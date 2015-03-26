@@ -317,7 +317,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
     if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
     {
       // rellum consistency, polarization, and trigger cut
-      if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(trigger)))
+      if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,trigger,1)))
       {
         // single photon cut
         if( exclude_sph==0 && fabs(N12-1)<0.01 )

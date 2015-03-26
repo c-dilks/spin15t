@@ -315,7 +315,7 @@ void Diagnostics()
       // fill trigger plot
       for(Int_t t=0; t<N_TRIG; t++)
       {
-        if(L2sum[1] & T->Mask(t)) trig_dist->Fill(t);
+        if(L2sum[1] & T->Mask(runnum,t,1)) trig_dist->Fill(t);
       };
 
       // below here we have if statements for each event class; within each
@@ -333,7 +333,7 @@ void Diagnostics()
       {
         for(Int_t t=0; t<N_TRIG; t++)
         {
-          if(L2sum[1] & T->Mask(t))
+          if(L2sum[1] & T->Mask(runnum,t,1))
           {
             if(Z < 0.8)
             {
@@ -371,7 +371,7 @@ void Diagnostics()
       {
         for(Int_t t=0; t<N_TRIG; t++)
         {
-          if(L2sum[1] & T->Mask(t))
+          if(L2sum[1] & T->Mask(runnum,t,1))
           {
             pt_vs_eta[kSph][t]->Fill(Eta,Pt);
             en_vs_eta[kSph][t]->Fill(Eta,E12);
@@ -388,7 +388,7 @@ void Diagnostics()
       {
         for(Int_t t=0; t<N_TRIG; t++)
         {
-          if(L2sum[1] & T->Mask(t))
+          if(L2sum[1] & T->Mask(runnum,t,1))
           {
             pt_vs_eta[kThr][t]->Fill(Eta,Pt);
             en_vs_eta[kThr][t]->Fill(Eta,E12);

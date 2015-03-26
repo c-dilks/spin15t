@@ -10,9 +10,12 @@
 void ReduceData(const char * filename="Outputset145ka.root",
                 const char * dirname="../../Output")
 {
+  if(gSystem->Getenv("TRIGGER")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
+
   // load polarization and rellum data
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
+
 
   char root_file[256];
   sprintf(root_file,"%s/%s",dirname,filename);
@@ -34,18 +37,18 @@ void ReduceData(const char * filename="Outputset145ka.root",
   Bool_t kicked_str;
   Int_t blue_str,yell_str,spin_str;
   Float_t b_pol_str,y_pol_str;
-  Float_t R_bbc[10];
-  Float_t R_zdc[10];
-  Float_t R_vpd[10];
-  Float_t R_bbc_err[10];
-  Float_t R_zdc_err[10];
-  Float_t R_vpd_err[10];
+  //Float_t R_bbc[10];
+  //Float_t R_zdc[10];
+  //Float_t R_vpd[10];
+  //Float_t R_bbc_err[10];
+  //Float_t R_zdc_err[10];
+  //Float_t R_vpd_err[10];
+  //Int_t pattern;
   Bool_t isConsistent;
   Float_t b_pol;
   Float_t y_pol;
   Float_t b_pol_err;
   Float_t y_pol_err;
-  Int_t pattern;
   Int_t L2sum[2];
   twotr->SetBranchAddress("M12",&M12);
   twotr->SetBranchAddress("N12",&N12);
@@ -76,6 +79,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
   str->Branch("fill",&fill,"fill/I");
   str->Branch("L2sum",L2sum,"L2sum[2]/I");
 
+  /*
   char R_bbc_n[10][32];
   char R_zdc_n[10][32];
   char R_vpd_n[10][32];
@@ -104,13 +108,12 @@ void ReduceData(const char * filename="Outputset145ka.root",
     sprintf(R_zdc_err_d[r],"R%d_zdc_err/F",r);
     sprintf(R_vpd_err_d[r],"R%d_vpd_err/F",r);
 
-    // deprecated ???
-    //str->Branch(R_bbc_n[r],&(R_bbc[r]),R_bbc_d[r]);
-    //str->Branch(R_bbc_err_n[r],&(R_bbc_err[r]),R_bbc_err_d[r]);
-    //str->Branch(R_zdc_n[r],&(R_zdc[r]),R_zdc_d[r]);
-    //str->Branch(R_zdc_err_n[r],&(R_zdc_err[r]),R_zdc_err_d[r]);
-    //str->Branch(R_vpd_n[r],&(R_vpd[r]),R_vpd_d[r]);
-    //str->Branch(R_vpd_err_n[r],&(R_vpd_err[r]),R_vpd_err_d[r]);
+    str->Branch(R_bbc_n[r],&(R_bbc[r]),R_bbc_d[r]);
+    str->Branch(R_bbc_err_n[r],&(R_bbc_err[r]),R_bbc_err_d[r]);
+    str->Branch(R_zdc_n[r],&(R_zdc[r]),R_zdc_d[r]);
+    str->Branch(R_zdc_err_n[r],&(R_zdc_err[r]),R_zdc_err_d[r]);
+    str->Branch(R_vpd_n[r],&(R_vpd[r]),R_vpd_d[r]);
+    str->Branch(R_vpd_err_n[r],&(R_vpd_err[r]),R_vpd_err_d[r]);
   };
 
   str->Branch("isConsistent",&isConsistent,"isConsistent/O");
@@ -119,6 +122,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
   str->Branch("b_pol_err",&b_pol_err,"b_pol_err/F");
   str->Branch("y_pol_err",&y_pol_err,"y_pol_err/F");
   str->Branch("pattern",&pattern,"pattern/I");
+  */
 
   
   // reduction loop
@@ -138,6 +142,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
       if(runnum!=runnum_tmp)
       {
 
+        /*
         for(Int_t r=1; r<10; r++)
         {
           R_bbc[r] = RD->Rellum(runnum,r,"bbc");
@@ -148,15 +153,16 @@ void ReduceData(const char * filename="Outputset145ka.root",
           R_zdc_err[r] = RD->RellumErr(runnum,r,"zdc");
           R_vpd_err[r] = RD->RellumErr(runnum,r,"vpd");
         };
+        pattern = RD->Pattern(runnum);
+        */
 
-        isConsistent = RD->RellumConsistent(runnum);
         b_pol = RD->BluePol(runnum);
         y_pol = RD->YellPol(runnum);
         b_pol_err = RD->BluePolErr(runnum);
         y_pol_err = RD->YellPolErr(runnum);
-        pattern = RD->Pattern(runnum);
-        fill = RD->GetFill(runnum);
 
+        isConsistent = RD->RellumConsistent(runnum);
+        fill = RD->GetFill(runnum);
         runnum_tmp = runnum;
       };
 
