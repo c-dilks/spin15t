@@ -5,59 +5,9 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
   // open root file
   TFile * asym_tfile = new TFile(asym_file,"READ");
 
-  // get bins from environment
-  Int_t phi_bins0, eta_bins0, pt_bins0, en_bins0;
-  if(gSystem->Getenv("TRIGGER")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  char trigger[16];
-  strcpy(trigger,gSystem->Getenv("TRIGGER"));
-  sscanf(gSystem->Getenv("PHI_BINS"),"%d",&phi_bins0);
-  sscanf(gSystem->Getenv("ETA_BINS"),"%d",&eta_bins0);
-  sscanf(gSystem->Getenv("PT_BINS"),"%d",&pt_bins0);
-  sscanf(gSystem->Getenv("EN_BINS"),"%d",&en_bins0);
-  const Int_t phi_bins = phi_bins0;
-  const Int_t eta_bins = eta_bins0;
-  const Int_t pt_bins = pt_bins0;
-  const Int_t en_bins = en_bins0;
-  Float_t phi_div[phi_bins+1];
-  Float_t eta_div[eta_bins+1];
-  Float_t pt_div[pt_bins+1];
-  Float_t en_div[en_bins+1];
-  char phi_div_env[phi_bins+1][20];
-  char eta_div_env[eta_bins+1][20];
-  char pt_div_env[pt_bins+1][20];
-  char en_div_env[en_bins+1][20];
-  for(Int_t i=0; i<=phi_bins; i++)
-  {
-    sprintf(phi_div_env[i],"PHI_DIV_%d",i);
-    sscanf(gSystem->Getenv(phi_div_env[i]),"%f",&(phi_div[i]));
-    printf("%s %f\n",phi_div_env[i],phi_div[i]);
-  };
-  for(Int_t i=0; i<=eta_bins; i++)
-  {
-    sprintf(eta_div_env[i],"ETA_DIV_%d",i);
-    sscanf(gSystem->Getenv(eta_div_env[i]),"%f",&(eta_div[i]));
-    printf("%s %f\n",eta_div_env[i],eta_div[i]);
-  };
-  for(Int_t i=0; i<=pt_bins; i++)
-  {
-    sprintf(pt_div_env[i],"PT_DIV_%d",i);
-    sscanf(gSystem->Getenv(pt_div_env[i]),"%f",&(pt_div[i]));
-    printf("%s %f\n",pt_div_env[i],pt_div[i]);
-  };
-  for(Int_t i=0; i<=en_bins; i++)
-  {
-    sprintf(en_div_env[i],"EN_DIV_%d",i);
-    sscanf(gSystem->Getenv(en_div_env[i]),"%f",&(en_div[i]));
-    printf("%s %f\n",en_div_env[i],en_div[i]);
-  };
-  Float_t phi_low; sscanf(gSystem->Getenv("PHI_LOW"),"%f",&phi_low);
-  Float_t phi_high; sscanf(gSystem->Getenv("PHI_HIGH"),"%f",&phi_high);
-  Float_t eta_low; sscanf(gSystem->Getenv("ETA_LOW"),"%f",&eta_low);
-  Float_t eta_high; sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&eta_high);
-  Float_t pt_low; sscanf(gSystem->Getenv("PT_LOW"),"%f",&pt_low);
-  Float_t pt_high; sscanf(gSystem->Getenv("PT_HIGH"),"%f",&pt_high);
-  Float_t en_low; sscanf(gSystem->Getenv("EN_LOW"),"%f",&en_low);
-  Float_t en_high; sscanf(gSystem->Getenv("EN_HIGH"),"%f",&en_high);
+  // environment
+  gSystem->Load("src/RunData.so");
+  Environ * env = new Environ();
 
 
   // set jet type
@@ -75,9 +25,9 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
   strcpy(asymmetry[3],"DSA");
   // written out asymmetry titles
   char asymmetry_w[asym_bins][128];
-  sprintf(asymmetry_w[1],"yellow single spin asymmetry (%s triggers)",trigger);
-  sprintf(asymmetry_w[2],"blue single spin asymmetry (%s triggers)",trigger);
-  sprintf(asymmetry_w[3],"double spin asymmetry (%s triggers)",trigger);
+  sprintf(asymmetry_w[1],"yellow single spin asymmetry (%s triggers)",env->TriggerType);
+  sprintf(asymmetry_w[2],"blue single spin asymmetry (%s triggers)",env->TriggerType);
+  sprintf(asymmetry_w[3],"double spin asymmetry (%s triggers)",env->TriggerType);
 
   // define asymmetry kinematic dependence plots
   const Int_t zz_bins=2;
@@ -92,27 +42,27 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
   strcpy(dir_title[1][2],"A_N_blue");
   strcpy(dir_title[1][3],"A_TT");
   char kindep_main_title[64];
-  if(pt_bins0==1 && en_bins0!=1 && eta_bins0==1) 
+  if(env->PtBins==1 && env->EnBins!=1 && env->EtaBins==1) 
   {
     for(Int_t z=0; z<zz_bins; z++)
     {
       for(Int_t a=1; a<asym_bins; a++) sprintf(kindep_name[z][a],"/%s/en_dep_z%d_a%d_g0_p0",dir_title[z][a],z,a);
     };
     strcpy(xaxistitle,"E (GeV)");
-    sprintf(kindep_main_title,"%s asymmetries vs. E (%s triggers)",jtype_str,trigger);
-    num_bins = en_bins0;
+    sprintf(kindep_main_title,"%s asymmetries vs. E (%s triggers)",jtype_str,env->TriggerType);
+    num_bins = env->EnBins;
   }
-  else if(pt_bins0!=1 && en_bins0==1 && eta_bins0==1) 
+  else if(env->PtBins!=1 && env->EnBins==1 && env->EtaBins==1) 
   {
     for(Int_t z=0; z<zz_bins; z++)
     {
       for(Int_t a=1; a<asym_bins; a++) sprintf(kindep_name[z][a],"/%s/pt_dep_z%d_a%d_g0_e0",dir_title[z][a],z,a);
     };
     strcpy(xaxistitle,"p_{#perp}  (GeV/c)");
-    sprintf(kindep_main_title,"%s asymmetries vs. p_{T} (%s triggers)",jtype_str,trigger);
-    num_bins = pt_bins0;
+    sprintf(kindep_main_title,"%s asymmetries vs. p_{T} (%s triggers)",jtype_str,env->TriggerType);
+    num_bins = env->PtBins;
   }
-  else if(pt_bins0==1 && en_bins0==1 && eta_bins0==1)
+  else if(env->PtBins==1 && env->EnBins==1 && env->EtaBins==1)
   {
     for(Int_t z=0; z<zz_bins; z++)
     {
@@ -162,16 +112,16 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
   char asym_title[zz_bins][asym_bins][num_bins0][256];
   TH1D * asym_hist[zz_bins][asym_bins][num_bins0];
   char asym_main_title[asym_bins][100];
-  if(pt_bins0==1 && en_bins0!=1 && eta_bins0==1) 
+  if(env->PtBins==1 && env->EnBins!=1 && env->EtaBins==1) 
   {
     for(Int_t z=0; z<zz_bins; z++)
     {
       for(Int_t a=1; a<asym_bins; a++) 
       {
-        for(Int_t e=0; e<en_bins0; e++)
+        for(Int_t e=0; e<env->EnBins; e++)
         {
           sprintf(asym_name[z][a][e],"/%s/asym_a%d_g0_p0_e%d",dir_title[z][a],a,e);
-          sprintf(asym_title[z][a][e],"E #in [%.2f,%.2f)",en_div[e],en_div[e+1]);
+          sprintf(asym_title[z][a][e],"E #in [%.2f,%.2f)",env->EnDiv(e),env->EnDiv(e+1));
           asym_hist[z][a][e] = (TH1D*) asym_tfile->Get(asym_name[z][a][e]);
           asym_hist[z][a][e]->SetTitle(asym_title[z][a][e]);
           asym_hist[z][a][e]->GetXaxis()->SetTitle("#phi");
@@ -186,16 +136,16 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
       };
     };
   }
-  else if(pt_bins0!=1 && en_bins0==1 && eta_bins0==1) 
+  else if(env->PtBins!=1 && env->EnBins==1 && env->EtaBins==1) 
   {
     for(Int_t z=0; z<zz_bins; z++)
     {
       for(Int_t a=1; a<asym_bins; a++) 
       {
-        for(Int_t p=0; p<pt_bins0; p++)
+        for(Int_t p=0; p<env->PtBins; p++)
         {
           sprintf(asym_name[z][a][p],"/%s/asym_a%d_g0_p%d_e0",dir_title[z][a],a,p);
-          sprintf(asym_title[z][a][p],"p_{#perp} #in [%.2f,%.2f)",pt_div[p],pt_div[p+1]);
+          sprintf(asym_title[z][a][p],"p_{#perp} #in [%.2f,%.2f)",env->PtDiv(p),env->PtDiv(p+1));
           asym_hist[z][a][p] = (TH1D*) asym_tfile->Get(asym_name[z][a][p]);
           asym_hist[z][a][p]->SetTitle(asym_title[z][a][p]);
           asym_hist[z][a][p]->GetXaxis()->SetTitle("#phi");
@@ -210,7 +160,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
       };
     };
   }
-  else if(pt_bins0==1 && en_bins0==1 && eta_bins0==1)
+  else if(env->PtBins==1 && env->EnBins==1 && env->EtaBins==1)
   {
     for(Int_t z=0; z<zz_bins; z++)
     {

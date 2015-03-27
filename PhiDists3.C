@@ -11,62 +11,13 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
   Trigger * T = new Trigger();
+  Environ * env = new Environ();
 
   // get bins from environment
-  Int_t phi_bins0, eta_bins0, pt_bins0, en_bins0;
-  char trigger[16];
-  char cut_type[16];
-  if(gSystem->Getenv("TRIGGER")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  sscanf(gSystem->Getenv("PHI_BINS"),"%d",&phi_bins0);
-  sscanf(gSystem->Getenv("ETA_BINS"),"%d",&eta_bins0);
-  sscanf(gSystem->Getenv("PT_BINS"),"%d",&pt_bins0);
-  sscanf(gSystem->Getenv("EN_BINS"),"%d",&en_bins0);
-  strcpy(trigger,gSystem->Getenv("TRIGGER"));
-  strcpy(cut_type,gSystem->Getenv("CUT_TYPE"));
-  const Int_t phi_bins = phi_bins0;
-  const Int_t eta_bins = eta_bins0;
-  const Int_t pt_bins = pt_bins0;
-  const Int_t en_bins = en_bins0;
-  Float_t phi_div[phi_bins+1];
-  Float_t eta_div[eta_bins+1];
-  Float_t pt_div[pt_bins+1];
-  Float_t en_div[en_bins+1];
-  char phi_div_env[phi_bins+1][20];
-  char eta_div_env[eta_bins+1][20];
-  char pt_div_env[pt_bins+1][20];
-  char en_div_env[en_bins+1][20];
-  for(Int_t i=0; i<=phi_bins; i++)
-  {
-    sprintf(phi_div_env[i],"PHI_DIV_%d",i);
-    sscanf(gSystem->Getenv(phi_div_env[i]),"%f",&(phi_div[i]));
-    printf("%s %f\n",phi_div_env[i],phi_div[i]);
-  };
-  for(Int_t i=0; i<=eta_bins; i++)
-  {
-    sprintf(eta_div_env[i],"ETA_DIV_%d",i);
-    sscanf(gSystem->Getenv(eta_div_env[i]),"%f",&(eta_div[i]));
-    printf("%s %f\n",eta_div_env[i],eta_div[i]);
-  };
-  for(Int_t i=0; i<=pt_bins; i++)
-  {
-    sprintf(pt_div_env[i],"PT_DIV_%d",i);
-    sscanf(gSystem->Getenv(pt_div_env[i]),"%f",&(pt_div[i]));
-    printf("%s %f\n",pt_div_env[i],pt_div[i]);
-  };
-  for(Int_t i=0; i<=en_bins; i++)
-  {
-    sprintf(en_div_env[i],"EN_DIV_%d",i);
-    sscanf(gSystem->Getenv(en_div_env[i]),"%f",&(en_div[i]));
-    printf("%s %f\n",en_div_env[i],en_div[i]);
-  };
-  Float_t phi_low; sscanf(gSystem->Getenv("PHI_LOW"),"%f",&phi_low);
-  Float_t phi_high; sscanf(gSystem->Getenv("PHI_HIGH"),"%f",&phi_high);
-  Float_t eta_low; sscanf(gSystem->Getenv("ETA_LOW"),"%f",&eta_low);
-  Float_t eta_high; sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&eta_high);
-  Float_t pt_low; sscanf(gSystem->Getenv("PT_LOW"),"%f",&pt_low);
-  Float_t pt_high; sscanf(gSystem->Getenv("PT_HIGH"),"%f",&pt_high);
-  Float_t en_low; sscanf(gSystem->Getenv("EN_LOW"),"%f",&en_low);
-  Float_t en_high; sscanf(gSystem->Getenv("EN_HIGH"),"%f",&en_high);
+  Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
+  Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
+  Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
+  Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
 
 
   // read redset tree and set output file name
@@ -170,7 +121,8 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         sprintf(pt_wdist_n[1][g][e][r],"pt_wdist_pi0_g%d_e%d_r%d",g,e,runnum_arr[r]);
         sprintf(pt_wdist_n[2][g][e][r],"pt_wdist_thr_g%d_e%d_r%d",g,e,runnum_arr[r]);
         for(Int_t j=0; j<3; j++)
-          pt_wdist[j][g][e][r] = new TH1D(pt_wdist_n[j][g][e][r],pt_wdist_n[j][g][e][r],NWBINS,pt_low,pt_high);
+          pt_wdist[j][g][e][r] = new TH1D(pt_wdist_n[j][g][e][r],pt_wdist_n[j][g][e][r],NWBINS,
+          env->PtLow,env->PtHigh);
       };
       for(Int_t p=0; p<pt_bins; p++)
       {
@@ -178,7 +130,8 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         sprintf(en_wdist_n[1][g][p][r],"en_wdist_pi0_g%d_p%d_r%d",g,p,runnum_arr[r]);
         sprintf(en_wdist_n[2][g][p][r],"en_wdist_thr_g%d_p%d_r%d",g,p,runnum_arr[r]);
         for(Int_t j=0; j<3; j++)
-          en_wdist[j][g][p][r] = new TH1D(en_wdist_n[j][g][p][r],en_wdist_n[j][g][p][r],NWBINS,en_low,en_high);
+          en_wdist[j][g][p][r] = new TH1D(en_wdist_n[j][g][p][r],en_wdist_n[j][g][p][r],NWBINS,
+          env->EnLow,env->EnHigh);
       };
       for(Int_t p=0; p<pt_bins; p++)
       {
@@ -227,21 +180,24 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
             sprintf(phi_dist_thr_n[s][g][p][e][r],"phi_thr_s%d_g%d_p%d_e%d_r%d",s,g,p,e,runnum_arr[r]);
 
             sprintf(phi_dist_sph_t[s][g][p][e][r],
-             "single-#gamma #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],eta_div[g],eta_div[g+1],pt_div[p],pt_div[p+1],en_div[e],en_div[e+1],runnum_arr[r]);
+"single-#gamma #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
+             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
+             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
             sprintf(phi_dist_pi0_t[s][g][p][e][r],
-             "#pi^{0} #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],eta_div[g],eta_div[g+1],pt_div[p],pt_div[p+1],en_div[e],en_div[e+1],runnum_arr[r]);
+"#pi^{0} #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
+             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
+             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
             sprintf(phi_dist_thr_t[s][g][p][e][r],
-             "N_{#gamma}>3 jet #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],eta_div[g],eta_div[g+1],pt_div[p],pt_div[p+1],en_div[e],en_div[e+1],runnum_arr[r]);
+"N_{#gamma}>3 jet #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
+             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
+             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
 
             phi_dist_sph[s][g][p][e][r] = new TH1D(phi_dist_sph_n[s][g][p][e][r],phi_dist_sph_t[s][g][p][e][r],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
             phi_dist_pi0[s][g][p][e][r] = new TH1D(phi_dist_pi0_n[s][g][p][e][r],phi_dist_pi0_t[s][g][p][e][r],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
             phi_dist_thr[s][g][p][e][r] = new TH1D(phi_dist_thr_n[s][g][p][e][r],phi_dist_thr_t[s][g][p][e][r],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
 
             phi_dist_sph[s][g][p][e][r]->Sumw2();
             phi_dist_pi0[s][g][p][e][r]->Sumw2();
@@ -290,9 +246,9 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
     else if(blue==1 && yell==1) ss=3;
 
     // kinematic bins --> array indices
-    for(Int_t g=0; g<eta_bins; g++) { if(Eta>=eta_div[g] && Eta<eta_div[g+1]) gg=g; };
-    for(Int_t p=0; p<pt_bins;  p++) { if(Pt>=pt_div[p]   && Pt<pt_div[p+1]  ) pp=p; };
-    for(Int_t e=0; e<en_bins;  e++) { if(E12>=en_div[e]  && E12<en_div[e+1] ) ee=e; };
+    for(Int_t g=0; g<eta_bins; g++) { if(Eta>=env->EtaDiv(g) && Eta<env->EtaDiv(g+1)) gg=g; };
+    for(Int_t p=0; p<pt_bins;  p++) { if(Pt>=env->PtDiv(p)   && Pt<env->PtDiv(p+1)  ) pp=p; };
+    for(Int_t e=0; e<en_bins;  e++) { if(E12>=env->EnDiv(e)  && E12<env->EnDiv(e+1) ) ee=e; };
 
     // run number --> array index
     if(runnum != runnum_tmp)
@@ -316,8 +272,8 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
     //printf("%d %d %d %d %d\n",ss,gg,pp,ee,rr);
     if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
     {
-      // rellum consistency, polarization, and trigger cut
-      if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,trigger,1)))
+      // rellum consistency, polarization, and env->TriggerType cut
+      if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
       {
         // single photon cut
         if( exclude_sph==0 && fabs(N12-1)<0.01 )
@@ -345,8 +301,8 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
           for(Int_t qq=0; qq<mass_cut_tr->GetEntries(); qq++)
           {
             mass_cut_tr->GetEntry(qq);
-            if(((!strcmp(cut_type,"en") && E12>=lb && E12<ub) ||
-                (!strcmp(cut_type,"pt") && Pt>=lb && Pt<lb)) &&
+            if(((!strcmp(env->MassCutType,"en") && E12>=lb && E12<ub) ||
+                (!strcmp(env->MassCutType,"pt") && Pt>=lb && Pt<lb)) &&
                 M12>=massL && M12<massH) usepi0=true;
           };
           if(usepi0)

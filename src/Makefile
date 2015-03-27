@@ -19,8 +19,8 @@ GLIBS = $(ROOTGLIBS) $(SYSLIBS)
 
 #-----------------------------------------------
 
-CXXFILES = RunData.cxx Trigger.cxx
-HEADERS = RunData.h Trigger.h
+CXXFILES = Environ.cxx RunData.cxx Trigger.cxx
+HEADERS = Environ.h RunData.h Trigger.h
 
 #-----------------------------------------------
 

@@ -2,26 +2,20 @@
 
 void MassCutter()
 {
-  // load environment
-  if(gSystem->Getenv("TRIGGER")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  char trigger[16];
-  char cut_type[16];
-  strcpy(trigger,gSystem->Getenv("TRIGGER"));
-  strcpy(cut_type,gSystem->Getenv("CUT_TYPE"));
+  // environment
   gSystem->Load("src/RunData.so");
   Trigger * T = new Trigger();
+  Environ * env = new Environ();
 
-  // check cut_type
+  // check mass cut type
   Int_t multiplier;
-  if(!strcmp(cut_type,"en")) multiplier=10;
-  else if(!strcmp(cut_type,"pt")) multiplier=1;
+  if(!strcmp(env->MassCutType,"en")) multiplier=10;
+  else if(!strcmp(env->MassCutType,"pt")) multiplier=1;
   else
   {
-    fprintf(stderr,"ERROR: cut_type must be \"en\" or \"pt\"\n");
+    fprintf(stderr,"ERROR: env->MassCutType must be \"en\" or \"pt\"\n");
     return;
   };
-
-
 
 
   // load mass dists for each en bin
@@ -31,10 +25,10 @@ void MassCutter()
   char mdist_arr_n[10][64];
   for(Int_t ii=0; ii<10; ii++)
   {
-    sprintf(mdist_arr_n[ii],"mass_dist_for_%sbin_%d_arr",cut_type,ii);
+    sprintf(mdist_arr_n[ii],"mass_dist_for_%sbin_%d_arr",env->MassCutType,ii);
     mdist_arr[ii] = (TObjArray*) infile->Get(mdist_arr_n[ii]);
     printf("%s %p\n",mdist_arr_n[ii],(void*)mdist_arr[ii]);
-    mdist[ii] = (TH1D*) mdist_arr[ii]->At(T->Index(trigger));
+    mdist[ii] = (TH1D*) mdist_arr[ii]->At(T->Index(env->TriggerType));
     mdist[ii]->GetXaxis()->SetLabelSize(0.06);
     mdist[ii]->GetYaxis()->SetLabelSize(0.06);
     mdist[ii]->SetLineWidth(2);
@@ -118,7 +112,7 @@ void MassCutter()
   TCanvas * cc = new TCanvas("cc","cc",700,500);
   Int_t cnt=0;
   gROOT->ProcessLine(".! touch mass_cuts.dat; rm mass_cuts.dat; touch mass_cuts.dat");
-  printf("%s_low %s_high mass_low mass_at_max_bin mass_high\n",cut_type,cut_type);
+  printf("%s_low %s_high mass_low mass_at_max_bin mass_high\n",env->MassCutType,env->MassCutType);
   for(Int_t ii=0; ii<10; ii++)
   {
     if(mdist[ii]->GetEntries()>0)

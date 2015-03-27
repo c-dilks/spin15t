@@ -9,6 +9,7 @@ void Diagnostics()
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
   Trigger * T = new Trigger();
+  Environ * env = new Environ();
 
 
   // open chain
@@ -53,98 +54,16 @@ void Diagnostics()
   strcpy(class_title[kPi0],"#pi^{0} (naive M cut)");
   strcpy(class_title[kThr],"N_{#gamma}>2");
 
-  
-  // get kinematics ranges for eta,Pt,Phi using the reduced data set and looking for maxima and minima
-  // -- this is useful for looking at kinematic distrbutions beyond the kinematic boundaries set in Bin_Splitter.C
-  // -- below there is a section to get the kinematic ranges using Bin_Splitter.C; comment either this section
-  //    or the next to choose which one to use
-  /*
-  for(Int_t x=0; x<tr->GetEntries(); x++)
-  {
-    if((x%100000)==0) printf("computing kin ranges: %.2f%%\n",100*((Float_t)x)/((Float_t)tr->GetEntries()));
-    tr->GetEntry(x);
-    kicked = RD->Kicked(runnum,bx);
-    if(runnum!=runnum_tmp)
-    {
-      b_pol = RD->BluePol(runnum);
-      y_pol = RD->YellPol(runnum);
-      isConsistent = RD->RellumConsistent(runnum);
-      runnum_tmp=runnum;
-    }
-    // n photon cut
-    //if(N12==1 && kicked==0 && isConsistent==1 && b_pol*y_pol!=0)
-    // pi0 cut
-    if(fabs(M12-0.135)<0.1 && Z<0.8 && (TrigBits&0x200) && N12==2 && kicked==0 && isConsistent==1 && b_pol*y_pol!=0 && Pt<15)
-    {
-      E12_min = (E12 < E12_min) ? E12:E12_min;
-      Pt_min  = (Pt  < Pt_min)  ? Pt:Pt_min;
-      Eta_min = (Eta < Eta_min) ? Eta:Eta_min;
-      Phi_min = (Phi < Phi_min) ? Phi:Phi_min;
-
-      E12_max = (E12 > E12_max) ? E12:E12_max;
-      Pt_max  = (Pt  > Pt_max)  ? Pt:Pt_max;
-      Eta_max = (Eta > Eta_max) ? Eta:Eta_max;
-      Phi_max = (Phi > Phi_max) ? Phi:Phi_max;
-    };
-  };
-  */
-
 
   // get kinematic ranges using the current binning set by Bin_Splitter.C
-  // -- choose this section or the previous one to set the kinematic ranges to plot in diag.root 
-  ///*
-  Int_t phi_bins0, eta_bins0, pt_bins0, en_bins0;
-  if(gSystem->Getenv("PHI_BINS")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  sscanf(gSystem->Getenv("PHI_BINS"),"%d",&phi_bins0);
-  sscanf(gSystem->Getenv("ETA_BINS"),"%d",&eta_bins0);
-  sscanf(gSystem->Getenv("PT_BINS"),"%d",&pt_bins0);
-  sscanf(gSystem->Getenv("EN_BINS"),"%d",&en_bins0);
-  const Int_t phi_bins = phi_bins0;
-  const Int_t eta_bins = eta_bins0;
-  const Int_t pt_bins = pt_bins0;
-  const Int_t en_bins = en_bins0;
-  Float_t phi_div[phi_bins+1];
-  Float_t eta_div[eta_bins+1];
-  Float_t pt_div[pt_bins+1];
-  Float_t en_div[en_bins+1];
-  char phi_div_env[phi_bins+1][20];
-  char eta_div_env[eta_bins+1][20];
-  char pt_div_env[pt_bins+1][20];
-  char en_div_env[en_bins+1][20];
-  for(Int_t i=0; i<=phi_bins; i++)
-  {
-    sprintf(phi_div_env[i],"PHI_DIV_%d",i);
-    sscanf(gSystem->Getenv(phi_div_env[i]),"%f",&(phi_div[i]));
-    printf("%s %f\n",phi_div_env[i],phi_div[i]);
-  };
-  for(Int_t i=0; i<=eta_bins; i++)
-  {
-    sprintf(eta_div_env[i],"ETA_DIV_%d",i);
-    sscanf(gSystem->Getenv(eta_div_env[i]),"%f",&(eta_div[i]));
-    printf("%s %f\n",eta_div_env[i],eta_div[i]);
-  };
-  for(Int_t i=0; i<=pt_bins; i++)
-  {
-    sprintf(pt_div_env[i],"PT_DIV_%d",i);
-    sscanf(gSystem->Getenv(pt_div_env[i]),"%f",&(pt_div[i]));
-    printf("%s %f\n",pt_div_env[i],pt_div[i]);
-  };
-  for(Int_t i=0; i<=en_bins; i++)
-  {
-    sprintf(en_div_env[i],"EN_DIV_%d",i);
-    sscanf(gSystem->Getenv(en_div_env[i]),"%f",&(en_div[i]));
-    printf("%s %f\n",en_div_env[i],en_div[i]);
-  };
-  sscanf(gSystem->Getenv("PHI_LOW"),"%f",&Phi_min);
-  sscanf(gSystem->Getenv("PHI_HIGH"),"%f",&Phi_max);
-  sscanf(gSystem->Getenv("ETA_LOW"),"%f",&Eta_min);
-  sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&Eta_max);
-  sscanf(gSystem->Getenv("PT_LOW"),"%f",&Pt_min);
-  sscanf(gSystem->Getenv("PT_HIGH"),"%f",&Pt_max);
-  sscanf(gSystem->Getenv("EN_LOW"),"%f",&E12_min);
-  sscanf(gSystem->Getenv("EN_HIGH"),"%f",&E12_max);
-  //*/
-  
+  Phi_min = env->PhiLow;
+  Phi_max = env->PhiHigh;
+  Eta_min = env->EtaLow;
+  Eta_max = env->EtaHigh;
+  E12_min = env->EnLow;
+  E12_max = env->EnHigh;
+  Pt_min = env->PtLow;
+  Pt_max = env->PtHigh;
 
   
   // load run exclusion trees
@@ -284,7 +203,7 @@ void Diagnostics()
   };
 
   // trigger distribution
-  TH1D * trig_dist = new TH1D("trig_dist","Trigger Counts",10,0,10);
+  TH1D * trig_dist = new TH1D("trig_dist","Trigger Counts",N_TRIG,0,N_TRIG);
   for(Int_t t=0; t<N_TRIG; t++) trig_dist->GetXaxis()->SetBinLabel(t+1,T->Name(t));
 
 

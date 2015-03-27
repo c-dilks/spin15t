@@ -20,4 +20,4 @@ prelim.root
 diag_plots/*.pdf
 *.gz
 asym_plots/*
-wdist_pdfs/*.pdf
+wdist_pdfs/*

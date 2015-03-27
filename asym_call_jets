@@ -1,35 +1,39 @@
 #!/bin/bash
 # runs double and single spin analyses, and draws output
 
-rm output/*.root
-rm output/*.png
+if [ $EN_BINS -eq 1 -a $PT_BINS -ne 1 ]; then
+  kindep="pt"
+elif [ $EN_BINS -ne 1 -a $PT_BINS -eq 1 ]; then
+  kindep="en"
+else
+  echo "kinematic dependence unknown"
+  exit
+fi
+echo "$kindep dependence"
 
-root -b -q -l 'Asym3.C('\"sph\"','\"all\"')'
-root -b -q -l 'DrawAsymmetries.C('\"sph\"')'
-mv -v spin.root output/spin_sph.root
-mv -v canv_kindep_0.png output/canv_kindep_z0_sph.png
-mv -v canv_kindep_1.png output/canv_kindep_z1_sph.png
-mv -v canv_z0_Y-SSA.png output/canv_Y-SSA_sph.png
-mv -v canv_z0_B-SSA.png output/canv_B-SSA_sph.png
-mv -v canv_z0_DSA.png output/canv_DSA_sph.png
-mv -v asymcanv_sph.root output/
 
-root -b -q -l 'Asym3.C('\"pi0\"','\"all\"')'
-root -b -q -l 'DrawAsymmetries.C('\"pi0\"')'
-mv -v spin.root output/spin_pi0.root
-mv -v canv_kindep_0.png output/canv_kindep_z0_pi0.png
-mv -v canv_kindep_1.png output/canv_kindep_z1_pi0.png
-mv -v canv_z0_Y-SSA.png output/canv_Y-SSA_pi0.png
-mv -v canv_z0_B-SSA.png output/canv_B-SSA_pi0.png
-mv -v canv_z0_DSA.png output/canv_DSA_pi0.png
-mv -v asymcanv_pi0.root output/
+outputdir="asym_plots/output_${TRIGGER_TYPE}_$kindep"
+mkdir -p $outputdir
+rm $outputdir/*
 
-root -b -q -l 'Asym3.C('\"thr\"','\"all\"')'
-root -b -q -l 'DrawAsymmetries.C('\"thr\"')'
-mv -v spin.root output/spin_thr.root
-mv -v canv_kindep_0.png output/canv_kindep_z0_thr.png
-mv -v canv_kindep_1.png output/canv_kindep_z1_thr.png
-mv -v canv_z0_Y-SSA.png output/canv_Y-SSA_thr.png
-mv -v canv_z0_B-SSA.png output/canv_B-SSA_thr.png
-mv -v canv_z0_DSA.png output/canv_DSA_thr.png
-mv -v asymcanv_thr.root output/
+for class in "sph" "pi0" "thr"; do
+  root -b -q -l 'Asym3.C('\"${class}\"','\"all\"')'
+  root -b -q -l 'DrawAsymmetries.C('\"${class}\"')'
+  mv -v spin.root ${outputdir}/spin_${class}.root
+  mv -v canv_kindep_0.png ${outputdir}/canv_kindep_z0_${class}.png
+  mv -v canv_kindep_1.png ${outputdir}/canv_kindep_z1_${class}.png
+  mv -v canv_z0_Y-SSA.png ${outputdir}/canv_Y-SSA_${class}.png
+  mv -v canv_z0_B-SSA.png ${outputdir}/canv_B-SSA_${class}.png
+  mv -v canv_z0_DSA.png ${outputdir}/canv_DSA_${class}.png
+  mv -v asymcanv_${class}.root ${outputdir}/
+  htmlfile="${outputdir}/${class}_phi_dists.html"
+  echo '<html>' >> $htmlfile
+  echo '<head><title>Asymmetries</title></head>' >> $htmlfile
+  echo '<body>' >> $htmlfile
+  echo '<div style="width:1300px;overflow:scroll;">' >> $htmlfile
+  echo '<img width="400" src=canv_Y-SSA_'${class}'.png>' >> $htmlfile
+  echo '<img width="400" src=canv_B-SSA_'${class}'.png>' >> $htmlfile
+  echo '<img width="400" src=canv_DSA_'${class}'.png>' >> $htmlfile
+  echo '</body>' >> $htmlfile
+  echo '</html>' >> $htmlfile
+done

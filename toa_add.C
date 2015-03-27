@@ -68,56 +68,14 @@ void toa_add(Bool_t printPDFs=false)
 
   
   // get bins from environment
-  Int_t phi_bins0, eta_bins0, pt_bins0, en_bins0;
-  if(gSystem->Getenv("PHI_BINS")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  sscanf(gSystem->Getenv("PHI_BINS"),"%d",&phi_bins0);
-  sscanf(gSystem->Getenv("ETA_BINS"),"%d",&eta_bins0);
-  sscanf(gSystem->Getenv("PT_BINS"),"%d",&pt_bins0);
-  sscanf(gSystem->Getenv("EN_BINS"),"%d",&en_bins0);
-  const Int_t phi_bins = phi_bins0;
-  const Int_t eta_bins = eta_bins0;
-  const Int_t pt_bins = pt_bins0;
-  const Int_t en_bins = en_bins0;
-  Float_t phi_div[phi_bins+1];
-  Float_t eta_div[eta_bins+1];
-  Float_t pt_div[pt_bins+1];
-  Float_t en_div[en_bins+1];
-  char phi_div_env[phi_bins+1][20];
-  char eta_div_env[eta_bins+1][20];
-  char pt_div_env[pt_bins+1][20];
-  char en_div_env[en_bins+1][20];
-  for(Int_t i=0; i<=phi_bins; i++)
-  {
-    sprintf(phi_div_env[i],"PHI_DIV_%d",i);
-    sscanf(gSystem->Getenv(phi_div_env[i]),"%f",&(phi_div[i]));
-    printf("%s %f\n",phi_div_env[i],phi_div[i]);
-  };
-  for(Int_t i=0; i<=eta_bins; i++)
-  {
-    sprintf(eta_div_env[i],"ETA_DIV_%d",i);
-    sscanf(gSystem->Getenv(eta_div_env[i]),"%f",&(eta_div[i]));
-    printf("%s %f\n",eta_div_env[i],eta_div[i]);
-  };
-  for(Int_t i=0; i<=pt_bins; i++)
-  {
-    sprintf(pt_div_env[i],"PT_DIV_%d",i);
-    sscanf(gSystem->Getenv(pt_div_env[i]),"%f",&(pt_div[i]));
-    printf("%s %f\n",pt_div_env[i],pt_div[i]);
-  };
-  for(Int_t i=0; i<=en_bins; i++)
-  {
-    sprintf(en_div_env[i],"EN_DIV_%d",i);
-    sscanf(gSystem->Getenv(en_div_env[i]),"%f",&(en_div[i]));
-    printf("%s %f\n",en_div_env[i],en_div[i]);
-  };
-  Float_t phi_low; sscanf(gSystem->Getenv("PHI_LOW"),"%f",&phi_low);
-  Float_t phi_high; sscanf(gSystem->Getenv("PHI_HIGH"),"%f",&phi_high);
-  Float_t eta_low; sscanf(gSystem->Getenv("ETA_LOW"),"%f",&eta_low);
-  Float_t eta_high; sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&eta_high);
-  Float_t pt_low; sscanf(gSystem->Getenv("PT_LOW"),"%f",&pt_low);
-  Float_t pt_high; sscanf(gSystem->Getenv("PT_HIGH"),"%f",&pt_high);
-  Float_t en_low; sscanf(gSystem->Getenv("EN_LOW"),"%f",&en_low);
-  Float_t en_high; sscanf(gSystem->Getenv("EN_HIGH"),"%f",&en_high);
+  gSystem->Load("src/RunData.so");
+  Environ * env = new Environ();
+  Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
+  Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
+  Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
+  Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
+
+  // event classes
   char jtype[3][8];
   strcpy(jtype[0],"sph");
   strcpy(jtype[1],"pi0");
@@ -419,7 +377,7 @@ void toa_add(Bool_t printPDFs=false)
       for(Int_t j=0; j<3; j++)
       {
         sprintf(pt_wdist_n[j][g][e],"pt_wdist_tot_%s_g%d_e%d",jtype[j],g,e);
-        pt_wdist_tot[j][g][e] = new TH1D(pt_wdist_n[j][g][e],pt_wdist_n[j][g][e],NWBINS,pt_low,pt_high);
+        pt_wdist_tot[j][g][e] = new TH1D(pt_wdist_n[j][g][e],pt_wdist_n[j][g][e],NWBINS,env->PtLow,env->PtHigh);
       };
     };
     for(Int_t p=0; p<pt_bins; p++)
@@ -427,7 +385,7 @@ void toa_add(Bool_t printPDFs=false)
       for(Int_t j=0; j<3; j++)
       {
         sprintf(en_wdist_n[j][g][p],"en_wdist_tot_%s_g%d_p%d",jtype[j],g,p);
-        en_wdist_tot[j][g][p] = new TH1D(en_wdist_n[j][g][p],en_wdist_n[j][g][p],NWBINS,en_low,en_high);
+        en_wdist_tot[j][g][p] = new TH1D(en_wdist_n[j][g][p],en_wdist_n[j][g][p],NWBINS,env->EnLow,env->EnHigh);
       };
     };
     for(Int_t p=0; p<pt_bins; p++)

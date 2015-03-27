@@ -6,5 +6,6 @@
 
 #pragma link C++ class RunData+;
 #pragma link C++ class Trigger+;
+#pragma link C++ class Environ+;
 
 #endif

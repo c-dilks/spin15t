@@ -23,58 +23,14 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
   TFile * infile = new TFile("phiset/all.root","READ");
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
+  Environ * env = new Environ();
 
   // get bins from environment
-  Int_t phi_bins0, eta_bins0, pt_bins0, en_bins0;
-  if(gSystem->Getenv("PHI_BINS")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-  sscanf(gSystem->Getenv("PHI_BINS"),"%d",&phi_bins0);
-  sscanf(gSystem->Getenv("ETA_BINS"),"%d",&eta_bins0);
-  sscanf(gSystem->Getenv("PT_BINS"),"%d",&pt_bins0);
-  sscanf(gSystem->Getenv("EN_BINS"),"%d",&en_bins0);
-  const Int_t phi_bins = phi_bins0;
-  const Int_t eta_bins = eta_bins0;
-  const Int_t pt_bins = pt_bins0;
-  const Int_t en_bins = en_bins0;
-  Float_t phi_div[phi_bins+1];
-  Float_t eta_div[eta_bins+1];
-  Float_t pt_div[pt_bins+1];
-  Float_t en_div[en_bins+1];
-  char phi_div_env[phi_bins+1][20];
-  char eta_div_env[eta_bins+1][20];
-  char pt_div_env[pt_bins+1][20];
-  char en_div_env[en_bins+1][20];
-  for(Int_t i=0; i<=phi_bins; i++)
-  {
-    sprintf(phi_div_env[i],"PHI_DIV_%d",i);
-    sscanf(gSystem->Getenv(phi_div_env[i]),"%f",&(phi_div[i]));
-    printf("%s %f\n",phi_div_env[i],phi_div[i]);
-  };
-  for(Int_t i=0; i<=eta_bins; i++)
-  {
-    sprintf(eta_div_env[i],"ETA_DIV_%d",i);
-    sscanf(gSystem->Getenv(eta_div_env[i]),"%f",&(eta_div[i]));
-    printf("%s %f\n",eta_div_env[i],eta_div[i]);
-  };
-  for(Int_t i=0; i<=pt_bins; i++)
-  {
-    sprintf(pt_div_env[i],"PT_DIV_%d",i);
-    sscanf(gSystem->Getenv(pt_div_env[i]),"%f",&(pt_div[i]));
-    printf("%s %f\n",pt_div_env[i],pt_div[i]);
-  };
-  for(Int_t i=0; i<=en_bins; i++)
-  {
-    sprintf(en_div_env[i],"EN_DIV_%d",i);
-    sscanf(gSystem->Getenv(en_div_env[i]),"%f",&(en_div[i]));
-    printf("%s %f\n",en_div_env[i],en_div[i]);
-  };
-  Float_t phi_low; sscanf(gSystem->Getenv("PHI_LOW"),"%f",&phi_low);
-  Float_t phi_high; sscanf(gSystem->Getenv("PHI_HIGH"),"%f",&phi_high);
-  Float_t eta_low; sscanf(gSystem->Getenv("ETA_LOW"),"%f",&eta_low);
-  Float_t eta_high; sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&eta_high);
-  Float_t pt_low; sscanf(gSystem->Getenv("PT_LOW"),"%f",&pt_low);
-  Float_t pt_high; sscanf(gSystem->Getenv("PT_HIGH"),"%f",&pt_high);
-  Float_t en_low; sscanf(gSystem->Getenv("EN_LOW"),"%f",&en_low);
-  Float_t en_high; sscanf(gSystem->Getenv("EN_HIGH"),"%f",&en_high);
+  Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
+  Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
+  Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
+  Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
+
 
 
   // read TObjArrays of phi distributions
@@ -172,13 +128,13 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
             sprintf(phi_dist_num_e_n[a][s][g][p][e],"phi_num_e_a%d_s%d_g%d_p%d_e%d",a,s,g,p,e);
             sprintf(phi_dist_den_e_n[a][s][g][p][e],"phi_den_e_a%d_s%d_g%d_p%d_e%d",a,s,g,p,e);
             phi_dist_num[a][s][g][p][e] = new TH1D(phi_dist_num_n[a][s][g][p][e],phi_dist_num_n[a][s][g][p][e],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
             phi_dist_den[a][s][g][p][e] = new TH1D(phi_dist_den_n[a][s][g][p][e],phi_dist_den_n[a][s][g][p][e],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
             phi_dist_num_e[a][s][g][p][e] = new TH1D(phi_dist_num_e_n[a][s][g][p][e],phi_dist_num_e_n[a][s][g][p][e],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
             phi_dist_den_e[a][s][g][p][e] = new TH1D(phi_dist_den_e_n[a][s][g][p][e],phi_dist_den_e_n[a][s][g][p][e],
-              phi_bins,phi_low,phi_high);
+              phi_bins,env->PhiLow,env->PhiHigh);
 
             for(Int_t r=0; r<ARR_size; r++)
             {
@@ -393,43 +349,46 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
           sprintf(asym_e_n[a][g][p][e],"asym_e_a%d_g%d_p%d_e%d",a,g,p,e);
           sprintf(asym_t[a][g][p][e],
              "%s vs. %s :: #eta#in[%.2f,%.2f), p_{T}#in[%.2f,%.2f), E#in[%.2f,%.2f) (runsum)",
-             asym_title[a],var_str,eta_div[g],eta_div[g+1],pt_div[p],pt_div[p+1],en_div[e],en_div[e+1]);
+             asym_title[a],var_str,
+             env->EtaDiv(g),env->EtaDiv(g+1),
+             env->PtDiv(p),env->PtDiv(p+1),
+             env->EnDiv(e),env->EnDiv(e+1));
 
 
           dist_ll_num[a][g][p][e] = new TH1D(dist_ll_num_n[a][g][p][e],
-              dist_ll_num_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_ll_num_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_rr_num[a][g][p][e] = new TH1D(dist_rr_num_n[a][g][p][e],
-              dist_rr_num_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_rr_num_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_ll_den[a][g][p][e] = new TH1D(dist_ll_den_n[a][g][p][e],
-              dist_ll_den_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_ll_den_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_rr_den[a][g][p][e] = new TH1D(dist_rr_den_n[a][g][p][e],
-              dist_rr_den_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_rr_den_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           
           dist_ll_num_e[a][g][p][e] = new TH1D(dist_ll_num_e_n[a][g][p][e],
-              dist_ll_num_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_ll_num_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_rr_num_e[a][g][p][e] = new TH1D(dist_rr_num_e_n[a][g][p][e],
-              dist_rr_num_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_rr_num_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_ll_den_e[a][g][p][e] = new TH1D(dist_ll_den_e_n[a][g][p][e],
-              dist_ll_den_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_ll_den_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           dist_rr_den_e[a][g][p][e] = new TH1D(dist_rr_den_e_n[a][g][p][e],
-              dist_rr_den_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              dist_rr_den_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
 
           numer[a][g][p][e] = new TH1D(numer_n[a][g][p][e],
-              numer_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              numer_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           denom[a][g][p][e] = new TH1D(denom_n[a][g][p][e],
-              denom_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              denom_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           numer_e[a][g][p][e] = new TH1D(numer_e_n[a][g][p][e],
-              numer_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              numer_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           denom_e[a][g][p][e] = new TH1D(denom_e_n[a][g][p][e],
-              denom_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              denom_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
 
           numer_e_sqrt[a][g][p][e] = new TH1D(numer_e_sqrt_n[a][g][p][e],
-              numer_e_sqrt_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              numer_e_sqrt_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
 
           asym[a][g][p][e] = new TH1D(asym_n[a][g][p][e],
-              asym_t[a][g][p][e],phi_bins,phi_low,phi_high);
+              asym_t[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
           asym_e[a][g][p][e] = new TH1D(asym_e_n[a][g][p][e],
-              asym_e_n[a][g][p][e],phi_bins,phi_low,phi_high);
+              asym_e_n[a][g][p][e],phi_bins,env->PhiLow,env->PhiHigh);
 
           // build left & right terms
           if(a==3)
@@ -503,18 +462,18 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
           sprintf(asym_fit_n[a][g][p][e],"asym_fit_a%d_g%d_p%d_e%d",a,g,p,e);
           if(a==3) 
           {
-            asym_fit[a][g][p][e] = new TF1(asym_fit_n[a][g][p][e],"[0]+[1]*cos(2*x)",phi_low,phi_high);
+            asym_fit[a][g][p][e] = new TF1(asym_fit_n[a][g][p][e],"[0]+[1]*cos(2*x)",env->PhiLow,env->PhiHigh);
             asym_fit[a][g][p][e]->SetParName(0,"A_{#Sigma}");
             asym_fit[a][g][p][e]->SetParName(1,"A_{TT}");
           }
           else if(a==1 || a==2)
           {
-            asym_fit[a][g][p][e] = new TF1(asym_fit_n[a][g][p][e],"[0]+[1]*cos(x)",phi_low,phi_high);
+            asym_fit[a][g][p][e] = new TF1(asym_fit_n[a][g][p][e],"[0]+[1]*cos(x)",env->PhiLow,env->PhiHigh);
             asym_fit[a][g][p][e]->SetParName(0,"R");
             if(a==1) asym_fit[a][g][p][e]->SetParName(1,"A_{N}^{Y}");
             else if(a==2) asym_fit[a][g][p][e]->SetParName(1,"A_{N}^{B}");
           };
-          asym[a][g][p][e]->Fit(asym_fit[a][g][p][e],"Q","",phi_low,phi_high);
+          asym[a][g][p][e]->Fit(asym_fit[a][g][p][e],"Q","",env->PhiLow,env->PhiHigh);
           if(asym_fit[a][g][p][e]!=NULL)
           {
             if(a==3) asym_value[a][g][p][e]+=asym_fit[a][g][p][e]->GetParameter(1);
@@ -537,7 +496,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
         for(Int_t e=0; e<en_bins; e++)
         {
           //asym[a][g][p][e]->GetYaxis()->SetRangeUser(2*asym_min[a][g][p][e],2*asym_max[a][g][p][e]);
-          asym[a][g][p][e]->GetXaxis()->SetRangeUser(phi_low,phi_high);
+          asym[a][g][p][e]->GetXaxis()->SetRangeUser(env->PhiLow,env->PhiHigh);
         };
       };
     };
@@ -600,7 +559,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
       for(Int_t p=0; p<pt_bins; p++)
       {
         sprintf(pt_wdist_sub_n[g][e][p],"pt_wdist_sub_g%d_e%d_ptbin%d",g,e,p);
-        pt_wdist_sub[g][e][p] = new TH1D(pt_wdist_sub_n[g][e][p],pt_wdist_sub_n[g][e][p],NWBINS,pt_low,pt_high);
+        pt_wdist_sub[g][e][p] = new TH1D(pt_wdist_sub_n[g][e][p],
+          pt_wdist_sub_n[g][e][p],NWBINS,env->PtLow,env->PtHigh);
       };
     };
     for(Int_t p=0; p<pt_bins; p++)
@@ -608,7 +568,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
       for(Int_t e=0; e<en_bins; e++)
       {
         sprintf(en_wdist_sub_n[g][p][e],"en_wdist_sub_g%d_p%d_enbin%d",g,p,e);
-        en_wdist_sub[g][p][e] = new TH1D(en_wdist_sub_n[g][p][e],en_wdist_sub_n[g][p][e],NWBINS,en_low,en_high);
+        en_wdist_sub[g][p][e] = new TH1D(en_wdist_sub_n[g][p][e],
+          en_wdist_sub_n[g][p][e],NWBINS,env->EnLow,env->EnHigh);
       };
     };
   };
@@ -624,7 +585,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
         bincent = pt_wdist[g][e]->GetBinCenter(b);
         for(Int_t p=0; p<pt_bins; p++)
         {
-          if(bincent>=pt_div[p] && bincent<pt_div[p+1])
+          if(bincent>=env->PtDiv(p) && bincent<env->PtDiv(p+1))
           {
             pt_wdist_sub[g][e][p]->SetBinContent(b,bincont);
           };
@@ -639,7 +600,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
         bincent = en_wdist[g][p]->GetBinCenter(b);
         for(Int_t e=0; e<en_bins; e++)
         {
-          if(bincent>=en_div[e] && bincent<en_div[e+1])
+          if(bincent>=env->EnDiv(e) && bincent<env->EnDiv(e+1))
           {
             en_wdist_sub[g][p][e]->SetBinContent(b,bincont);
           };
@@ -663,7 +624,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
     {
       for(Int_t p=0; p<pt_bins; p++)
       {
-        pt_div_line[g][e][p] = new TLine(pt_div[p],0,pt_div[p],pt_wdist[g][e]->GetMaximum());
+        pt_div_line[g][e][p] = new TLine(env->PtDiv(p),0,env->PtDiv(p),pt_wdist[g][e]->GetMaximum());
         pt_cent_line[g][e][p] = new TLine(pt_wdist_sub[g][e][p]->GetMean(),
                                           pt_wdist[g][e]->GetMaximum() * 1/4,
                                           pt_wdist_sub[g][e][p]->GetMean(),
@@ -681,7 +642,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
     {
       for(Int_t e=0; e<en_bins; e++)
       {
-        en_div_line[g][p][e] = new TLine(en_div[e],0,en_div[e],en_wdist[g][p]->GetMaximum());
+        en_div_line[g][p][e] = new TLine(env->EnDiv(e),0,env->EnDiv(e),en_wdist[g][p]->GetMaximum());
         en_cent_line[g][p][e] = new TLine(en_wdist_sub[g][p][e]->GetMean(),
                                           en_wdist[g][p]->GetMaximum() * 1/4,
                                           en_wdist_sub[g][p][e]->GetMean(),
@@ -790,8 +751,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
               // estimated statistical error
                 //err_en[z][a][g][p][en_dep_cnt[z][a][g][p]]=1/(0.55*0.55)*1/sqrt(yield[0][g][p][e]+yield[1][g][p][e]+yield[2][g][p][e]+yield[3][g][p][e]);
 
-              //cent_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = en_div[e] + ((en_div[e+1]-en_div[e])/2.0);
-              //width_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = (en_div[e+1]-en_div[e])/2.0;
+              //cent_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = env->EnDiv(e) + ((env->EnDiv(e+1)-env->EnDiv(e))/2.0);
+              //width_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = (env->EnDiv(e+1)-env->EnDiv(e))/2.0;
               cent_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = en_wdist_sub[g][p][e]->GetMean();
               width_en[z][a][g][p][en_dep_cnt[z][a][g][p]] = en_wdist_sub[g][p][e]->GetRMS();
 
@@ -803,7 +764,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
               val_en[z][a][g][p],width_en[z][a][g][p],err_en[z][a][g][p]);
             sprintf(en_dep_t[z][a][g][p],
               "%s #pm #sigma %s vs. E for p_{T}#in[%.2f,%.2f) and #eta#in[%.2f,%.2f)",
-              asym_title_kd[z][a],asym_title_kd[z][a],pt_div[p],pt_div[p+1],eta_div[g],eta_div[g+1]);
+              asym_title_kd[z][a],asym_title_kd[z][a],
+              env->PtDiv(p),env->PtDiv(p+1),env->EtaDiv(g),env->EtaDiv(g+1));
           
           en_dep[z][a][g][p]->SetTitle(en_dep_t[z][a][g][p]);
           en_dep[z][a][g][p]->GetXaxis()->SetTitle("E (GeV)");
@@ -832,8 +794,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
               // estimated statistical error
                 //err_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]]=1/(0.55*0.55)*1/sqrt(yield[0][g][p][e]+yield[1][g][p][e]+yield[2][g][p][e]+yield[3][g][p][e]);
 
-              //cent_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = pt_div[p] + ((pt_div[p+1]-pt_div[p])/2.0);
-              //width_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = (pt_div[p+1]-pt_div[p])/2.0;
+              //cent_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = env->PtDiv(p) + ((env->PtDiv(p+1)-env->PtDiv(p))/2.0);
+              //width_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = (env->PtDiv(p+1)-env->PtDiv(p))/2.0;
               cent_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = pt_wdist_sub[g][e][p]->GetMean();
               width_pt[z][a][g][e][pt_dep_cnt[z][a][g][e]] = pt_wdist_sub[g][e][p]->GetRMS();
 
@@ -844,7 +806,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
             pt_dep[z][a][g][e] = new TGraphErrors(pt_dep_cnt[z][a][g][e],cent_pt[z][a][g][e],
               val_pt[z][a][g][e],width_pt[z][a][g][e],err_pt[z][a][g][e]);
             sprintf(pt_dep_t[z][a][g][e],"%s #pm #sigma %s vs. p_{T} for E#in[%.2f,%.2f) and #eta#in[%.2f,%.2f)",
-              asym_title_kd[z][a],asym_title_kd[z][a],en_div[e],en_div[e+1],eta_div[g],eta_div[g+1]);
+              asym_title_kd[z][a],asym_title_kd[z][a],env->EnDiv(e),env->EnDiv(e+1),env->EtaDiv(g),env->EtaDiv(g+1));
 
           pt_dep[z][a][g][e]->SetTitle(pt_dep_t[z][a][g][e]);
           pt_dep[z][a][g][e]->GetXaxis()->SetTitle("p_{T} (GeV)");

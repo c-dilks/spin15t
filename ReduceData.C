@@ -10,8 +10,6 @@
 void ReduceData(const char * filename="Outputset145ka.root",
                 const char * dirname="../../Output")
 {
-  if(gSystem->Getenv("TRIGGER")==NULL){fprintf(stderr,"ERROR: source env vars\n"); return;};
-
   // load polarization and rellum data
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();

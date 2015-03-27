@@ -15,17 +15,17 @@ void Bin_Splitter()
   // CONTROL VARIABLES
 
   // trigger
-  char trigger[16]; strcpy(trigger,"all");
+  char trigger[16]; strcpy(trigger,"SmBS3");
 
   // en or pt dependent mass cuts
   char cut_type[16]; strcpy(cut_type,"en");
 
   Double_t phi_low=-3.15;
   Double_t phi_high=3.15;
-  Int_t phi_bins=7;
+  Int_t phi_bins=10;
 
   Double_t eta_low=2.5;
-  Double_t eta_high=4; // can go up to 4.5, but do we trust the edge data?
+  Double_t eta_high=4.2; // can go up to 4.5, but do we trust the edge data?
   Int_t eta_bins=1;
 
   Double_t pt_low=0.0;   // lowest acceptable pT for runs 12 & 13; hard kin. cutoff overrides this
@@ -170,8 +170,8 @@ void Bin_Splitter()
     printf("export EN_DIV_7=%f\n",en_high);
     //*/
   };
-  printf("\nexport TRIGGER=\"%s\"\n",trigger);
-  printf("export CUT_TYPE=\"%s\"\n",cut_type);
+  printf("\nexport TRIGGER_TYPE=\"%s\"\n",trigger);
+  printf("export MASS_CUT_TYPE=\"%s\"\n",cut_type);
   
   gSystem->RedirectOutput(0);
   char cat[128];
