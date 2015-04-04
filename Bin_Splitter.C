@@ -10,31 +10,31 @@
 // -- these bins do not define the final kinematic cuts used for the jet types; the 
 //    final kinematic boundaries are set in PhiDists3.C (and additionally Diagnostics.C)
 
-void Bin_Splitter()
+void Bin_Splitter(Int_t phi_bins = 10,
+                  Int_t eta_bins = 1,
+                  Int_t pt_bins = 1,
+                  Int_t en_bins = 0
+)
 {
   // CONTROL VARIABLES
 
   // trigger
-  char trigger[16]; strcpy(trigger,"SmBS3");
+  char trigger[16]; strcpy(trigger,"All");
 
   // en or pt dependent mass cuts
   char cut_type[16]; strcpy(cut_type,"en");
 
   Double_t phi_low=-3.15;
   Double_t phi_high=3.15;
-  Int_t phi_bins=10;
 
   Double_t eta_low=2.5;
   Double_t eta_high=4.2; // can go up to 4.5, but do we trust the edge data?
-  Int_t eta_bins=1;
 
   Double_t pt_low=0.0;   // lowest acceptable pT for runs 12 & 13; hard kin. cutoff overrides this
   Double_t pt_high=10.0; // pi0 reconstruction is unreliable for pT>15
-  Int_t pt_bins=1;
 
   Double_t en_low=0.0; // E>30 cutoff point for pi0s; should allow sph & thr to go lower
   Double_t en_high=100; // can go up to 255, but cluster merging for pi0s is problem for E>100
-  Int_t en_bins=0;
 
   char efile[64];
   strcpy(efile,"env_bins.sh");

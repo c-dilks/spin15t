@@ -43,5 +43,5 @@ export EN_DIV_5=65.000000
 export EN_DIV_6=80.000000
 export EN_DIV_7=100.000000
 
-export TRIGGER_TYPE="SmBS3"
+export TRIGGER_TYPE="All"
 export MASS_CUT_TYPE="en"

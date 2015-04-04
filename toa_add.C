@@ -6,7 +6,7 @@
 // -- reads rtree.root
 
 
-void toa_add(Bool_t printPDFs=false)
+void toa_add(Bool_t printPDFs=false, Int_t FILTER=0)
 {
   gROOT->Reset();
   // build array of phiset/*.root TFile pointers
@@ -64,6 +64,9 @@ void toa_add(Bool_t printPDFs=false)
       fprintf(stderr,"ERROR: rtree file problem\n");
       return;
     };
+    // FILTER OUT RUNS (FOR PLOTTING WDIST BEFORE & AFTER MAJOR CHANGES)
+    if(FILTER==1 && runnum > 16078015) runnum_arr[i]=0; // choose period before DSM update
+    if(FILTER==2 && runnum < 16078015) runnum_arr[i]=0; // choose after before DSM update
   };
 
   

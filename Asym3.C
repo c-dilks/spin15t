@@ -806,7 +806,8 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
             pt_dep[z][a][g][e] = new TGraphErrors(pt_dep_cnt[z][a][g][e],cent_pt[z][a][g][e],
               val_pt[z][a][g][e],width_pt[z][a][g][e],err_pt[z][a][g][e]);
             sprintf(pt_dep_t[z][a][g][e],"%s #pm #sigma %s vs. p_{T} for E#in[%.2f,%.2f) and #eta#in[%.2f,%.2f)",
-              asym_title_kd[z][a],asym_title_kd[z][a],env->EnDiv(e),env->EnDiv(e+1),env->EtaDiv(g),env->EtaDiv(g+1));
+              asym_title_kd[z][a],asym_title_kd[z][a],
+              env->EnDiv(e),env->EnDiv(e+1),env->EtaDiv(g),env->EtaDiv(g+1));
 
           pt_dep[z][a][g][e]->SetTitle(pt_dep_t[z][a][g][e]);
           pt_dep[z][a][g][e]->GetXaxis()->SetTitle("p_{T} (GeV)");

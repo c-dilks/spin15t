@@ -12,12 +12,17 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   RunData * RD = new RunData();
   Trigger * T = new Trigger();
   Environ * env = new Environ();
+  EventClass * ev = new EventClass();
 
   // get bins from environment
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
   Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
   Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
   Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
+
+  // get number of event classes
+  Int_t N_CLASS_tmp = ev->N;
+  const Int_t N_CLASS = N_CLASS_tmp;
 
 
   // read redset tree and set output file name
@@ -82,21 +87,6 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   printf("NRUNS=%d\n",NRUNS);
 
 
-  // read mass cuts (produced using MassCutter.C)
-  // -- used to implement (energy or pt)-dependent mass cuts for pi0s
-  //    since the mass peak drifts w.r.t. energy bin
-  // -- NOTE: THIS MAY SLIGHTLY CHANGE THE ENERGY BIN BOUNDARIES FROM WHAT'S IN ENV!!!!!!!!!
-  TTree * mass_cut_tr = new TTree("mass_cut_tr","mass_cut_tr");
-  mass_cut_tr->ReadFile("mass_cuts.dat","lb/F:ub/F:massL/F:massM/F:massH/F");
-  Int_t mass_cut_tr_ent_tmp = mass_cut_tr->GetEntries();
-  const Int_t MENT = mass_cut_tr_ent_tmp;
-  Float_t lb,ub,massL,massH;
-  mass_cut_tr->SetBranchAddress("lb",&lb);
-  mass_cut_tr->SetBranchAddress("ub",&ub);
-  mass_cut_tr->SetBranchAddress("massL",&massL);
-  mass_cut_tr->SetBranchAddress("massH",&massH);
-
-
 
   // define kinematic distributions ("wdist" = weighting distribution)
   // -- these are distributions in energy and phi, but with finer binning; they are used 
@@ -105,43 +95,37 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   // -- one en wdist for each pt bin (and eta bin)
   // -- one invariant mass (mm) wdist for each eta,pt,en bin
   const Int_t NWBINS = 100;
-  TH1D * pt_wdist[3][eta_bins][en_bins][NRUNS]; // [jet type] [....]
-  TH1D * en_wdist[3][eta_bins][pt_bins][NRUNS];
-  TH1D * mm_wdist[3][eta_bins][pt_bins][en_bins][NRUNS];
-  char pt_wdist_n[3][eta_bins][en_bins][NRUNS][64];
-  char en_wdist_n[3][eta_bins][pt_bins][NRUNS][64];
-  char mm_wdist_n[3][eta_bins][pt_bins][en_bins][NRUNS][64];
-  for(Int_t r=0; r<NRUNS; r++)
+  TH1D * pt_wdist[N_CLASS][eta_bins][en_bins][NRUNS];
+  TH1D * en_wdist[N_CLASS][eta_bins][pt_bins][NRUNS];
+  TH1D * mm_wdist[N_CLASS][eta_bins][pt_bins][en_bins][NRUNS];
+  char pt_wdist_n[N_CLASS][eta_bins][en_bins][NRUNS][64];
+  char en_wdist_n[N_CLASS][eta_bins][pt_bins][NRUNS][64];
+  char mm_wdist_n[N_CLASS][eta_bins][pt_bins][en_bins][NRUNS][64];
+  for(Int_t c=0; c<N_CLASS; c++)
   {
-    for(Int_t g=0; g<eta_bins; g++)
+    for(Int_t r=0; r<NRUNS; r++)
     {
-      for(Int_t e=0; e<en_bins; e++)
-      {
-        sprintf(pt_wdist_n[0][g][e][r],"pt_wdist_sph_g%d_e%d_r%d",g,e,runnum_arr[r]);
-        sprintf(pt_wdist_n[1][g][e][r],"pt_wdist_pi0_g%d_e%d_r%d",g,e,runnum_arr[r]);
-        sprintf(pt_wdist_n[2][g][e][r],"pt_wdist_thr_g%d_e%d_r%d",g,e,runnum_arr[r]);
-        for(Int_t j=0; j<3; j++)
-          pt_wdist[j][g][e][r] = new TH1D(pt_wdist_n[j][g][e][r],pt_wdist_n[j][g][e][r],NWBINS,
-          env->PtLow,env->PtHigh);
-      };
-      for(Int_t p=0; p<pt_bins; p++)
-      {
-        sprintf(en_wdist_n[0][g][p][r],"en_wdist_sph_g%d_p%d_r%d",g,p,runnum_arr[r]);
-        sprintf(en_wdist_n[1][g][p][r],"en_wdist_pi0_g%d_p%d_r%d",g,p,runnum_arr[r]);
-        sprintf(en_wdist_n[2][g][p][r],"en_wdist_thr_g%d_p%d_r%d",g,p,runnum_arr[r]);
-        for(Int_t j=0; j<3; j++)
-          en_wdist[j][g][p][r] = new TH1D(en_wdist_n[j][g][p][r],en_wdist_n[j][g][p][r],NWBINS,
-          env->EnLow,env->EnHigh);
-      };
-      for(Int_t p=0; p<pt_bins; p++)
+      for(Int_t g=0; g<eta_bins; g++)
       {
         for(Int_t e=0; e<en_bins; e++)
         {
-          sprintf(mm_wdist_n[0][g][p][e][r],"mm_wdist_sph_g%d_p%d_e%d_r%d",g,p,e,runnum_arr[r]);
-          sprintf(mm_wdist_n[1][g][p][e][r],"mm_wdist_pi0_g%d_p%d_e%d_r%d",g,p,e,runnum_arr[r]);
-          sprintf(mm_wdist_n[2][g][p][e][r],"mm_wdist_thr_g%d_p%d_e%d_r%d",g,p,e,runnum_arr[r]);
-          for(Int_t j=0; j<3; j++)
-            mm_wdist[j][g][p][e][r] = new TH1D(mm_wdist_n[j][g][p][e][r],mm_wdist_n[j][g][p][e][r],NWBINS,0,1);
+          sprintf(pt_wdist_n[c][g][e][r],"pt_wdist_%d_g%d_e%d_r%d",ev->Name(c),g,e,runnum_arr[r]);
+          pt_wdist[c][g][e][r] = new TH1D(pt_wdist_n[c][g][e][r],pt_wdist_n[c][g][e][r],NWBINS,
+            env->PtLow,env->PtHigh);
+        };
+        for(Int_t p=0; p<pt_bins; p++)
+        {
+          sprintf(en_wdist_n[c][g][p][r],"en_wdist_%s_g%d_p%d_r%d",ev->Name(c),g,p,runnum_arr[r]);
+          en_wdist[c][g][p][r] = new TH1D(en_wdist_n[c][g][p][r],en_wdist_n[c][g][p][r],NWBINS,
+            env->EnLow,env->EnHigh);
+        };
+        for(Int_t p=0; p<pt_bins; p++)
+        {
+          for(Int_t e=0; e<en_bins; e++)
+          {
+            sprintf(mm_wdist_n[c][g][p][e][r],"mm_wdist_%s_g%d_p%d_e%d_r%d",ev->Name(c),g,p,e,runnum_arr[r]);
+            mm_wdist[c][g][p][e][r] = new TH1D(mm_wdist_n[c][g][p][e][r],mm_wdist_n[c][g][p][e][r],NWBINS,0,1);
+          };
         };
       };
     };
@@ -149,80 +133,47 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
 
 
   // define phi distributions  for each spinbit and kinematic bin
-  // _sph = single photon
-  // _pi0 = neutral pions
-  // _thr = >=3 photon jet
-  // ---> n.b. I can't use higher dimensional arrays
-  TH1D * phi_dist_sph[4][eta_bins][pt_bins][en_bins][NRUNS]; // [spinbit] [eta] [pt] [en] [run number]
-  TH1D * phi_dist_pi0[4][eta_bins][pt_bins][en_bins][NRUNS]; 
-  TH1D * phi_dist_thr[4][eta_bins][pt_bins][en_bins][NRUNS]; 
-
-  char phi_dist_sph_n[4][eta_bins][pt_bins][en_bins][NRUNS][256];
-  char phi_dist_pi0_n[4][eta_bins][pt_bins][en_bins][NRUNS][256];
-  char phi_dist_thr_n[4][eta_bins][pt_bins][en_bins][NRUNS][256];
-
-  char phi_dist_sph_t[4][eta_bins][pt_bins][en_bins][NRUNS][400];
-  char phi_dist_pi0_t[4][eta_bins][pt_bins][en_bins][NRUNS][400];
-  char phi_dist_thr_t[4][eta_bins][pt_bins][en_bins][NRUNS][400];
+  // ---> ROOT is limited in the sense that I cannot make a pointer to
+  //      a dim>=6 array... I have thus folded the spinbit and event class
+  //      index into one array dimension, 10*(event class) + spinbit
+  //      ... if you have a better idea, good. implment it. 
+  TH1D * phi_dist[10*N_CLASS+4][eta_bins][pt_bins][en_bins][NRUNS]; // [10*event_class+spinbit] [..] ..
+  TString phi_dist_n[10*N_CLASS+4][eta_bins][pt_bins][en_bins][NRUNS];
+  TString phi_dist_t[10*N_CLASS+4][eta_bins][pt_bins][en_bins][NRUNS];
+  char tmp_str[256];
 
   for(Int_t r=0; r<NRUNS; r++)
   {
-    for(Int_t s=0; s<4; s++)
+    for(Int_t c=0; c<N_CLASS; c++)
     {
-      for(Int_t g=0; g<eta_bins; g++)
+      for(Int_t s=0; s<4; s++)
       {
-        for(Int_t p=0; p<pt_bins; p++)
+        for(Int_t g=0; g<eta_bins; g++)
         {
-          for(Int_t e=0; e<en_bins; e++)
+          for(Int_t p=0; p<pt_bins; p++)
           {
-            sprintf(phi_dist_sph_n[s][g][p][e][r],"phi_sph_s%d_g%d_p%d_e%d_r%d",s,g,p,e,runnum_arr[r]);
-            sprintf(phi_dist_pi0_n[s][g][p][e][r],"phi_pi0_s%d_g%d_p%d_e%d_r%d",s,g,p,e,runnum_arr[r]);
-            sprintf(phi_dist_thr_n[s][g][p][e][r],"phi_thr_s%d_g%d_p%d_e%d_r%d",s,g,p,e,runnum_arr[r]);
+            for(Int_t e=0; e<en_bins; e++)
+            {
+              sprintf(tmp_str,"phi_%s_s%d_g%d_p%d_e%d_r%d",ev->Name(c),
+                s,g,p,e,runnum_arr[r]);
+              phi_dist_n[10*c+s][g][p][e][r] = TString(tmp_str);
 
-            sprintf(phi_dist_sph_t[s][g][p][e][r],
-"single-#gamma #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
-             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
-            sprintf(phi_dist_pi0_t[s][g][p][e][r],
-"#pi^{0} #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
-             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
-            sprintf(phi_dist_thr_t[s][g][p][e][r],
-"N_{#gamma}>3 jet #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
-             spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
-             env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
+              sprintf(tmp_str,
+  "%s #phi distribution :: spin=(%s) #eta#in[%.2f,%.2f) p_{T}#in[%.2f,%.2f) E#in[%.2f,%.2f) :: r%d",
+               ev->Title(c),spinbit_t[s],env->EtaDiv(g),env->EtaDiv(g+1),
+               env->PtDiv(p),env->PtDiv(p+1),env->EnDiv(e),env->EnDiv(e+1),runnum_arr[r]);
+              phi_dist_t[10*c+s][g][p][e][r] = TString(tmp_str);
 
-            phi_dist_sph[s][g][p][e][r] = new TH1D(phi_dist_sph_n[s][g][p][e][r],phi_dist_sph_t[s][g][p][e][r],
-              phi_bins,env->PhiLow,env->PhiHigh);
-            phi_dist_pi0[s][g][p][e][r] = new TH1D(phi_dist_pi0_n[s][g][p][e][r],phi_dist_pi0_t[s][g][p][e][r],
-              phi_bins,env->PhiLow,env->PhiHigh);
-            phi_dist_thr[s][g][p][e][r] = new TH1D(phi_dist_thr_n[s][g][p][e][r],phi_dist_thr_t[s][g][p][e][r],
-              phi_bins,env->PhiLow,env->PhiHigh);
+              phi_dist[10*c+s][g][p][e][r] = new TH1D(phi_dist_n[10*c+s][g][p][e][r].Data(),
+                phi_dist_t[10*c+s][g][p][e][r].Data(),phi_bins,env->PhiLow,env->PhiHigh);
 
-            phi_dist_sph[s][g][p][e][r]->Sumw2();
-            phi_dist_pi0[s][g][p][e][r]->Sumw2();
-            phi_dist_thr[s][g][p][e][r]->Sumw2();
-          };
-        }; 
+              phi_dist[10*c+s][g][p][e][r]->Sumw2();
+            };
+          }; 
+        };
       };
     };
   };
-
-  
-  // load run exclusion lists (for excluding specific runs, e.g., due to hot tower)
-  // -- exclusion_list_from_situ is the full list runs with pathological pt distributions
-  //    along with explanations of their pathologies
-  TTree * exclusion_sph = new TTree("exclusion_sph","exclusion_sph");
-  TTree * exclusion_pi0 = new TTree("exclusion_pi0","exclusion_pi0");
-  TTree * exclusion_thr = new TTree("exclusion_thr","exclusion_thr");
-  exclusion_sph->ReadFile("exclusion_list_sph","runnum/I");
-  exclusion_pi0->ReadFile("exclusion_list_pi0","runnum/I");
-  exclusion_thr->ReadFile("exclusion_list_thr","runnum/I");
-  Bool_t exclude_sph,exclude_pi0,exclude_thr;
-  Int_t rn_sph,rn_pi0,rn_thr;
-  exclusion_sph->SetBranchAddress("runnum",&rn_sph);
-  exclusion_pi0->SetBranchAddress("runnum",&rn_pi0);
-  exclusion_thr->SetBranchAddress("runnum",&rn_thr);
 
 
   // fill phi distributions and wdists 
@@ -260,67 +211,27 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
       pattern = RD->Pattern(runnum);
       b_pol = RD->BluePol(runnum);
       y_pol = RD->YellPol(runnum);
-      exclude_sph=0;
-      exclude_pi0=0;
-      exclude_thr=0;
-      for(Int_t xx=0; xx<exclusion_sph->GetEntries(); xx++) { exclusion_sph->GetEntry(xx); if(runnum==rn_sph) exclude_sph=1; };
-      for(Int_t xx=0; xx<exclusion_pi0->GetEntries(); xx++) { exclusion_pi0->GetEntry(xx); if(runnum==rn_pi0) exclude_pi0=1; };
-      for(Int_t xx=0; xx<exclusion_thr->GetEntries(); xx++) { exclusion_thr->GetEntry(xx); if(runnum==rn_thr) exclude_thr=1; };
     };
 
     // check for valid array indices (filters out events outside kinematic boundaries)
     //printf("%d %d %d %d %d\n",ss,gg,pp,ee,rr);
+    /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)>3.1415/2.0)*/ /* north cells only */
+    /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)<3.1415/2.0)*/ /* south cells only */
     if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
     {
       // rellum consistency, polarization, and env->TriggerType cut
       if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
       {
-        // single photon cut
-        if( exclude_sph==0 && fabs(N12-1)<0.01 )
+        ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
+        for(Int_t c=0; c<N_CLASS; c++)
         {
-          phi_dist_sph[ss][gg][pp][ee][rr]->Fill(Phi);
-          pt_wdist[0][gg][ee][rr]->Fill(Pt);
-          en_wdist[0][gg][pp][rr]->Fill(E12);
-          mm_wdist[0][gg][pp][ee][rr]->Fill(M12);
-        }
-
-        // pi0 cut (includes hard kinematic cutoffs overriding env variables)
-        else if(  exclude_pi0==0 &&
-                  fabs(N12-2)<0.01 &&
-                  Z<0.8 &&
-                  Pt>=0 && Pt<10 &&
-                  E12>=0 && E12<100
-                  )
-        {
-          // fill mass wdist regardless if event passes mass cut; this is to look at full
-          // mass distributions for each run, which is useful for hunting for hot towers
-          mm_wdist[1][gg][pp][ee][rr]->Fill(M12); 
-
-          // $CUT_TYPE-dependent mass cut
-          usepi0=false;
-          for(Int_t qq=0; qq<mass_cut_tr->GetEntries(); qq++)
+          if(ev->Valid(c))
           {
-            mass_cut_tr->GetEntry(qq);
-            if(((!strcmp(env->MassCutType,"en") && E12>=lb && E12<ub) ||
-                (!strcmp(env->MassCutType,"pt") && Pt>=lb && Pt<lb)) &&
-                M12>=massL && M12<massH) usepi0=true;
+            phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
+            pt_wdist[c][gg][ee][rr]->Fill(Pt);
+            en_wdist[c][gg][pp][rr]->Fill(E12);
+            mm_wdist[c][gg][pp][ee][rr]->Fill(M12);
           };
-          if(usepi0)
-          {
-            phi_dist_pi0[ss][gg][pp][ee][rr]->Fill(Phi);
-            pt_wdist[1][gg][ee][rr]->Fill(Pt);
-            en_wdist[1][gg][pp][rr]->Fill(E12);
-          };
-        }
-
-
-        // >=3 photon jet cut
-        else if( exclude_thr==0 && N12>2 )
-        {
-          phi_dist_thr[ss][gg][pp][ee][rr]->Fill(Phi);
-          pt_wdist[2][gg][ee][rr]->Fill(Pt);
-          en_wdist[2][gg][pp][rr]->Fill(E12);
-          mm_wdist[2][gg][pp][ee][rr]->Fill(M12);
         };
       };
     };
@@ -329,39 +240,32 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
 
   // make object arrays
   TFile * outfile = new TFile(outname,"RECREATE");
-  TObjArray * phi_dist_sph_arr[4][eta_bins][pt_bins][en_bins];
-  TObjArray * phi_dist_pi0_arr[4][eta_bins][pt_bins][en_bins];
-  TObjArray * phi_dist_thr_arr[4][eta_bins][pt_bins][en_bins];
-  TObjArray * pt_wdist_arr[3][eta_bins][en_bins];
-  TObjArray * en_wdist_arr[3][eta_bins][pt_bins];
-  TObjArray * mm_wdist_arr[3][eta_bins][pt_bins][en_bins];
-  char phi_dist_sph_arr_name[4][eta_bins][pt_bins][en_bins][128];
-  char phi_dist_pi0_arr_name[4][eta_bins][pt_bins][en_bins][128];
-  char phi_dist_thr_arr_name[4][eta_bins][pt_bins][en_bins][128];
-  char pt_wdist_arr_name[3][eta_bins][en_bins][128];
-  char en_wdist_arr_name[3][eta_bins][pt_bins][128];
-  char mm_wdist_arr_name[3][eta_bins][pt_bins][en_bins][128];
-  for(Int_t e=0; e<en_bins; e++)
+  TObjArray * phi_dist_arr[4][eta_bins][pt_bins][en_bins][N_CLASS];
+  TObjArray * pt_wdist_arr[N_CLASS][eta_bins][en_bins];
+  TObjArray * en_wdist_arr[N_CLASS][eta_bins][pt_bins];
+  TObjArray * mm_wdist_arr[N_CLASS][eta_bins][pt_bins][en_bins];
+  char phi_dist_arr_name[4][eta_bins][pt_bins][en_bins][N_CLASS][64];
+  char pt_wdist_arr_name[N_CLASS][eta_bins][en_bins][64];
+  char en_wdist_arr_name[N_CLASS][eta_bins][pt_bins][64];
+  char mm_wdist_arr_name[N_CLASS][eta_bins][pt_bins][en_bins][64];
+  for(Int_t c=0; c<N_CLASS; c++)
   {
-    for(Int_t g=0; g<eta_bins; g++)
+    for(Int_t e=0; e<en_bins; e++)
     {
-      for(Int_t p=0; p<pt_bins; p++)
+      for(Int_t g=0; g<eta_bins; g++)
       {
-        for(Int_t s=0; s<4; s++)
+        for(Int_t p=0; p<pt_bins; p++)
         {
-          phi_dist_sph_arr[s][g][p][e] = new TObjArray();
-          phi_dist_pi0_arr[s][g][p][e] = new TObjArray();
-          phi_dist_thr_arr[s][g][p][e] = new TObjArray();
-
-          sprintf(phi_dist_sph_arr_name[s][g][p][e],"phi_dist_sph_s%d_g%d_p%d_e%d",s,g,p,e);
-          sprintf(phi_dist_pi0_arr_name[s][g][p][e],"phi_dist_pi0_s%d_g%d_p%d_e%d",s,g,p,e);
-          sprintf(phi_dist_thr_arr_name[s][g][p][e],"phi_dist_thr_s%d_g%d_p%d_e%d",s,g,p,e);
-          
-          for(Int_t r=0; r<NRUNS; r++)
+          for(Int_t s=0; s<4; s++)
           {
-            phi_dist_sph_arr[s][g][p][e]->AddLast(phi_dist_sph[s][g][p][e][r]);
-            phi_dist_pi0_arr[s][g][p][e]->AddLast(phi_dist_pi0[s][g][p][e][r]);
-            phi_dist_thr_arr[s][g][p][e]->AddLast(phi_dist_thr[s][g][p][e][r]);
+            phi_dist_arr[s][g][p][e][c] = new TObjArray();
+
+            sprintf(phi_dist_arr_name[s][g][p][e][c],"phi_dist_%s_s%d_g%d_p%d_e%d",ev->Name(c),s,g,p,e);
+            
+            for(Int_t r=0; r<NRUNS; r++)
+            {
+              phi_dist_arr[s][g][p][e][c]->AddLast(phi_dist[10*c+s][g][p][e][r]);
+            };
           };
         };
       };
@@ -371,93 +275,67 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   {
     for(Int_t e=0; e<en_bins; e++)
     {
-      for(Int_t j=0; j<3; j++) pt_wdist_arr[j][g][e] = new TObjArray();
-      sprintf(pt_wdist_arr_name[0][g][e],"pt_wdist_sph_g%d_e%d",g,e);
-      sprintf(pt_wdist_arr_name[1][g][e],"pt_wdist_pi0_g%d_e%d",g,e);
-      sprintf(pt_wdist_arr_name[2][g][e],"pt_wdist_thr_g%d_e%d",g,e);
-      for(Int_t j=0; j<3; j++) for(Int_t r=0; r<NRUNS; r++) pt_wdist_arr[j][g][e]->AddLast(pt_wdist[j][g][e][r]);
+      for(Int_t c=0; c<N_CLASS; c++) 
+      {
+        pt_wdist_arr[c][g][e] = new TObjArray();
+        sprintf(pt_wdist_arr_name[c][g][e],"pt_wdist_%s_g%d_e%d",ev->Name(c),g,e);
+        for(Int_t r=0; r<NRUNS; r++) pt_wdist_arr[c][g][e]->AddLast(pt_wdist[c][g][e][r]);
+      };
     };
     for(Int_t p=0; p<pt_bins; p++)
     {
-      for(Int_t j=0; j<3; j++) en_wdist_arr[j][g][p] = new TObjArray();
-      sprintf(en_wdist_arr_name[0][g][p],"en_wdist_sph_g%d_p%d",g,p);
-      sprintf(en_wdist_arr_name[1][g][p],"en_wdist_pi0_g%d_p%d",g,p);
-      sprintf(en_wdist_arr_name[2][g][p],"en_wdist_thr_g%d_p%d",g,p);
-      for(Int_t j=0; j<3; j++) for(Int_t r=0; r<NRUNS; r++) en_wdist_arr[j][g][p]->AddLast(en_wdist[j][g][p][r]);
+      for(Int_t c=0; c<N_CLASS; c++) 
+      {
+        en_wdist_arr[c][g][p] = new TObjArray();
+        sprintf(en_wdist_arr_name[c][g][p],"en_wdist_%s_g%d_p%d",ev->Name(c),g,p);
+        for(Int_t r=0; r<NRUNS; r++) en_wdist_arr[c][g][p]->AddLast(en_wdist[c][g][p][r]);
+      };
     };
     for(Int_t p=0; p<pt_bins; p++)
     {
       for(Int_t e=0; e<en_bins; e++)
       {
-        for(Int_t j=0; j<3; j++) mm_wdist_arr[j][g][p][e] = new TObjArray();
-        sprintf(mm_wdist_arr_name[0][g][p][e],"mm_wdist_sph_g%d_p%d_e%d",g,p,e);
-        sprintf(mm_wdist_arr_name[1][g][p][e],"mm_wdist_pi0_g%d_p%d_e%d",g,p,e);
-        sprintf(mm_wdist_arr_name[2][g][p][e],"mm_wdist_thr_g%d_p%d_e%d",g,p,e);
-        for(Int_t j=0; j<3; j++) for(Int_t r=0; r<NRUNS; r++) mm_wdist_arr[j][g][p][e]->AddLast(mm_wdist[j][g][p][e][r]);
+        for(Int_t c=0; c<N_CLASS; c++) 
+        {
+          mm_wdist_arr[c][g][p][e] = new TObjArray();
+          sprintf(mm_wdist_arr_name[c][g][p][e],"mm_wdist_%s_g%d_p%d_e%d",ev->Name(c),g,p,e);
+          for(Int_t r=0; r<NRUNS; r++) mm_wdist_arr[c][g][p][e]->AddLast(mm_wdist[c][g][p][e][r]);
+        };
       };
     };
   };
 
   
   // write object arrays
-  outfile->mkdir("sph");
-  outfile->cd("sph");
-  for(Int_t e=0; e<en_bins; e++)
+  for(Int_t c=0; c<N_CLASS; c++)
   {
-    for(Int_t g=0; g<eta_bins; g++)
+    outfile->mkdir(ev->Name(c));
+    outfile->cd(ev->Name(c));
+    for(Int_t e=0; e<en_bins; e++)
     {
-      for(Int_t p=0; p<pt_bins; p++)
+      for(Int_t g=0; g<eta_bins; g++)
       {
-        for(Int_t s=0; s<4; s++)
+        for(Int_t p=0; p<pt_bins; p++)
         {
-          phi_dist_sph_arr[s][g][p][e]->Write(phi_dist_sph_arr_name[s][g][p][e],TObject::kSingleKey);
+          for(Int_t s=0; s<4; s++)
+          {
+            phi_dist_arr[s][g][p][e][c]->Write(phi_dist_arr_name[s][g][p][e][c],TObject::kSingleKey);
+          };
         };
       };
     };
+    outfile->cd();
   };
-  outfile->cd();
-  outfile->mkdir("pi0");
-  outfile->cd("pi0");
-  for(Int_t e=0; e<en_bins; e++)
-  {
-    for(Int_t g=0; g<eta_bins; g++)
-    {
-      for(Int_t p=0; p<pt_bins; p++)
-      {
-        for(Int_t s=0; s<4; s++)
-        {
-          phi_dist_pi0_arr[s][g][p][e]->Write(phi_dist_pi0_arr_name[s][g][p][e],TObject::kSingleKey);
-        };
-      };
-    };
-  };
-  outfile->cd();
-  outfile->mkdir("thr");
-  outfile->cd("thr");
-  for(Int_t e=0; e<en_bins; e++)
-  {
-    for(Int_t g=0; g<eta_bins; g++)
-    {
-      for(Int_t p=0; p<pt_bins; p++)
-      {
-        for(Int_t s=0; s<4; s++)
-        {
-          phi_dist_thr_arr[s][g][p][e]->Write(phi_dist_thr_arr_name[s][g][p][e],TObject::kSingleKey);
-        };
-      };
-    };
-  };
-  outfile->cd();
 
   // write wdists
   for(Int_t g=0; g<eta_bins; g++)
   {
-    for(Int_t j=0; j<3; j++)
+    for(Int_t c=0; c<N_CLASS; c++)
     {
-      for(Int_t e=0; e<en_bins; e++) pt_wdist_arr[j][g][e]->Write(pt_wdist_arr_name[j][g][e],TObject::kSingleKey);
-      for(Int_t p=0; p<pt_bins; p++) en_wdist_arr[j][g][p]->Write(en_wdist_arr_name[j][g][p],TObject::kSingleKey);
+      for(Int_t e=0; e<en_bins; e++) pt_wdist_arr[c][g][e]->Write(pt_wdist_arr_name[c][g][e],TObject::kSingleKey);
+      for(Int_t p=0; p<pt_bins; p++) en_wdist_arr[c][g][p]->Write(en_wdist_arr_name[c][g][p],TObject::kSingleKey);
       for(Int_t p=0; p<pt_bins; p++) for(Int_t e=0; e<en_bins; e++)
-        mm_wdist_arr[j][g][p][e]->Write(mm_wdist_arr_name[j][g][p][e],TObject::kSingleKey);
+        mm_wdist_arr[c][g][p][e]->Write(mm_wdist_arr_name[c][g][p][e],TObject::kSingleKey);
     };
   };
 };
