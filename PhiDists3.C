@@ -109,7 +109,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
       {
         for(Int_t e=0; e<en_bins; e++)
         {
-          sprintf(pt_wdist_n[c][g][e][r],"pt_wdist_%d_g%d_e%d_r%d",ev->Name(c),g,e,runnum_arr[r]);
+          sprintf(pt_wdist_n[c][g][e][r],"pt_wdist_%s_g%d_e%d_r%d",ev->Name(c),g,e,runnum_arr[r]);
           pt_wdist[c][g][e][r] = new TH1D(pt_wdist_n[c][g][e][r],pt_wdist_n[c][g][e][r],NWBINS,
             env->PtLow,env->PtHigh);
         };
