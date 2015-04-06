@@ -4,23 +4,24 @@
 if [ $# -eq 1 ]; then
   outputdir="$1"
 else
+  outputdir="output"
 
-  if [ $EN_BINS -eq 1 -a $PT_BINS -ne 1 ]; then
-    kindep="pt"
-  elif [ $EN_BINS -ne 1 -a $PT_BINS -eq 1 ]; then
-    kindep="en"
-  else
-    echo "kinematic dependence unknown"
-    exit
-  fi
-  echo "$kindep dependence"
-  outputdir="asym_plots/output_${TRIGGER_TYPE}_$kindep"
+  #if [ $EN_BINS -eq 1 -a $PT_BINS -ne 1 ]; then
+    #kindep="pt"
+  #elif [ $EN_BINS -ne 1 -a $PT_BINS -eq 1 ]; then
+    #kindep="en"
+  #else
+    #echo "kinematic dependence unknown"
+    #exit
+  #fi
+  #echo "$kindep dependence"
+  #outputdir="asym_plots/output_${TRIGGER_TYPE}_$kindep"
 fi
 
 mkdir -p $outputdir
 rm $outputdir/*
 
-for class in "sph" "pi0" "thr"; do
+for class in "sph" "pi0" "thr" "etm"; do
   root -b -q -l 'Asym3.C('\"${class}\"','\"all\"')'
   root -b -q -l 'DrawAsymmetries.C('\"${class}\"')'
   mv -v spin.root ${outputdir}/spin_${class}.root

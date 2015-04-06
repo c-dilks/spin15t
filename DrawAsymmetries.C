@@ -1,6 +1,6 @@
 // draws A_LL, blue A_L, yellow A_L on one plot
 
-void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", const char * asym_file="spin.root")
+void DrawAsymmetries(const char * evclass="pi0", const char * filetype="png", const char * asym_file="spin.root")
 {
   // open root file
   TFile * asym_tfile = new TFile(asym_file,"READ");
@@ -8,14 +8,8 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
   // environment
   gSystem->Load("src/RunData.so");
   Environ * env = new Environ();
+  EventClass * ev = new EventClass();
 
-
-  // set jet type
-  char jtype_str[32];
-  if(!strcmp(jtype,"sph")) strcpy(jtype_str,"single #gamma");
-  else if(!strcmp(jtype,"pi0")) strcpy(jtype_str,"#pi^{0}");
-  else if(!strcmp(jtype,"thr")) strcpy(jtype_str,"N_{#gamma}>2");
-  else strcpy(jtype_str,"");
 
   // asymmetry titles
   const Int_t asym_bins=4;
@@ -49,7 +43,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
       for(Int_t a=1; a<asym_bins; a++) sprintf(kindep_name[z][a],"/%s/en_dep_z%d_a%d_g0_p0",dir_title[z][a],z,a);
     };
     strcpy(xaxistitle,"E (GeV)");
-    sprintf(kindep_main_title,"%s asymmetries vs. E (%s triggers)",jtype_str,env->TriggerType);
+    sprintf(kindep_main_title,"%s asymmetries vs. E (%s triggers)",ev->Title(evclass),env->TriggerType);
     num_bins = env->EnBins;
   }
   else if(env->PtBins!=1 && env->EnBins==1 && env->EtaBins==1) 
@@ -59,7 +53,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
       for(Int_t a=1; a<asym_bins; a++) sprintf(kindep_name[z][a],"/%s/pt_dep_z%d_a%d_g0_e0",dir_title[z][a],z,a);
     };
     strcpy(xaxistitle,"p_{#perp}  (GeV/c)");
-    sprintf(kindep_main_title,"%s asymmetries vs. p_{T} (%s triggers)",jtype_str,env->TriggerType);
+    sprintf(kindep_main_title,"%s asymmetries vs. p_{T} (%s triggers)",ev->Title(evclass),env->TriggerType);
     num_bins = env->PtBins;
   }
   else if(env->PtBins==1 && env->EnBins==1 && env->EtaBins==1)
@@ -68,7 +62,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
     {
       for(Int_t a=1; a<asym_bins; a++) sprintf(kindep_name[z][a],"/%s/pt_dep_z%d_a%d_g0_e0",dir_title[z][a],z,a);
     };
-    sprintf(kindep_main_title,"%s asymmetries",jtype_str);
+    sprintf(kindep_main_title,"%s asymmetries",ev->Title(evclass));
     strcpy(xaxistitle,"single bin");
     num_bins = 1;
   }
@@ -132,7 +126,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
           asym_hist[z][a][e]->GetYaxis()->SetTitleSize(0.06);
           asym_hist[z][a][e]->GetYaxis()->SetTitleOffset(0.8);
         };
-        sprintf(asym_main_title[a],"%s %s vs #phi",jtype_str,asymmetry_w[a]);
+        sprintf(asym_main_title[a],"%s %s vs #phi",ev->Title(evclass),asymmetry_w[a]);
       };
     };
   }
@@ -156,7 +150,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
           asym_hist[z][a][p]->GetYaxis()->SetTitleSize(0.06);
           asym_hist[z][a][p]->GetYaxis()->SetTitleOffset(0.8);
         };
-        sprintf(asym_main_title[a],"%s %s vs #phi",jtype_str,asymmetry_w[a]);
+        sprintf(asym_main_title[a],"%s %s vs #phi",ev->Title(evclass),asymmetry_w[a]);
       };
     };
   }
@@ -177,7 +171,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
         asym_hist[z][a][0]->GetXaxis()->SetTitleSize(0.06);
         asym_hist[z][a][0]->GetYaxis()->SetTitleSize(0.06);
         asym_hist[z][a][0]->GetYaxis()->SetTitleOffset(0.8);
-        sprintf(asym_main_title[a],"%s %s vs #phi",jtype_str,asymmetry_w[a]);
+        sprintf(asym_main_title[a],"%s %s vs #phi",ev->Title(evclass),asymmetry_w[a]);
       };
     };
   };
@@ -250,7 +244,7 @@ void DrawAsymmetries(const char * jtype="pi0", const char * filetype="png", cons
 
   // draw analysing power canvases
   char canv_filename[64];
-  sprintf(canv_filename,"asymcanv_%s.root",jtype);
+  sprintf(canv_filename,"asymcanv_%s.root",evclass);
   TFile * outfile = new TFile(canv_filename,"RECREATE");
 
   gStyle->SetOptStat(0);

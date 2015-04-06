@@ -17,7 +17,7 @@
 //  --> use asym_call* scripts to call different filters
 //
 
-void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter_low=0, Int_t filter_high=0)
+void Asym3(const char * evclass="pi0", const char * filter_type="all",Int_t filter_low=0, Int_t filter_high=0)
 {
   const Float_t pi=3.1415;
   TFile * infile = new TFile("phiset/all.root","READ");
@@ -46,7 +46,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
       {
         for(Int_t e=0; e<en_bins; e++)
         {
-          sprintf(phi_dist_arr_n[s][g][p][e],"%s/phi_dist_%s_s%d_g%d_p%d_e%d",jtype,jtype,s,g,p,e);
+          sprintf(phi_dist_arr_n[s][g][p][e],"%s/phi_dist_%s_s%d_g%d_p%d_e%d",evclass,evclass,s,g,p,e);
           phi_dist_arr[s][g][p][e] = (TObjArray*) infile->Get(phi_dist_arr_n[s][g][p][e]);
           printf("phi_dist_arr[%d][%d][%d][%d] @ %p\n",s,g,p,e,(void*)phi_dist_arr[s][g][p][e]);
           if(s==0 && g==0 && p==0 && e==0)
@@ -96,6 +96,7 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
   Float_t weight_num_e,weight_den_e; // weight for statistical error (by-product of MLM for A_LL);
   Int_t fill,pattern;
   Bool_t isConsistent;
+  TString tmpstr;
   gROOT->ProcessLine(".! touch runlist; rm runlist; touch runlist");
   for(Int_t s=0; s<4; s++)
   {
@@ -138,15 +139,11 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
 
             for(Int_t r=0; r<ARR_size; r++)
             {
-              if(!strcmp(jtype,"sph"))
-                sscanf(phi_dist_arr[0][g][p][e]->At(r)->GetName(), "phi_sph_s%*d_g%*d_p%*d_e%*d_r%d",&runnum);
-              else if(!strcmp(jtype,"pi0"))
-                sscanf(phi_dist_arr[0][g][p][e]->At(r)->GetName(), "phi_pi0_s%*d_g%*d_p%*d_e%*d_r%d",&runnum);
-              else if(!strcmp(jtype,"thr"))
-                sscanf(phi_dist_arr[0][g][p][e]->At(r)->GetName(), "phi_thr_s%*d_g%*d_p%*d_e%*d_r%d",&runnum);
+              tmpstr = TString(phi_dist_arr[0][g][p][e]->At(r)->GetName());
+              sscanf(tmpstr(tmpstr.Length()-8,tmpstr.Length()).Data(),"%d",&runnum);
 
               //printf("phi_dist_name=%s\n",phi_dist_arr[0][g][p][e]->At(r)->GetName());
-              //printf("jtype=%s runnum=%d\n",jtype,runnum);
+              //printf("evclass=%s runnum=%d\n",evclass,runnum);
 
               // RELLUM SELECTION HERE
               rellum = RD->Rellum(runnum,a,"vpd"); // note that asym no. = rellum no. needed for this asymmetry
@@ -521,20 +518,20 @@ void Asym3(const char * jtype="pi0", const char * filter_type="all",Int_t filter
 
 
   // open wdists
-  TH1D * pt_wdist[eta_bins][en_bins]; // [jtype] [eta] [en]
-  TH1D * en_wdist[eta_bins][pt_bins]; // [jtype] [eta] [en]
+  TH1D * pt_wdist[eta_bins][en_bins]; // [eta] [en]
+  TH1D * en_wdist[eta_bins][pt_bins]; // [eta] [en]
   char pt_wdist_n[eta_bins][en_bins][64];
   char en_wdist_n[eta_bins][pt_bins][64];
   for(Int_t g=0; g<eta_bins; g++)
   {
     for(Int_t e=0; e<en_bins; e++)
     {
-      sprintf(pt_wdist_n[g][e],"pt_wdist_tot_%s_g%d_e%d",jtype,g,e);
+      sprintf(pt_wdist_n[g][e],"pt_wdist_tot_%s_g%d_e%d",evclass,g,e);
       pt_wdist[g][e] = (TH1D*) infile->Get(pt_wdist_n[g][e]);
     };
     for(Int_t p=0; p<pt_bins; p++)
     {
-      sprintf(en_wdist_n[g][p],"en_wdist_tot_%s_g%d_p%d",jtype,g,p);
+      sprintf(en_wdist_n[g][p],"en_wdist_tot_%s_g%d_p%d",evclass,g,p);
       en_wdist[g][p] = (TH1D*) infile->Get(en_wdist_n[g][p]);
     };
   };
