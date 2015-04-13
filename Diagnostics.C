@@ -5,12 +5,15 @@
 void Diagnostics()
 {
   const Int_t NBINS=400; // NUMBER OF BINS
+  const Int_t NBINS_VS_RUN=100; // number of bins for variable vs. run index plots
+  const Int_t MAXRUNS=500; // arbitrary max number of runs (so we don't waste time counting them...)
 
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
   Trigger * T = new Trigger();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
+  TCUbits * tcu = new TCUbits();
 
 
   // open chain
@@ -19,7 +22,8 @@ void Diagnostics()
   Float_t E12,Pt,Eta,Phi,M12,Z,b_pol,y_pol;
   Bool_t kicked,isConsistent;
   Int_t runnum,bx;
-  Int_t L2sum[2];
+  UInt_t L2sum[2];
+  UInt_t lastdsm[8];
   Float_t N12;
 
   Float_t E12_min,Pt_min,Eta_min,Phi_min;
@@ -37,7 +41,7 @@ void Diagnostics()
   str->SetBranchAddress("Z",&Z);
   str->SetBranchAddress("N12",&N12);
   str->SetBranchAddress("L2sum",L2sum);
-  Int_t runnum_tmp=0;
+  str->SetBranchAddress("lastdsm",lastdsm);
 
   // trigger list
   Int_t N_TRIG_tmp = T->N;
@@ -74,6 +78,20 @@ void Diagnostics()
   TH1D * mass_dist[N_CLASS][N_TRIG];
   TH1D * z_dist[N_CLASS][N_TRIG];
 
+  TH1D * pt_temp[N_CLASS][N_TRIG];
+  TH1D * en_temp[N_CLASS][N_TRIG];
+  TH1D * eta_temp[N_CLASS][N_TRIG];
+  TH1D * phi_temp[N_CLASS][N_TRIG];
+  TH1D * mass_temp[N_CLASS][N_TRIG];
+  TH1D * z_temp[N_CLASS][N_TRIG];
+
+  TH2D * pt_vs_run[N_CLASS][N_TRIG];
+  TH2D * en_vs_run[N_CLASS][N_TRIG];
+  TH2D * eta_vs_run[N_CLASS][N_TRIG];
+  TH2D * phi_vs_run[N_CLASS][N_TRIG];
+  TH2D * mass_vs_run[N_CLASS][N_TRIG];
+  TH2D * z_vs_run[N_CLASS][N_TRIG];
+
   char pt_vs_eta_n[N_CLASS][N_TRIG][64];
   char en_vs_eta_n[N_CLASS][N_TRIG][64];
   char pt_vs_phi_n[N_CLASS][N_TRIG][64];
@@ -99,14 +117,45 @@ void Diagnostics()
   char mass_vs_pt_t[N_CLASS][N_TRIG][256];
   char mass_dist_t[N_CLASS][N_TRIG][256];
   char z_dist_t[N_CLASS][N_TRIG][256];
-  Float_t low_mass;
+
+  char pt_temp_n[N_CLASS][N_TRIG][64];
+  char en_temp_n[N_CLASS][N_TRIG][64];
+  char eta_temp_n[N_CLASS][N_TRIG][64];
+  char phi_temp_n[N_CLASS][N_TRIG][64];
+  char mass_temp_n[N_CLASS][N_TRIG][64];
+  char z_temp_n[N_CLASS][N_TRIG][64];
+
+  char pt_vs_run_n[N_CLASS][N_TRIG][64];
+  char en_vs_run_n[N_CLASS][N_TRIG][64];
+  char eta_vs_run_n[N_CLASS][N_TRIG][64];
+  char phi_vs_run_n[N_CLASS][N_TRIG][64];
+  char mass_vs_run_n[N_CLASS][N_TRIG][64];
+  char z_vs_run_n[N_CLASS][N_TRIG][64];
+
+  char pt_vs_run_t[N_CLASS][N_TRIG][256];
+  char en_vs_run_t[N_CLASS][N_TRIG][256];
+  char eta_vs_run_t[N_CLASS][N_TRIG][256];
+  char phi_vs_run_t[N_CLASS][N_TRIG][256];
+  char mass_vs_run_t[N_CLASS][N_TRIG][256];
+  char z_vs_run_t[N_CLASS][N_TRIG][256];
+
+  Float_t low_mass,high_mass;
 
   for(Int_t t=0; t<N_TRIG; t++)
   {
     for(Int_t c=0; c<N_CLASS; c++)
     {
-      if(c==ev->Idx("etm")) low_mass=0.3;
-      else low_mass=0;
+      low_mass=0; // default
+      high_mass=1; // default
+      if(c==ev->Idx("thr")) 
+      {
+        low_mass=0.7; // to match cutoff in EventClass.cxx
+        high_mass=6;
+      }
+      else if(c==ev->Idx("etm")) 
+      {
+        low_mass=0.3;
+      };
 
       sprintf(pt_vs_eta_n[c][t],"%s_%s_pt_vs_eta",T->Name(t),ev->Name(c));
       sprintf(en_vs_eta_n[c][t],"%s_%s_en_vs_eta",T->Name(t),ev->Name(c));
@@ -127,26 +176,90 @@ void Diagnostics()
       sprintf(en_vs_phi_t[c][t],"%s %s :: E vs. #phi;#phi;E",T->Name(t),ev->Title(c));
       sprintf(eta_vs_phi_t[c][t],"%s %s :: #eta vs. #phi;#phi;#eta",T->Name(t),ev->Title(c));
       sprintf(pt_vs_en_t[c][t],"%s %s :: p_{T} vs. E;E;p_{T}",T->Name(t),ev->Title(c));
-      sprintf(z_vs_eta_t[c][t],"%s %s :: Z vs. #eta (%s cuts w/o Z-cut);#eta;Z",T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(z_vs_phi_t[c][t],"%s %s :: Z vs. #phi (%s cuts w/o Z-cut);#phi;Z",T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_vs_en_t[c][t],"%s %s :: M vs. E (%s cuts w/o M-cut);E;M",T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_vs_pt_t[c][t],"%s %s :: M vs. p_{T} (%s cuts w/o M-cut);p_{T};M",T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_dist_t[c][t],"%s %s :: M distribution (%s cuts w/o M-cut);M",T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(z_dist_t[c][t],"%s %s :: Z distribution (%s cuts w/o Z-cut);Z",T->Name(t),ev->Title(c),ev->Title(c));
 
-      pt_vs_eta[c][t] = new TH2D(pt_vs_eta_n[c][t],pt_vs_eta_t[c][t],NBINS,Eta_min,Eta_max,NBINS,Pt_min,Pt_max);
-      en_vs_eta[c][t] = new TH2D(en_vs_eta_n[c][t],en_vs_eta_t[c][t],NBINS,Eta_min,Eta_max,NBINS,E12_min,E12_max);
-      pt_vs_phi[c][t] = new TH2D(pt_vs_phi_n[c][t],pt_vs_phi_t[c][t],NBINS,Phi_min,Phi_max,NBINS,Pt_min,Pt_max);
-      en_vs_phi[c][t] = new TH2D(en_vs_phi_n[c][t],en_vs_phi_t[c][t],NBINS,Phi_min,Phi_max,NBINS,E12_min,E12_max);
-      eta_vs_phi[c][t] = new TH2D(eta_vs_phi_n[c][t],eta_vs_phi_t[c][t],NBINS,Phi_min,Phi_max,NBINS,Eta_min,Eta_max);
-      pt_vs_en[c][t] = new TH2D(pt_vs_en_n[c][t],pt_vs_en_t[c][t],NBINS,E12_min,E12_max,NBINS,Pt_min,Pt_max);
-      z_vs_eta[c][t] = new TH2D(z_vs_eta_n[c][t],z_vs_eta_t[c][t],NBINS,Eta_min,Eta_max,NBINS,0,1);
-      z_vs_phi[c][t] = new TH2D(z_vs_phi_n[c][t],z_vs_phi_t[c][t],NBINS,Phi_min,Phi_max,NBINS,0,1);
-      mass_vs_en[c][t] = new TH2D(mass_vs_en_n[c][t],mass_vs_en_t[c][t],NBINS,E12_min,E12_max,NBINS,low_mass,1);
-      mass_vs_pt[c][t] = new TH2D(mass_vs_pt_n[c][t],mass_vs_pt_t[c][t],NBINS,Pt_min,Pt_max,NBINS,low_mass,1);
+      sprintf(z_vs_eta_t[c][t],"%s %s :: Z vs. #eta (%s cuts w/o Z-cut);#eta;Z",
+        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(z_vs_phi_t[c][t],"%s %s :: Z vs. #phi (%s cuts w/o Z-cut);#phi;Z",
+        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(mass_vs_en_t[c][t],"%s %s :: M vs. E (%s cuts w/o M-cut);E;M",
+        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(mass_vs_pt_t[c][t],"%s %s :: M vs. p_{T} (%s cuts w/o M-cut);p_{T};M",
+        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(mass_dist_t[c][t],"%s %s :: M distribution (%s cuts w/o M-cut);M",
+        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(z_dist_t[c][t],"%s %s :: Z distribution (%s cuts w/o Z-cut);Z",
+        T->Name(t),ev->Title(c),ev->Title(c));
+
+      pt_vs_eta[c][t] = new TH2D(pt_vs_eta_n[c][t],pt_vs_eta_t[c][t],
+        NBINS,Eta_min,Eta_max,NBINS,Pt_min,Pt_max);
+      en_vs_eta[c][t] = new TH2D(en_vs_eta_n[c][t],en_vs_eta_t[c][t],
+        NBINS,Eta_min,Eta_max,NBINS,E12_min,E12_max);
+      pt_vs_phi[c][t] = new TH2D(pt_vs_phi_n[c][t],pt_vs_phi_t[c][t],
+        NBINS,Phi_min,Phi_max,NBINS,Pt_min,Pt_max);
+      en_vs_phi[c][t] = new TH2D(en_vs_phi_n[c][t],en_vs_phi_t[c][t],
+        NBINS,Phi_min,Phi_max,NBINS,E12_min,E12_max);
+      eta_vs_phi[c][t] = new TH2D(eta_vs_phi_n[c][t],eta_vs_phi_t[c][t],
+        NBINS,Phi_min,Phi_max,NBINS,Eta_min,Eta_max);
+      pt_vs_en[c][t] = new TH2D(pt_vs_en_n[c][t],pt_vs_en_t[c][t],
+        NBINS,E12_min,E12_max,NBINS,Pt_min,Pt_max);
+      z_vs_eta[c][t] = new TH2D(z_vs_eta_n[c][t],z_vs_eta_t[c][t],
+        NBINS,Eta_min,Eta_max,NBINS,0,1);
+      z_vs_phi[c][t] = new TH2D(z_vs_phi_n[c][t],z_vs_phi_t[c][t],
+        NBINS,Phi_min,Phi_max,NBINS,0,1);
+      mass_vs_en[c][t] = new TH2D(mass_vs_en_n[c][t],mass_vs_en_t[c][t],
+        NBINS,E12_min,E12_max,NBINS,low_mass,high_mass);
+      mass_vs_pt[c][t] = new TH2D(mass_vs_pt_n[c][t],mass_vs_pt_t[c][t],
+        NBINS,Pt_min,Pt_max,NBINS,low_mass,high_mass);
+
       z_dist[c][t] = new TH1D(z_dist_n[c][t],z_dist_t[c][t],NBINS,0,1);
+      mass_dist[c][t] = new TH1D(mass_dist_n[c][t],mass_dist_t[c][t],NBINS,low_mass,high_mass);
 
-      mass_dist[c][t] = new TH1D(mass_dist_n[c][t],mass_dist_t[c][t],NBINS,low_mass,1);
+      sprintf(pt_temp_n[c][t],"%s_%s_pt_temp",T->Name(t),ev->Name(c));
+      sprintf(en_temp_n[c][t],"%s_%s_en_temp",T->Name(t),ev->Name(c));
+      sprintf(eta_temp_n[c][t],"%s_%s_eta_temp",T->Name(t),ev->Name(c));
+      sprintf(phi_temp_n[c][t],"%s_%s_phi_temp",T->Name(t),ev->Name(c));
+      sprintf(mass_temp_n[c][t],"%s_%s_mass_temp",T->Name(t),ev->Name(c));
+      sprintf(z_temp_n[c][t],"%s_%s_z_temp",T->Name(t),ev->Name(c));
+
+      sprintf(pt_vs_run_n[c][t],"%s_%s_pt_vs_run",T->Name(t),ev->Name(c));
+      sprintf(en_vs_run_n[c][t],"%s_%s_en_vs_run",T->Name(t),ev->Name(c));
+      sprintf(eta_vs_run_n[c][t],"%s_%s_eta_vs_run",T->Name(t),ev->Name(c));
+      sprintf(phi_vs_run_n[c][t],"%s_%s_phi_vs_run",T->Name(t),ev->Name(c));
+      sprintf(mass_vs_run_n[c][t],"%s_%s_mass_vs_run",T->Name(t),ev->Name(c));
+      sprintf(z_vs_run_n[c][t],"%s_%s_z_vs_run",T->Name(t),ev->Name(c));
+
+      sprintf(pt_vs_run_t[c][t],"%s %s :: p_{T} vs. run index",T->Name(t),ev->Title(c));
+      sprintf(en_vs_run_t[c][t],"%s %s :: E vs. run index",T->Name(t),ev->Title(c));
+      sprintf(eta_vs_run_t[c][t],"%s %s :: #eta vs. run index",T->Name(t),ev->Title(c));
+      sprintf(phi_vs_run_t[c][t],"%s %s :: #phi vs. run index",T->Name(t),ev->Title(c));
+      sprintf(mass_vs_run_t[c][t],"%s %s :: M vs. run index",T->Name(t),ev->Title(c));
+      sprintf(z_vs_run_t[c][t],"%s %s :: Z vs. run index",T->Name(t),ev->Title(c));
+
+      pt_temp[c][t] = new TH1D(pt_temp_n[c][t],pt_temp_n[c][t],
+        NBINS_VS_RUN,Pt_min,Pt_max);
+      en_temp[c][t] = new TH1D(en_temp_n[c][t],en_temp_n[c][t],
+        NBINS_VS_RUN,E12_min,E12_max);
+      eta_temp[c][t] = new TH1D(eta_temp_n[c][t],eta_temp_n[c][t],
+        NBINS_VS_RUN,Eta_min,Eta_max);
+      phi_temp[c][t] = new TH1D(phi_temp_n[c][t],phi_temp_n[c][t],
+        NBINS_VS_RUN,Phi_min,Phi_max);
+      mass_temp[c][t] = new TH1D(mass_temp_n[c][t],mass_temp_n[c][t],
+        NBINS_VS_RUN,low_mass,high_mass);
+      z_temp[c][t] = new TH1D(z_temp_n[c][t],z_temp_n[c][t],
+        NBINS_VS_RUN,0,1);
+
+      pt_vs_run[c][t] = new TH2D(pt_vs_run_n[c][t],pt_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Pt_min,Pt_max);
+      en_vs_run[c][t] = new TH2D(en_vs_run_n[c][t],en_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,E12_min,E12_max);
+      eta_vs_run[c][t] = new TH2D(eta_vs_run_n[c][t],eta_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Eta_min,Eta_max);
+      phi_vs_run[c][t] = new TH2D(phi_vs_run_n[c][t],phi_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Phi_min,Phi_max);
+      mass_vs_run[c][t] = new TH2D(mass_vs_run_n[c][t],mass_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,low_mass,high_mass);
+      z_vs_run[c][t] = new TH2D(z_vs_run_n[c][t],z_vs_run_t[c][t],
+        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,0,1);
     };
   };
 
@@ -163,7 +276,8 @@ void Diagnostics()
       sprintf(mass_dist_for_enbin_t[t][ee],
         "%s M_{#gamma#gamma} distribution for E_{#gamma#gamma}#in[%d,%d) GeV",
         T->Name(t),ee*10,(ee+1)*10);
-      mass_dist_for_enbin[t][ee] = new TH1D(mass_dist_for_enbin_n[t][ee],mass_dist_for_enbin_t[t][ee],NBINS,0,1);
+      mass_dist_for_enbin[t][ee] = 
+        new TH1D(mass_dist_for_enbin_n[t][ee],mass_dist_for_enbin_t[t][ee],NBINS,0,1);
     };
   };
 
@@ -187,23 +301,108 @@ void Diagnostics()
   TH1D * trig_dist = new TH1D("trig_dist","Trigger Counts",N_TRIG,0,N_TRIG);
   for(Int_t t=0; t<N_TRIG; t++) trig_dist->GetXaxis()->SetBinLabel(t+1,T->Name(t));
 
+  // trigger mix for FMS and RP
+  enum rp_enum { kEOR=1,kWOR,kET,kIT,kSDE,kSDW }; // leaving out DD for now, since it has !FMS cut
+  TH2D * trig_rp_mix[N_CLASS];
+  char trig_rp_mix_n[N_CLASS][32];
+  char trig_rp_mix_t[N_CLASS][64];
+  for(Int_t c=0; c<N_CLASS; c++)
+  {
+    sprintf(trig_rp_mix_n[c],"%s_trig_rp_mix",ev->Name(c));
+    sprintf(trig_rp_mix_t[c],"%s RP-FMS overlap",ev->Title(c));
+    trig_rp_mix[c] = new TH2D(trig_rp_mix_n[c],trig_rp_mix_t[c],
+      6,1,7,N_TRIG,0,N_TRIG);
+    for(Int_t t=0; t<N_TRIG; t++) trig_rp_mix[c]->GetYaxis()->SetBinLabel(t+1,T->Name(t));
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kEOR,"EOR");
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kWOR,"WOR");
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kET,"ET");
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kIT,"IT");
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kSDE,"SDE");
+    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kSDW,"SDW");
+    //trig_rp_mix[c]->GetXaxis()->SetBinLabel(kDD,"DD"); // change to 7 bins if you uncomment this
+  };
 
 
   // fill histograms
-  runnum_tmp=0;
-  //for(Int_t x=0; x<500000; x++)
-  for(Int_t x=0; x<tr->GetEntries(); x++)
+  Int_t runnum_tmp=0;
+  Int_t runcount=0;
+  Double_t pt_bc,en_bc,eta_bc,phi_bc,z_bc,mass_bc;
+  Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
+
+  Int_t ENT = tr->GetEntries();
+  //ENT = 3000000; // uncomment to do a short loop for testing
+  system("touch diag_run_table.dat; rm diag_run_table.dat");
+  for(Int_t x=0; x<ENT; x++)
   {
-    if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)tr->GetEntries()));
+    if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
     tr->GetEntry(x);
     kicked = RD->Kicked(runnum,bx);
-    if(runnum!=runnum_tmp)
+
+    // get new polarisation and check rellum
+    // also fill kinematic vs. run plots
+    if(runnum!=runnum_tmp || x+1==ENT)
     {
       b_pol = RD->BluePol(runnum);
       y_pol = RD->YellPol(runnum);
       isConsistent = RD->RellumConsistent(runnum);
+
+      if(runnum_tmp!=0) runcount++;
+      if(runcount>0)
+      {
+        for(Int_t t=0; t<N_TRIG; t++)
+        {
+          for(Int_t c=0; c<N_CLASS; c++)
+          {
+            pt_temp[c][t]->Scale(1/pt_temp[c][t]->Integral());
+            en_temp[c][t]->Scale(1/en_temp[c][t]->Integral());
+            eta_temp[c][t]->Scale(1/eta_temp[c][t]->Integral());
+            phi_temp[c][t]->Scale(1/phi_temp[c][t]->Integral());
+            z_temp[c][t]->Scale(1/z_temp[c][t]->Integral());
+            mass_temp[c][t]->Scale(1/mass_temp[c][t]->Integral());
+            for(Int_t b=1; b<NBINS_VS_RUN; b++)
+            {
+              pt_bc = pt_temp[c][t]->GetBinCenter(b);
+              en_bc = en_temp[c][t]->GetBinCenter(b);
+              eta_bc = eta_temp[c][t]->GetBinCenter(b);
+              phi_bc = phi_temp[c][t]->GetBinCenter(b);
+              z_bc = z_temp[c][t]->GetBinCenter(b);
+              mass_bc = mass_temp[c][t]->GetBinCenter(b);
+
+              pt_bn = pt_vs_run[c][t]->FindBin(runcount,pt_bc);
+              en_bn = en_vs_run[c][t]->FindBin(runcount,en_bc);
+              eta_bn = eta_vs_run[c][t]->FindBin(runcount,eta_bc);
+              phi_bn = phi_vs_run[c][t]->FindBin(runcount,phi_bc);
+              z_bn = z_vs_run[c][t]->FindBin(runcount,z_bc);
+              mass_bn = mass_vs_run[c][t]->FindBin(runcount,mass_bc);
+
+              pt_vs_run[c][t]->SetBinContent(pt_bn,pt_temp[c][t]->GetBinContent(b));
+              en_vs_run[c][t]->SetBinContent(en_bn,en_temp[c][t]->GetBinContent(b));
+              eta_vs_run[c][t]->SetBinContent(eta_bn,eta_temp[c][t]->GetBinContent(b));
+              phi_vs_run[c][t]->SetBinContent(phi_bn,phi_temp[c][t]->GetBinContent(b));
+              z_vs_run[c][t]->SetBinContent(z_bn,z_temp[c][t]->GetBinContent(b));
+              mass_vs_run[c][t]->SetBinContent(mass_bn,mass_temp[c][t]->GetBinContent(b));
+
+              //printf("%s %s :: pt_bn=%d runcount=%d pt_bc=%f content=%f\n",
+                //T->Name(t),ev->Name(c),pt_bn,runcount,pt_bc,pt_temp[c][t]->GetBinContent(b));
+
+            };
+            pt_temp[c][t]->Reset();
+            en_temp[c][t]->Reset();
+            eta_temp[c][t]->Reset();
+            phi_temp[c][t]->Reset();
+            z_temp[c][t]->Reset();
+            mass_temp[c][t]->Reset();
+          };
+        };
+      };
+
+      printf("%d -----------------------\n",runnum);
+      gSystem->RedirectOutput("diag_run_table.dat","a");
+      printf("%d %d\n",runcount,runnum);
+      gSystem->RedirectOutput(0);
       runnum_tmp=runnum;
     }
+
     // rellum / pol cut
     if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0)
     {
@@ -218,6 +417,7 @@ void Diagnostics()
       // then loop through all triggers
 
       ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
+      tcu->SetBits(lastdsm);
       for(Int_t c=0; c<N_CLASS; c++)
       {
         // fill main kinematic correlation plots
@@ -233,6 +433,19 @@ void Diagnostics()
               en_vs_phi[c][t]->Fill(Phi,E12);
               eta_vs_phi[c][t]->Fill(Phi,Eta);
               pt_vs_en[c][t]->Fill(E12,Pt);
+
+              pt_temp[c][t]->Fill(Pt);
+              en_temp[c][t]->Fill(E12);
+              eta_temp[c][t]->Fill(Eta);
+              phi_temp[c][t]->Fill(Phi);
+
+              // fill trigger mix plot for RPs
+              if(tcu->RP_EOR()) trig_rp_mix[c]->Fill(kEOR,t);
+              if(tcu->RP_WOR()) trig_rp_mix[c]->Fill(kWOR,t);
+              if(tcu->RP_ET()) trig_rp_mix[c]->Fill(kET,t);
+              if(tcu->RP_IT()) trig_rp_mix[c]->Fill(kIT,t);
+              if(tcu->RP_SDE()) trig_rp_mix[c]->Fill(kSDE,t);
+              if(tcu->RP_SDW()) trig_rp_mix[c]->Fill(kSDW,t);
             };
           };
         };
@@ -247,6 +460,7 @@ void Diagnostics()
               mass_dist[c][t]->Fill(M12);
               mass_vs_en[c][t]->Fill(E12,M12);
               mass_vs_pt[c][t]->Fill(Pt,M12);
+              mass_temp[c][t]->Fill(M12);
               // fill kinematic-dependent mass distributions for pions
               if(c==ev->Idx("pi0"))
               {
@@ -273,6 +487,7 @@ void Diagnostics()
               z_vs_eta[c][t]->Fill(Eta,Z);
               z_vs_phi[c][t]->Fill(Phi,Z);
               z_dist[c][t]->Fill(Z);
+              z_temp[c][t]->Fill(Z);
             };
           };
         };
@@ -297,6 +512,13 @@ void Diagnostics()
   TObjArray * mass_dist_for_enbin_arr[10];
   TObjArray * mass_dist_for_ptbin_arr[10];
 
+  TObjArray * pt_vs_run_arr[N_CLASS];
+  TObjArray * en_vs_run_arr[N_CLASS];
+  TObjArray * eta_vs_run_arr[N_CLASS];
+  TObjArray * phi_vs_run_arr[N_CLASS];
+  TObjArray * z_vs_run_arr[N_CLASS];
+  TObjArray * mass_vs_run_arr[N_CLASS];
+
   char pt_vs_eta_arr_n[N_CLASS][32];
   char en_vs_eta_arr_n[N_CLASS][32];
   char pt_vs_phi_arr_n[N_CLASS][32];
@@ -311,6 +533,12 @@ void Diagnostics()
   char z_dist_arr_n[N_CLASS][32];
   char mass_dist_for_enbin_arr_n[10][32];
   char mass_dist_for_ptbin_arr_n[10][32];
+  char pt_vs_run_arr_n[N_CLASS][32];
+  char en_vs_run_arr_n[N_CLASS][32];
+  char eta_vs_run_arr_n[N_CLASS][32];
+  char phi_vs_run_arr_n[N_CLASS][32];
+  char z_vs_run_arr_n[N_CLASS][32];
+  char mass_vs_run_arr_n[N_CLASS][32];
 
   for(Int_t c=0; c<N_CLASS; c++)
   {
@@ -326,6 +554,12 @@ void Diagnostics()
     sprintf(mass_vs_pt_arr_n[c],"%s_mass_vs_pt_arr",ev->Name(c));
     sprintf(mass_dist_arr_n[c],"%s_mass_dist_arr",ev->Name(c));
     sprintf(z_dist_arr_n[c],"%s_z_dist_arr",ev->Name(c));
+    sprintf(pt_vs_run_arr_n[c],"%s_pt_vs_run_arr",ev->Name(c));
+    sprintf(en_vs_run_arr_n[c],"%s_en_vs_run_arr",ev->Name(c));
+    sprintf(eta_vs_run_arr_n[c],"%s_eta_vs_run_arr",ev->Name(c));
+    sprintf(phi_vs_run_arr_n[c],"%s_phi_vs_run_arr",ev->Name(c));
+    sprintf(z_vs_run_arr_n[c],"%s_z_vs_run_arr",ev->Name(c));
+    sprintf(mass_vs_run_arr_n[c],"%s_mass_vs_run_arr",ev->Name(c));
     pt_vs_eta_arr[c] = new TObjArray();
     en_vs_eta_arr[c] = new TObjArray();
     pt_vs_phi_arr[c] = new TObjArray();
@@ -338,6 +572,12 @@ void Diagnostics()
     mass_vs_pt_arr[c] = new TObjArray();
     mass_dist_arr[c] = new TObjArray();
     z_dist_arr[c] = new TObjArray();
+    pt_vs_run_arr[c] = new TObjArray();
+    en_vs_run_arr[c] = new TObjArray();
+    eta_vs_run_arr[c] = new TObjArray();
+    phi_vs_run_arr[c] = new TObjArray();
+    z_vs_run_arr[c] = new TObjArray();
+    mass_vs_run_arr[c] = new TObjArray();
   };
   for(Int_t k=0; k<10; k++)
   {
@@ -363,6 +603,12 @@ void Diagnostics()
       mass_vs_pt_arr[c]->AddLast(mass_vs_pt[c][t]);
       mass_dist_arr[c]->AddLast(mass_dist[c][t]);
       z_dist_arr[c]->AddLast(z_dist[c][t]);
+      pt_vs_run_arr[c]->AddLast(pt_vs_run[c][t]);
+      en_vs_run_arr[c]->AddLast(en_vs_run[c][t]);
+      eta_vs_run_arr[c]->AddLast(eta_vs_run[c][t]);
+      phi_vs_run_arr[c]->AddLast(phi_vs_run[c][t]);
+      z_vs_run_arr[c]->AddLast(z_vs_run[c][t]);
+      mass_vs_run_arr[c]->AddLast(mass_vs_run[c][t]);
     };
     for(Int_t k=0; k<10; k++)
     {
@@ -378,6 +624,19 @@ void Diagnostics()
   TFile * outfile = new TFile(outfilename,"RECREATE");
 
   trig_dist->Write();
+  for(Int_t c=0; c<N_CLASS; c++) trig_rp_mix[c]->Write();
+  outfile->mkdir("hot_tower_search");
+  outfile->cd("hot_tower_search");
+  for(Int_t c=0; c<N_CLASS; c++)
+  {
+    pt_vs_run_arr[c]->Write(pt_vs_run_arr_n[c],TObject::kSingleKey);
+    en_vs_run_arr[c]->Write(en_vs_run_arr_n[c],TObject::kSingleKey);
+    eta_vs_run_arr[c]->Write(eta_vs_run_arr_n[c],TObject::kSingleKey);
+    phi_vs_run_arr[c]->Write(phi_vs_run_arr_n[c],TObject::kSingleKey);
+    z_vs_run_arr[c]->Write(z_vs_run_arr_n[c],TObject::kSingleKey);
+    mass_vs_run_arr[c]->Write(mass_vs_run_arr_n[c],TObject::kSingleKey);
+  };
+  outfile->cd();
   for(Int_t c=0; c<N_CLASS; c++)
   {
     pt_vs_eta_arr[c]->Write(pt_vs_eta_arr_n[c],TObject::kSingleKey);

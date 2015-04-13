@@ -15,6 +15,7 @@ corrupted
 src/*.so
 src/*Dict*
 output/*
+output_*/*
 output_for_spin/*
 prelim.root
 diag_plots/*.pdf

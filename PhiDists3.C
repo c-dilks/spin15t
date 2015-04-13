@@ -13,6 +13,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   Trigger * T = new Trigger();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
+  TCUbits * tcu = new TCUbits();
 
   // get bins from environment
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
@@ -29,7 +30,8 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   Int_t runnum,bx,blue,yell,pattern;
   Float_t M12,N12,E12,Z,Phi,Eta,Pt,b_pol,y_pol;
   Bool_t kicked,isConsistent;
-  Int_t L2sum[2];
+  UInt_t L2sum[2];
+  UInt_t lastdsm[8];
   char setname[32];
   sscanf(filename,"RedOutputset%s",setname);
   sprintf(filename,"redset/%s",filename);
@@ -47,6 +49,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   tree->SetBranchAddress("Eta",&Eta);
   tree->SetBranchAddress("Pt",&Pt);
   tree->SetBranchAddress("L2sum",L2sum);
+  tree->SetBranchAddress("lastdsm",lastdsm);
 
 
   // define spinbit strings
@@ -181,6 +184,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   rr=-1; runnum_tmp=0;
   printf("fill phi dists...\n");
   Bool_t usepi0;
+  Bool_t RP_satisfied;
   for(Int_t x=0; x<tree->GetEntries(); x++)
   {
     if((x%10000)==0) printf("%.2f%%\n",100*((Float_t)x)/((Float_t)tree->GetEntries()));
@@ -223,14 +227,32 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
       if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
       {
         ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
-        for(Int_t c=0; c<N_CLASS; c++)
+        tcu->SetBits(lastdsm);
+
+        /////////////////////////////////////////////
+        RP_satisfied=false; 
+
+        RP_satisfied=true; // (no RP restriction)
+        //if(tcu->RP_EOR()) RP_satisfied=true;
+        //if(tcu->RP_WOR()) RP_satisfied=true;
+        //if(tcu->RP_ET()) RP_satisfied=true;
+        //if(tcu->RP_IT()) RP_satisfied=true;
+        //if(tcu->RP_SDE()) RP_satisfied=true;
+        //if(tcu->RP_SDW()) RP_satisfied=true;
+        
+        /////////////////////////////////////////////
+
+        if(RP_satisfied)
         {
-          if(ev->Valid(c))
+          for(Int_t c=0; c<N_CLASS; c++)
           {
-            phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
-            pt_wdist[c][gg][ee][rr]->Fill(Pt);
-            en_wdist[c][gg][pp][rr]->Fill(E12);
-            mm_wdist[c][gg][pp][ee][rr]->Fill(M12);
+            if(ev->Valid(c))
+            {
+              phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
+              pt_wdist[c][gg][ee][rr]->Fill(Pt);
+              en_wdist[c][gg][pp][rr]->Fill(E12);
+              mm_wdist[c][gg][pp][ee][rr]->Fill(M12);
+            };
           };
         };
       };

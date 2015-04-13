@@ -8,5 +8,6 @@
 #pragma link C++ class Trigger+;
 #pragma link C++ class Environ+;
 #pragma link C++ class EventClass+;
+#pragma link C++ class TCUbits+;
 
 #endif

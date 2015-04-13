@@ -47,7 +47,8 @@ void ReduceData(const char * filename="Outputset145ka.root",
   Float_t y_pol;
   Float_t b_pol_err;
   Float_t y_pol_err;
-  Int_t L2sum[2];
+  UInt_t L2sum[2];
+  UInt_t lastdsm[8];
   twotr->SetBranchAddress("M12",&M12);
   twotr->SetBranchAddress("N12",&N12);
   twotr->SetBranchAddress("E12",&E12);
@@ -60,6 +61,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
   twotr->SetBranchAddress("Rnum",&runnum);
   twotr->SetBranchAddress("Bunchid7bit",&Bunchid7bit);
   twotr->SetBranchAddress("L2sum",L2sum);
+  twotr->SetBranchAddress("lastdsm",lastdsm);
   str->Branch("M12",&M12,"M12/F");
   str->Branch("N12",&N12,"N12/F");
   str->Branch("E12",&E12,"E12/F");
@@ -75,7 +77,8 @@ void ReduceData(const char * filename="Outputset145ka.root",
   str->Branch("TrigBits",&TrigBits,"TrigBits/I");
   str->Branch("runnum",&runnum,"runnum/I");
   str->Branch("fill",&fill,"fill/I");
-  str->Branch("L2sum",L2sum,"L2sum[2]/I");
+  str->Branch("L2sum",L2sum,"L2sum[2]/i");
+  str->Branch("lastdsm",lastdsm,"lastdsm[8]/i");
 
   /*
   char R_bbc_n[10][32];
@@ -135,7 +138,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
     //if(N12==2 && fabs(M12-0.15)<0.15 && (TrigBits&0xFFF)>0)
 
     // reduction cut
-    if(M12>=0 && (TrigBits&0xFFF)>0)
+    if(M12>=0)
     {
       if(runnum!=runnum_tmp)
       {
