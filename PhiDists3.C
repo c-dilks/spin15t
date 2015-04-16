@@ -239,6 +239,10 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         //if(tcu->RP_IT()) RP_satisfied=true;
         //if(tcu->RP_SDE()) RP_satisfied=true;
         //if(tcu->RP_SDW()) RP_satisfied=true;
+        ////
+        //if(tcu->RP_EOR() && !(tcu->RP_WOR())) RP_satisfied=true; // XEOR
+        //if(tcu->RP_WOR() && !(tcu->RP_EOR())) RP_satisfied=true; // XWOR
+
         
         /////////////////////////////////////////////
 
