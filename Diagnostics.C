@@ -302,24 +302,51 @@ void Diagnostics()
   for(Int_t t=0; t<N_TRIG; t++) trig_dist->GetXaxis()->SetBinLabel(t+1,T->Name(t));
 
   // trigger mix for FMS and RP
-  enum rp_enum { kEOR=1,kWOR,kET,kIT,kSDE,kSDW }; // leaving out DD for now, since it has !FMS cut
-  TH2D * trig_rp_mix[N_CLASS];
+  Int_t N_RP_tmp = tcu->NRP;
+  const Int_t N_RP = N_RP_tmp;
+
+  TH2D * trig_fms_mix[N_CLASS]; // overlap matrix of FMS triggers
+  TH2D * trig_rp_mix[N_CLASS]; // overlap matrix of RP triggers
+  TH2D * trig_fmsrp_mix[N_CLASS]; // overlap matrix of FMS vs. RP triggers
+                                  // (with extra column "n/a" for no RP trigger demand
+                                 
+  char trig_fms_mix_n[N_CLASS][32];
   char trig_rp_mix_n[N_CLASS][32];
+  char trig_fmsrp_mix_n[N_CLASS][32];
+  char trig_fms_mix_t[N_CLASS][64];
   char trig_rp_mix_t[N_CLASS][64];
+  char trig_fmsrp_mix_t[N_CLASS][64];
+
   for(Int_t c=0; c<N_CLASS; c++)
   {
+    sprintf(trig_fms_mix_n[c],"%s_trig_fms_mix",ev->Name(c));
     sprintf(trig_rp_mix_n[c],"%s_trig_rp_mix",ev->Name(c));
-    sprintf(trig_rp_mix_t[c],"%s RP-FMS overlap",ev->Title(c));
+    sprintf(trig_fmsrp_mix_n[c],"%s_trig_fmsrp_mix",ev->Name(c));
+
+    sprintf(trig_fms_mix_t[c],"%s FMS trigger overlap matrix",ev->Title(c));
+    sprintf(trig_rp_mix_t[c],"%s RP trigger overlap matrix",ev->Title(c));
+    sprintf(trig_fmsrp_mix_t[c],"%s RP-FMS trigger overlap matrix",ev->Title(c));
+
+    trig_fms_mix[c] = new TH2D(trig_fms_mix_n[c],trig_fms_mix_t[c],
+      N_TRIG,0,N_TRIG,N_TRIG,0,N_TRIG);
     trig_rp_mix[c] = new TH2D(trig_rp_mix_n[c],trig_rp_mix_t[c],
-      6,1,7,N_TRIG,0,N_TRIG);
-    for(Int_t t=0; t<N_TRIG; t++) trig_rp_mix[c]->GetYaxis()->SetBinLabel(t+1,T->Name(t));
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kEOR,"EOR");
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kWOR,"WOR");
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kET,"ET");
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kIT,"IT");
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kSDE,"SDE");
-    trig_rp_mix[c]->GetXaxis()->SetBinLabel(kSDW,"SDW");
-    //trig_rp_mix[c]->GetXaxis()->SetBinLabel(kDD,"DD"); // change to 7 bins if you uncomment this
+      N_RP,0,N_RP,N_RP,0,N_RP);
+    trig_fmsrp_mix[c] = new TH2D(trig_fmsrp_mix_n[c],trig_fmsrp_mix_t[c],
+      N_RP+1,0,N_RP+1,N_TRIG,0,N_TRIG);
+
+    for(Int_t t=0; t<N_TRIG; t++) 
+    {
+      trig_fms_mix[c]->GetXaxis()->SetBinLabel(t+1,T->Name(t));
+      trig_fms_mix[c]->GetYaxis()->SetBinLabel(t+1,T->Name(t));
+      trig_fmsrp_mix[c]->GetYaxis()->SetBinLabel(t+1,T->Name(t));
+    };
+    for(Int_t t=0; t<N_RP; t++)
+    {
+      trig_rp_mix[c]->GetXaxis()->SetBinLabel(t+1,tcu->RPname(t));
+      trig_rp_mix[c]->GetYaxis()->SetBinLabel(t+1,tcu->RPname(t));
+      trig_fmsrp_mix[c]->GetXaxis()->SetBinLabel(t+1,tcu->RPname(t));
+    };
+    trig_fmsrp_mix[c]->GetXaxis()->SetBinLabel(N_RP+1,"n/a");
   };
 
 
@@ -330,7 +357,7 @@ void Diagnostics()
   Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
 
   Int_t ENT = tr->GetEntries();
-  //ENT = 3000000; // uncomment to do a short loop for testing
+  //ENT = 300000; // uncomment to do a short loop for testing
   system("touch diag_run_table.dat; rm diag_run_table.dat");
   for(Int_t x=0; x<ENT; x++)
   {
@@ -439,13 +466,24 @@ void Diagnostics()
               eta_temp[c][t]->Fill(Eta);
               phi_temp[c][t]->Fill(Phi);
 
-              // fill trigger mix plot for RPs
-              if(tcu->RP_EOR()) trig_rp_mix[c]->Fill(kEOR,t);
-              if(tcu->RP_WOR()) trig_rp_mix[c]->Fill(kWOR,t);
-              if(tcu->RP_ET()) trig_rp_mix[c]->Fill(kET,t);
-              if(tcu->RP_IT()) trig_rp_mix[c]->Fill(kIT,t);
-              if(tcu->RP_SDE()) trig_rp_mix[c]->Fill(kSDE,t);
-              if(tcu->RP_SDW()) trig_rp_mix[c]->Fill(kSDW,t);
+              // fill trigger overlap matrices
+              for(Int_t tt=0; tt<N_TRIG; tt++)
+              {
+                if(L2sum[1] & T->Mask(runnum,tt,1))
+                  trig_fms_mix[c]->Fill(t,tt);
+              };
+              for(Int_t r=0; r<N_RP; r++)
+              {
+                if(tcu->FiredRP(r))
+                {
+                  trig_fmsrp_mix[c]->Fill(r,t);
+                  for(Int_t rr=0; rr<N_RP; rr++)
+                  {
+                    if(tcu->FiredRP(rr)) trig_rp_mix[c]->Fill(r,rr);
+                  };
+                };
+              };
+              trig_fmsrp_mix[c]->Fill(N_RP,t); // fill "n/a" column
             };
           };
         };
@@ -624,7 +662,12 @@ void Diagnostics()
   TFile * outfile = new TFile(outfilename,"RECREATE");
 
   trig_dist->Write();
+  outfile->mkdir("overlap_matrices");
+  outfile->cd("overlap_matrices");
+  for(Int_t c=0; c<N_CLASS; c++) trig_fms_mix[c]->Write();
   for(Int_t c=0; c<N_CLASS; c++) trig_rp_mix[c]->Write();
+  for(Int_t c=0; c<N_CLASS; c++) trig_fmsrp_mix[c]->Write();
+  outfile->cd();
   outfile->mkdir("hot_tower_search");
   outfile->cd("hot_tower_search");
   for(Int_t c=0; c<N_CLASS; c++)

@@ -21,22 +21,23 @@ class TCUbits : public TObject
 {
   public:
     TCUbits();
+
+    void InitRPdefs();
+    const char * RPname(Int_t idx0);
+    Int_t RPidx(char * name);
+
     void SetBits(UInt_t inbits[8]);
     Bool_t Fired(char * trg);
-
-    Bool_t RP_EOR();
-    Bool_t RP_WOR();
-    Bool_t RP_ET();
-    Bool_t RP_IT();
-    Bool_t RP_SDE();
-    Bool_t RP_SDW();
-    //Bool_t RP_DD();
+    
+    Bool_t FiredRP(Int_t idx0);
+    Bool_t FiredRP(char * name0);
 
     Bool_t FiredTOF();
     Bool_t FiredBBC();
 
 
     Bool_t debug;
+    Int_t NRP;
 
   private:
     Environ * env;
@@ -46,6 +47,9 @@ class TCUbits : public TObject
 
     std::map<std::string, std::pair<std::string,UInt_t> > tcu_bit; // trigger --> (DSM,input bit)
     std::map<std::string, UInt_t> tcu_chan; // DSM --> TCU channel
+
+    std::map<std::string, Int_t> rp_idx; // rp trigger name to an index
+    std::map<Int_t, std::string> rp_name; // rp index to trigger name
 
     ClassDef(TCUbits,1);
 };

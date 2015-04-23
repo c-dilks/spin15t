@@ -15,14 +15,14 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   draw[kET] = 0;
   draw[kIT] = 0;
 
-  draw[kSDE] = 0;
-  draw[kSDW] = 0;
+  draw[kSDE] = 1;
+  draw[kSDW] = 1;
 
   draw[kEOR] = 0;
   draw[kWOR] = 0;
 
-  draw[kXEOR] = 1;
-  draw[kXWOR] = 1;
+  draw[kXEOR] = 0;
+  draw[kXWOR] = 0;
   /////////////////////////
 
   char rp_name[NRP][16];

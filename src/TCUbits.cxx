@@ -43,6 +43,57 @@ TCUbits::TCUbits()
     tcu_chan.insert(pair<string,UInt_t>(string(dsm),tcuchan));
   };
   debug=false;
+
+  // initialize RP trigger definitions
+  InitRPdefs();
+};
+
+
+// RP trigger definitions initialization
+void TCUbits::InitRPdefs()
+{
+  Int_t ii=0;
+  rp_idx.insert(pair<string,Int_t>(string("EOR"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("WOR"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("EXOR"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("WXOR"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("SDE"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("SDW"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("ET"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("IT"),ii++));
+
+  NRP = ii;
+
+  map<string,Int_t>::iterator iter;
+  for(iter=rp_idx.begin(); iter!=rp_idx.end(); ++iter)
+  {
+    rp_name.insert(pair<Int_t,string>(iter->second,iter->first));
+  };
+};
+
+
+const char * TCUbits::RPname(Int_t idx0)
+{
+  string return_str;
+  try { return_str = rp_name.at(idx0); }
+  catch(const out_of_range& e)
+  {
+    fprintf(stderr,"ERROR: rp_name out of range\n");
+    return "";
+  };
+  return return_str.data();
+};
+
+Int_t TCUbits::RPidx(char * name0)
+{
+  Int_t return_idx;
+  try { return_idx = rp_idx.at(string(name0)); }
+  catch(const out_of_range& e)
+  {
+    fprintf(stderr,"ERROR: rp_idx out of range\n");
+    return -1;
+  };
+  return return_idx;
 };
 
 
@@ -50,7 +101,6 @@ void TCUbits::SetBits(UInt_t inbits[8])
 {
   for(Int_t i=0; i<8; i++) thisdsm[i] = inbits[i];
 };
-
 
 Bool_t TCUbits::Fired(char * trg)
 {
@@ -72,8 +122,22 @@ Bool_t TCUbits::Fired(char * trg)
 };
 
 
-// RP triggers
-//////////////////////
+
+
+Bool_t TCUbits::FiredRP(Int_t idx0)
+{
+  string name0;
+  try { name0 = rp_name.at(idx0); }
+  catch(const out_of_range& e)
+  {
+    fprintf(stderr,"ERROR: RP idx out of range\n");
+    return 0;
+  };
+  return FiredRP((char*)(name0.data()));
+};
+
+
+// RP TRIGGER LOGIC DEFINITIONS ////////////////////////////////////
 /*
 
 EOR = E1U | E1D | E2U | E2D 
@@ -91,23 +155,29 @@ Double Diffractive: DD = EOR & WOR & TOF & !BBC & !FMS
 [ In TCU inputs: EOR,WOR,ET,IT ]
 
 */
-Bool_t TCUbits::RP_EOR() { return Fired("RP_EOR"); };
-Bool_t TCUbits::RP_WOR() { return Fired("RP_WOR"); };
-Bool_t TCUbits::RP_ET() { return Fired("RP_ET"); };
-Bool_t TCUbits::RP_IT() { return Fired("RP_IT"); };
-Bool_t TCUbits::RP_SDE()
+Bool_t TCUbits::FiredRP(char * name0)
 {
-  return (Fired("RP_WOR") &&
-         !(Fired("ZDC-W")) && !(Fired("BBC-W")) &&
-          (Fired("ZDC-E") || Fired("BBC-E")));
+  if(!strcmp(name0,"EOR")) return Fired("RP_EOR");
+  else if(!strcmp(name0,"WOR")) return Fired("RP_WOR");
+
+  if(!strcmp(name0,"EXOR"))
+    return Fired("RP_EOR") && !(Fired("RP_WOR"));
+  if(!strcmp(name0,"WXOR"))
+    return Fired("RP_WOR") && !(Fired("RP_EOR"));
+
+  else if(!strcmp(name0,"SDE"))
+    return (Fired("RP_WOR") &&
+           !(Fired("ZDC-W")) && !(Fired("BBC-W")) &&
+            (Fired("ZDC-E") || Fired("BBC-E")));
+
+  else if(!strcmp(name0,"SDW"))
+    return (Fired("RP_EOR") &&
+           !(Fired("ZDC-E")) && !(Fired("BBC-E")) &&
+            (Fired("ZDC-W") || Fired("BBC-W")));
+
+  else if(!strcmp(name0,"IT")) return Fired("RP_IT");
+  else if(!strcmp(name0,"ET")) return Fired("RP_ET");
 };
-Bool_t TCUbits::RP_SDW()
-{
-  return (Fired("RP_EOR") &&
-         !(Fired("ZDC-E")) && !(Fired("BBC-E")) &&
-          (Fired("ZDC-W") || Fired("BBC-W")));
-};
-//Bool_t TCUbits::RP_DD()
 
 
 // TOF trigger; returns true if anything seen in TOF
