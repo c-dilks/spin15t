@@ -421,13 +421,13 @@ void Diagnostics()
             mass_temp[c][t]->Reset();
           };
         };
-      };
 
-      printf("%d -----------------------\n",runnum);
-      gSystem->RedirectOutput("diag_run_table.dat","a");
-      printf("%d %d\n",runcount,runnum);
-      gSystem->RedirectOutput(0);
-      runnum_tmp=runnum;
+        printf("%d -----------------------\n",runnum);
+        gSystem->RedirectOutput("diag_run_table.dat","a");
+        printf("%d %d\n",runcount,runnum);
+        gSystem->RedirectOutput(0);
+        runnum_tmp=runnum;
+      };
     }
 
     // rellum / pol cut
