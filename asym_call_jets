@@ -21,7 +21,7 @@ fi
 mkdir -p $outputdir
 rm $outputdir/*
 
-for class in "sph" "pi0" "thr" "etm"; do
+for class in "sph" "pi0" "thr" "etm" "jps"; do
   root -b -q -l 'Asym3.C('\"${class}\"','\"all\"')'
   root -b -q -l 'DrawAsymmetries.C('\"${class}\"')'
   mv -v spin.root ${outputdir}/spin_${class}.root
@@ -45,3 +45,7 @@ done
 
 echo ""
 echo "files written to ${outputdir}/"
+
+touch spinout.tar.gz
+rm spinout.tar.gz
+tar czvf spinout.tar.gz ${outputdir}

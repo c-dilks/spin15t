@@ -5,8 +5,8 @@
 
 void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blue")
 {
-  const Int_t NRP = 9;
-  enum rp_enum {kAll,kET,kIT,kSDE,kSDW,kEOR,kWOR,kXEOR,kXWOR};
+  const Int_t NRP = 10;
+  enum rp_enum {kAll,kET,kIT,kSDE,kSDW,kEOR,kWOR,kEXOR,kWXOR,kNORP};
 
   // draw switch
   Bool_t draw[NRP];
@@ -15,14 +15,16 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   draw[kET] = 0;
   draw[kIT] = 0;
 
-  draw[kSDE] = 1;
-  draw[kSDW] = 1;
+  draw[kSDE] = 0;
+  draw[kSDW] = 0;
 
-  draw[kEOR] = 0;
-  draw[kWOR] = 0;
+  draw[kEOR] = 1;
+  draw[kWOR] = 1;
 
-  draw[kXEOR] = 0;
-  draw[kXWOR] = 0;
+  draw[kEXOR] = 0;
+  draw[kWXOR] = 0;
+
+  draw[kNORP] = 1;
   /////////////////////////
 
   char rp_name[NRP][16];
@@ -33,8 +35,9 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   strcpy(rp_name[kSDW],"SDW");
   strcpy(rp_name[kEOR],"EOR");
   strcpy(rp_name[kWOR],"WOR");
-  strcpy(rp_name[kXEOR],"XEOR");
-  strcpy(rp_name[kXWOR],"XWOR");
+  strcpy(rp_name[kEXOR],"EXOR");
+  strcpy(rp_name[kWXOR],"WXOR");
+  strcpy(rp_name[kNORP],"NORP2");
 
   Int_t rp_plot_color[NRP];
   rp_plot_color[kAll] = (Int_t) kRed;
@@ -44,8 +47,9 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   rp_plot_color[kSDW] = (Int_t) kMagenta+1;
   rp_plot_color[kEOR] = (Int_t) kGray;
   rp_plot_color[kWOR] = (Int_t) kGray+3;
-  rp_plot_color[kXEOR] = (Int_t) kGray;
-  rp_plot_color[kXWOR] = (Int_t) kGray+3;
+  rp_plot_color[kEXOR] = (Int_t) kGray;
+  rp_plot_color[kWXOR] = (Int_t) kGray+3;
+  rp_plot_color[kNORP] = (Int_t) kBlue;
 
   Int_t A,Z;
   if(!strcmp(asym,"A_Sigma")) { Z=0; A=3; }

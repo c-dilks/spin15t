@@ -2,10 +2,11 @@
 *.root
 *.bat
 *.swp
-logfiles/*
+*.log
+*.err
+*.out
 patchset/*
 pdfset/*
-phiset/*
 pi0cntset/*
 study_fill/*
 study_runs/*

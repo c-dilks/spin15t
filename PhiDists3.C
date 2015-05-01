@@ -229,21 +229,32 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
         tcu->SetBits(lastdsm);
 
-        /////////////////////////////////////////////
         RP_satisfied=false; 
 
-        RP_satisfied=true; // (no RP restriction)
-        //if(tcu->RP_EOR()) RP_satisfied=true;
-        //if(tcu->RP_WOR()) RP_satisfied=true;
-        //if(tcu->RP_ET()) RP_satisfied=true;
-        //if(tcu->RP_IT()) RP_satisfied=true;
-        //if(tcu->RP_SDE()) RP_satisfied=true;
-        //if(tcu->RP_SDW()) RP_satisfied=true;
-        ////
-        //if(tcu->RP_EOR() && !(tcu->RP_WOR())) RP_satisfied=true; // XEOR
-        //if(tcu->RP_WOR() && !(tcu->RP_EOR())) RP_satisfied=true; // XWOR
 
-        
+        /////////////////////////////////////////////
+        RP_satisfied=true; // (no RP restriction)
+        //if(tcu->FiredRP("EOR")) RP_satisfied=true;
+        //if(tcu->FiredRP("WOR")) RP_satisfied=true;
+        //if(tcu->FiredRP("EXOR")) RP_satisfied=true;
+        //if(tcu->FiredRP("WXOR")) RP_satisfied=true;
+        //if(tcu->FiredRP("SDE")) RP_satisfied=true;
+        //if(tcu->FiredRP("SDW")) RP_satisfied=true;
+        //if(tcu->FiredRP("ET")) RP_satisfied=true;
+        //if(tcu->FiredRP("IT")) RP_satisfied=true;
+        //if(!(tcu->FiredRP("EOR")) && !(tcu->FiredRP("WOR"))) RP_satisfied=true; // NORP
+        /*
+        if(!(tcu->FiredRP("EOR")) && !(tcu->FiredRP("WOR")) &&
+           !(tcu->Fired("ZDC-E")) && !(tcu->Fired("ZDC-W")) &&
+           !(tcu->Fired("BBC-E"))
+          ) RP_satisfied=true; // NORP1
+          */
+        /*
+        if(!(tcu->FiredRP("EOR")) && !(tcu->FiredRP("WOR")) &&
+           !(tcu->Fired("ZDC-E")) && !(tcu->Fired("ZDC-W")) &&
+           tcu->Fired("BBC-E")
+          ) RP_satisfied=true; // NORP2
+          */
         /////////////////////////////////////////////
 
         if(RP_satisfied)
