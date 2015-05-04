@@ -1,0 +1,50 @@
+#!/bin/bash
+
+job="kincorr.bat"
+> $job
+
+echo "building batch file..."
+echo "Executable = `which root`" >> $job
+echo "Universe = vanilla" >> $job
+echo "notification = never" >> $job
+echo "getenv = True" >> $job
+echo '+Experiment = "star"' >> $job
+echo '+Job_Type = "cas"' >> $job
+echo "" >> $job
+
+log="logfiles"
+
+# count number of defined RP triggers
+# there is probably an easier way to do this...
+f="tempo.C"
+echo "void tempo() {" > $f
+echo "gSystem->Load(\"src/RunData.so\");" >> $f
+echo "TCUbits * tcu = new TCUbits();" >> $f
+echo "gSystem->RedirectOutput(\"tempo.dat\",\"w\");" >> $f
+echo "for(Int_t r=0; r<tcu->NRP; r++)" >> $f
+echo "printf(\"%s\\n\",tcu->RPname(r));" >> $f
+echo "gSystem->RedirectOutput(0);" >> $f
+echo "};" >> $f
+root -b -q tempo.C
+cat tempo.dat
+nrp=$(cat tempo.dat | wc -l)
+echo "nrp=$nrp"
+
+
+cnt=0
+
+while read line; do
+  let cnt++
+  echo "Arguments = -b -q Diagnostics.C(\\\"${line}\\\")" >> $job
+  echo "Log    = ${log}/Diag${cnt}.log" >> $job
+  echo "Output = ${log}/Diag${cnt}.out" >> $job
+  echo "Error  = ${log}/Diag${cnt}.err" >> $job
+  echo "Queue" >> $job
+  echo "" >> $job
+done < tempo.dat
+
+
+rm tempo.{dat,C}
+
+echo "Submitting $cnt jobs to condor"
+condor_submit $job

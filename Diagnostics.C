@@ -2,10 +2,11 @@
 // e.g., pt vs. eta
 // --> outputs all plots to diag_[trigger].pdf
 
-void Diagnostics()
+void Diagnostics(const char * RP_select="")
 {
   char outfilename[64];
-  sprintf(outfilename,"diag.root");
+  if(!strcmp(RP_select,"")) sprintf(outfilename,"diag.root");
+  else sprintf(outfilename,"diag_%s.root",RP_select);
   TFile * outfile = new TFile(outfilename,"RECREATE");
 
   const Int_t NBINS=400; // NUMBER OF BINS
@@ -146,6 +147,10 @@ void Diagnostics()
   char mass_vs_run_t[N_CLASS][N_TRIG][256];
   char z_vs_run_t[N_CLASS][N_TRIG][256];
 
+  char RP_select_t[32];
+  if(!strcmp(RP_select,"")) strcpy(RP_select_t,"");
+  else sprintf(RP_select_t," --- %s RP only",RP_select);
+
   Float_t low_mass,high_mass;
 
   for(Int_t t=0; t<N_TRIG; t++)
@@ -183,26 +188,33 @@ void Diagnostics()
       sprintf(mass_dist_n[c][t],"%s_%s_mass_dist",T->Name(t),ev->Name(c));
       sprintf(z_dist_n[c][t],"%s_%s_z_dist",T->Name(t),ev->Name(c));
 
-      sprintf(pt_vs_eta_t[c][t],"%s %s :: p_{T} vs. #eta;#eta;p_{T}",T->Name(t),ev->Title(c));
-      sprintf(en_vs_eta_t[c][t],"%s %s :: E vs. #eta;#eta;E",T->Name(t),ev->Title(c));
-      sprintf(pt_vs_phi_t[c][t],"%s %s :: p_{T} vs. #phi;#phi;p_{T}",T->Name(t),ev->Title(c));
-      sprintf(en_vs_phi_t[c][t],"%s %s :: E vs. #phi;#phi;E",T->Name(t),ev->Title(c));
-      sprintf(eta_vs_phi_t[c][t],"%s %s :: #eta vs. #phi;#phi;#eta",T->Name(t),ev->Title(c));
-      sprintf(pt_vs_en_t[c][t],"%s %s :: p_{T} vs. E;E;p_{T}",T->Name(t),ev->Title(c));
-      sprintf(y_vs_x_t[c][t],"%s %s :: y vs. x;x;y",T->Name(t),ev->Title(c));
+      sprintf(pt_vs_eta_t[c][t],"%s %s --- p_{T} vs. #eta%s;#eta;p_{T}",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(en_vs_eta_t[c][t],"%s %s --- E vs. #eta%s;#eta;E",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(pt_vs_phi_t[c][t],"%s %s --- p_{T} vs. #phi%s;#phi;p_{T}",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(en_vs_phi_t[c][t],"%s %s --- E vs. #phi%s;#phi;E",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(eta_vs_phi_t[c][t],"%s %s --- #eta vs. #phi%s;#phi;#eta",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(pt_vs_en_t[c][t],"%s %s --- p_{T} vs. E%s;E;p_{T}",
+        T->Name(t),ev->Title(c),RP_select_t);
+      sprintf(y_vs_x_t[c][t],"%s %s --- y vs. x%s;x;y",
+        T->Name(t),ev->Title(c),RP_select_t);
 
-      sprintf(z_vs_eta_t[c][t],"%s %s :: Z vs. #eta (%s cuts w/o Z-cut);#eta;Z",
-        T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(z_vs_phi_t[c][t],"%s %s :: Z vs. #phi (%s cuts w/o Z-cut);#phi;Z",
-        T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_vs_en_t[c][t],"%s %s :: M vs. E (%s cuts w/o M-cut);E;M",
-        T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_vs_pt_t[c][t],"%s %s :: M vs. p_{T} (%s cuts w/o M-cut);p_{T};M",
-        T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(mass_dist_t[c][t],"%s %s :: M distribution (%s cuts w/o M-cut);M",
-        T->Name(t),ev->Title(c),ev->Title(c));
-      sprintf(z_dist_t[c][t],"%s %s :: Z distribution (%s cuts w/o Z-cut);Z",
-        T->Name(t),ev->Title(c),ev->Title(c));
+      sprintf(z_vs_eta_t[c][t],"%s %s --- Z vs. #eta (%s cuts w/o Z-cut)%s;#eta;Z",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      sprintf(z_vs_phi_t[c][t],"%s %s --- Z vs. #phi (%s cuts w/o Z-cut)%s;#phi;Z",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      sprintf(mass_vs_en_t[c][t],"%s %s --- M vs. E (%s cuts w/o M-cut)%s;E;M",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      sprintf(mass_vs_pt_t[c][t],"%s %s --- M vs. p_{T} (%s cuts w/o M-cut)%s;p_{T};M",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      sprintf(mass_dist_t[c][t],"%s %s --- M distribution (%s cuts w/o M-cut)%s;M",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      sprintf(z_dist_t[c][t],"%s %s --- Z distribution (%s cuts w/o Z-cut)%s;Z",
+        T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
 
       pt_vs_eta[c][t] = new TH2D(pt_vs_eta_n[c][t],pt_vs_eta_t[c][t],
         NBINS,Eta_min,Eta_max,NBINS,Pt_min,Pt_max);
@@ -254,12 +266,18 @@ void Diagnostics()
       sprintf(mass_vs_run_n[c][t],"%s_%s_mass_vs_run",T->Name(t),ev->Name(c));
       sprintf(z_vs_run_n[c][t],"%s_%s_z_vs_run",T->Name(t),ev->Name(c));
 
-      sprintf(pt_vs_run_t[c][t],"%s %s :: p_{T} vs. run index",T->Name(t),ev->Title(c));
-      sprintf(en_vs_run_t[c][t],"%s %s :: E vs. run index",T->Name(t),ev->Title(c));
-      sprintf(eta_vs_run_t[c][t],"%s %s :: #eta vs. run index",T->Name(t),ev->Title(c));
-      sprintf(phi_vs_run_t[c][t],"%s %s :: #phi vs. run index",T->Name(t),ev->Title(c));
-      sprintf(mass_vs_run_t[c][t],"%s %s :: M vs. run index",T->Name(t),ev->Title(c));
-      sprintf(z_vs_run_t[c][t],"%s %s :: Z vs. run index",T->Name(t),ev->Title(c));
+      sprintf(pt_vs_run_t[c][t],"%s %s --- p_{T} vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
+      sprintf(en_vs_run_t[c][t],"%s %s --- E vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
+      sprintf(eta_vs_run_t[c][t],"%s %s --- #eta vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
+      sprintf(phi_vs_run_t[c][t],"%s %s --- #phi vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
+      sprintf(mass_vs_run_t[c][t],"%s %s --- M vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
+      sprintf(z_vs_run_t[c][t],"%s %s --- Z vs. run index%s",
+        T->Name(t),ev->Title(c),RP_select);
 
       pt_temp[c][t] = new TH1D(pt_temp_n[c][t],pt_temp_n[c][t],
         NBINS_VS_RUN,Pt_min,Pt_max);
@@ -324,7 +342,9 @@ void Diagnostics()
   };
 
   // trigger distribution
-  TH1D * trig_dist = new TH1D("trig_dist","Trigger Counts",N_TRIG,0,N_TRIG);
+  char trig_dist_t[64];
+  sprintf(trig_dist_t,"Trigger Counts%s",RP_select_t);
+  TH1D * trig_dist = new TH1D("trig_dist",trig_dist_t,N_TRIG,0,N_TRIG);
   for(Int_t t=0; t<N_TRIG; t++) trig_dist->GetXaxis()->SetBinLabel(t+1,T->Name(t));
 
   // trigger mix for FMS and RP
@@ -383,8 +403,8 @@ void Diagnostics()
   Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
 
   Int_t ENT = tr->GetEntries();
-  //ENT = 1000000; // uncomment to do a short loop for testing
-  system("touch diag_run_table.dat; rm diag_run_table.dat");
+  //ENT = 100000; // uncomment to do a short loop for testing
+  if(!strcmp(RP_select,"")) system("touch diag_run_table.dat; rm diag_run_table.dat");
   for(Int_t x=0; x<ENT; x++)
   {
     if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
@@ -435,7 +455,7 @@ void Diagnostics()
               z_vs_run[c][t]->SetBinContent(z_bn,z_temp[c][t]->GetBinContent(b));
               mass_vs_run[c][t]->SetBinContent(mass_bn,mass_temp[c][t]->GetBinContent(b));
 
-              //printf("%s %s :: pt_bn=%d runcount=%d pt_bc=%f content=%f\n",
+              //printf("%s %s -- pt_bn=%d runcount=%d pt_bc=%f content=%f\n",
                 //T->Name(t),ev->Name(c),pt_bn,runcount,pt_bc,pt_temp[c][t]->GetBinContent(b));
 
             };
@@ -449,9 +469,12 @@ void Diagnostics()
         };
 
         printf("%d -----------------------\n",runnum_tmp);
-        gSystem->RedirectOutput("diag_run_table.dat","a");
-        printf("%d %d\n",runcount,runnum_tmp);
-        gSystem->RedirectOutput(0);
+        if(!strcmp(RP_select,""))
+        {
+          gSystem->RedirectOutput("diag_run_table.dat","a");
+          printf("%d %d\n",runcount,runnum_tmp);
+          gSystem->RedirectOutput(0);
+        };
       };
       runnum_tmp=runnum;
     }
@@ -462,7 +485,9 @@ void Diagnostics()
       // fill trigger plot
       for(Int_t t=0; t<N_TRIG; t++)
       {
-        if(L2sum[1] & T->Mask(runnum,t,1)) trig_dist->Fill(t);
+        if(L2sum[1] & T->Mask(runnum,t,1) &&
+           (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
+          trig_dist->Fill(t);
       };
 
       // below here we have if statements for each event class; within each
@@ -481,18 +506,21 @@ void Diagnostics()
           {
             if(L2sum[1] & T->Mask(runnum,t,1))
             {
-              pt_vs_eta[c][t]->Fill(Eta,Pt);
-              en_vs_eta[c][t]->Fill(Eta,E12);
-              pt_vs_phi[c][t]->Fill(Phi,Pt);
-              en_vs_phi[c][t]->Fill(Phi,E12);
-              eta_vs_phi[c][t]->Fill(Phi,Eta);
-              pt_vs_en[c][t]->Fill(E12,Pt);
-              y_vs_x[c][t]->Fill(ev->Xd,ev->Yd);
+              if(!strcmp(RP_select,"") || tcu->FiredRP(RP_select))
+              {
+                pt_vs_eta[c][t]->Fill(Eta,Pt);
+                en_vs_eta[c][t]->Fill(Eta,E12);
+                pt_vs_phi[c][t]->Fill(Phi,Pt);
+                en_vs_phi[c][t]->Fill(Phi,E12);
+                eta_vs_phi[c][t]->Fill(Phi,Eta);
+                pt_vs_en[c][t]->Fill(E12,Pt);
+                y_vs_x[c][t]->Fill(ev->Xd,ev->Yd);
 
-              pt_temp[c][t]->Fill(Pt);
-              en_temp[c][t]->Fill(E12);
-              eta_temp[c][t]->Fill(Eta);
-              phi_temp[c][t]->Fill(Phi);
+                pt_temp[c][t]->Fill(Pt);
+                en_temp[c][t]->Fill(E12);
+                eta_temp[c][t]->Fill(Eta);
+                phi_temp[c][t]->Fill(Phi);
+              };
 
               // fill trigger overlap matrices
               for(Int_t tt=0; tt<N_TRIG; tt++)
@@ -521,7 +549,8 @@ void Diagnostics()
         {
           for(Int_t t=0; t<N_TRIG; t++)
           {
-            if(L2sum[1] & T->Mask(runnum,t,1))
+            if(L2sum[1] & T->Mask(runnum,t,1) &&
+               (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
             {
               mass_dist[c][t]->Fill(M12);
               mass_vs_en[c][t]->Fill(E12,M12);
@@ -548,7 +577,8 @@ void Diagnostics()
         {
           for(Int_t t=0; t<N_TRIG; t++)
           {
-            if(L2sum[1] & T->Mask(runnum,t,1))
+            if(L2sum[1] & T->Mask(runnum,t,1) &&
+               (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
             {
               z_vs_eta[c][t]->Fill(Eta,Z);
               z_vs_phi[c][t]->Fill(Phi,Z);

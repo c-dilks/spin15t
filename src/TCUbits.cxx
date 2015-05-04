@@ -61,6 +61,7 @@ void TCUbits::InitRPdefs()
   rp_idx.insert(pair<string,Int_t>(string("SDW"),ii++));
   rp_idx.insert(pair<string,Int_t>(string("ET"),ii++));
   rp_idx.insert(pair<string,Int_t>(string("IT"),ii++));
+  rp_idx.insert(pair<string,Int_t>(string("DD"),ii++));
 
   NRP = ii;
 
@@ -146,11 +147,10 @@ WOR = W1U | W1D | W2U | W2D
 Elastic Trigger:    ET = [ (E1U | E2U) & (W1D | W2D) ] | [ (E1D | E2D) & (W1U | W2U) ]
 Inelastic Trigger:  IT = [ (E1U | E2U) & (W1U | W2U) ] | [ (E1D | E2D) & (W1D | W2D) ] 
 
-Single Diffraction to E: SDE = WOR & !ZDCW & !BBCW & (ZDCE | BBCE)
-Single Diffraction to W: SDW = EOR & !ZDCE & !BBCE & (ZDCW | BBCW) 
+Single Diffraction to W: SDE = EOR & !ZDCE & !BBCE & (ZDCW | BBCW) 
+Single Diffraction to E: SDW = WOR & !ZDCW & !BBCW & (ZDCE | BBCE)
 
-Double Diffractive: DD = EOR & WOR & TOF & !BBC & !FMS 
-                         (currently not including !FMS term)
+Double Diffractive: DD = EOR & WOR & TOF & !BBC
 
 [ In TCU inputs: EOR,WOR,ET,IT ]
 
@@ -166,17 +166,23 @@ Bool_t TCUbits::FiredRP(char * name0)
     return Fired("RP_WOR") && !(Fired("RP_EOR"));
 
   else if(!strcmp(name0,"SDE"))
-    return (Fired("RP_WOR") &&
-           !(Fired("ZDC-W")) && !(Fired("BBC-W")) &&
-            (Fired("ZDC-E") || Fired("BBC-E")));
-
-  else if(!strcmp(name0,"SDW"))
     return (Fired("RP_EOR") &&
            !(Fired("ZDC-E")) && !(Fired("BBC-E")) &&
             (Fired("ZDC-W") || Fired("BBC-W")));
 
+  else if(!strcmp(name0,"SDW"))
+    return (Fired("RP_WOR") &&
+           !(Fired("ZDC-W")) && !(Fired("BBC-W")) &&
+            (Fired("ZDC-E") || Fired("BBC-E")));
+
   else if(!strcmp(name0,"IT")) return Fired("RP_IT");
   else if(!strcmp(name0,"ET")) return Fired("RP_ET");
+
+  else if(!strcmp(name0,"DD"))
+    return (Fired("RP_EOR") &&
+            Fired("RP_WOR") &&
+            FiredTOF() &&
+            !(FiredBBC()));
 };
 
 
