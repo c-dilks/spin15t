@@ -1,17 +1,16 @@
-// shows the dependence of various kinematics on geometry
-// e.g., pt vs. eta
-// --> outputs all plots to diag_[trigger].pdf
+// plots kinematic correlation and trigger overlaps for 
+// all FMS triggers, with the option of cutting on RP triggers;
+//
+// this script only stream in one redset file and is to be run
+// within condor
 
-void Diagnostics(const char * RP_select="")
+void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
+                    const char * RP_select="")
 {
-  char outfilename[64];
-  if(!strcmp(RP_select,"")) sprintf(outfilename,"diag.root");
-  else sprintf(outfilename,"diag_%s.root",RP_select);
-  TFile * outfile = new TFile(outfilename,"RECREATE");
 
   const Int_t NBINS=400; // NUMBER OF BINS
   const Int_t NBINS_VS_RUN=100; // number of bins for variable vs. run index plots
-  const Int_t MAXRUNS=500; // arbitrary max number of runs (so we don't waste time counting them...)
+  const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
   gSystem->Load("src/RunData.so");
   RunData * RD = new RunData();
@@ -21,9 +20,12 @@ void Diagnostics(const char * RP_select="")
   TCUbits * tcu = new TCUbits();
 
 
-  // open chain
-  TChain * tr = new TChain("str");
-  tr->Add("./redset/Red*.root");
+  // open tree
+  char infile_full_name[256];
+  sprintf(infile_full_name,"redset/%s",infile_name);
+  TFile * infile = new TFile(infile_full_name,"READ");
+  TTree * tr = (TTree*) infile->Get("str");
+
   Float_t E12,Pt,Eta,Phi,M12,Z,b_pol,y_pol;
   Bool_t kicked,isConsistent;
   Int_t runnum,bx;
@@ -84,19 +86,12 @@ void Diagnostics(const char * RP_select="")
   TH1D * mass_dist[N_CLASS][N_TRIG];
   TH1D * z_dist[N_CLASS][N_TRIG];
 
-  TH1D * pt_temp[N_CLASS][N_TRIG];
-  TH1D * en_temp[N_CLASS][N_TRIG];
-  TH1D * eta_temp[N_CLASS][N_TRIG];
-  TH1D * phi_temp[N_CLASS][N_TRIG];
-  TH1D * mass_temp[N_CLASS][N_TRIG];
-  TH1D * z_temp[N_CLASS][N_TRIG];
-
-  TH2D * pt_vs_run[N_CLASS][N_TRIG];
-  TH2D * en_vs_run[N_CLASS][N_TRIG];
-  TH2D * eta_vs_run[N_CLASS][N_TRIG];
-  TH2D * phi_vs_run[N_CLASS][N_TRIG];
-  TH2D * mass_vs_run[N_CLASS][N_TRIG];
-  TH2D * z_vs_run[N_CLASS][N_TRIG];
+  TH1D * pt_rdist[N_CLASS][N_TRIG][MAXRUNS];
+  TH1D * en_rdist[N_CLASS][N_TRIG][MAXRUNS];
+  TH1D * eta_rdist[N_CLASS][N_TRIG][MAXRUNS];
+  TH1D * phi_rdist[N_CLASS][N_TRIG][MAXRUNS];
+  TH1D * mass_rdist[N_CLASS][N_TRIG][MAXRUNS];
+  TH1D * z_rdist[N_CLASS][N_TRIG][MAXRUNS];
 
   char pt_vs_eta_n[N_CLASS][N_TRIG][64];
   char en_vs_eta_n[N_CLASS][N_TRIG][64];
@@ -126,26 +121,19 @@ void Diagnostics(const char * RP_select="")
   char mass_dist_t[N_CLASS][N_TRIG][256];
   char z_dist_t[N_CLASS][N_TRIG][256];
 
-  char pt_temp_n[N_CLASS][N_TRIG][64];
-  char en_temp_n[N_CLASS][N_TRIG][64];
-  char eta_temp_n[N_CLASS][N_TRIG][64];
-  char phi_temp_n[N_CLASS][N_TRIG][64];
-  char mass_temp_n[N_CLASS][N_TRIG][64];
-  char z_temp_n[N_CLASS][N_TRIG][64];
+  char pt_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
+  char en_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
+  char eta_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
+  char phi_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
+  char mass_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
+  char z_rdist_n[N_CLASS][N_TRIG][MAXRUNS][64];
 
-  char pt_vs_run_n[N_CLASS][N_TRIG][64];
-  char en_vs_run_n[N_CLASS][N_TRIG][64];
-  char eta_vs_run_n[N_CLASS][N_TRIG][64];
-  char phi_vs_run_n[N_CLASS][N_TRIG][64];
-  char mass_vs_run_n[N_CLASS][N_TRIG][64];
-  char z_vs_run_n[N_CLASS][N_TRIG][64];
-
-  char pt_vs_run_t[N_CLASS][N_TRIG][256];
-  char en_vs_run_t[N_CLASS][N_TRIG][256];
-  char eta_vs_run_t[N_CLASS][N_TRIG][256];
-  char phi_vs_run_t[N_CLASS][N_TRIG][256];
-  char mass_vs_run_t[N_CLASS][N_TRIG][256];
-  char z_vs_run_t[N_CLASS][N_TRIG][256];
+  char pt_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
+  char en_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
+  char eta_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
+  char phi_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
+  char mass_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
+  char z_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
 
   char RP_select_t[32];
   if(!strcmp(RP_select,"")) strcpy(RP_select_t,"");
@@ -203,6 +191,7 @@ void Diagnostics(const char * RP_select="")
       sprintf(y_vs_x_t[c][t],"%s %s --- y vs. x%s;x;y",
         T->Name(t),ev->Title(c),RP_select_t);
 
+      printf("here\n");
       sprintf(z_vs_eta_t[c][t],"%s %s --- Z vs. #eta (%s cuts w/o Z-cut)%s;#eta;Z",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
       sprintf(z_vs_phi_t[c][t],"%s %s --- Z vs. #phi (%s cuts w/o Z-cut)%s;#phi;Z",
@@ -211,10 +200,13 @@ void Diagnostics(const char * RP_select="")
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
       sprintf(mass_vs_pt_t[c][t],"%s %s --- M vs. p_{T} (%s cuts w/o M-cut)%s;p_{T};M",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      printf("VVVVV\n");
       sprintf(mass_dist_t[c][t],"%s %s --- M distribution (%s cuts w/o M-cut)%s;M",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      printf("%s\n",mass_dist_t[c][t]);
       sprintf(z_dist_t[c][t],"%s %s --- Z distribution (%s cuts w/o Z-cut)%s;Z",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
+      printf("^^^^^\n");
 
       pt_vs_eta[c][t] = new TH2D(pt_vs_eta_n[c][t],pt_vs_eta_t[c][t],
         NBINS,Eta_min,Eta_max,NBINS,Pt_min,Pt_max);
@@ -241,69 +233,38 @@ void Diagnostics(const char * RP_select="")
 
       z_dist[c][t] = new TH1D(z_dist_n[c][t],z_dist_t[c][t],NBINS,0,1);
       mass_dist[c][t] = new TH1D(mass_dist_n[c][t],mass_dist_t[c][t],NBINS,low_mass,high_mass);
-      printf("VVVVV\n");
-      printf("^^^^^\n");
 
-      printf("----- c=%d t=%d\n",c,t);
-      sprintf(pt_temp_n[c][t],"%s_%s_pt_temp",T->Name(t),ev->Name(c));
-      sprintf(en_temp_n[c][t],"%s_%s_en_temp",T->Name(t),ev->Name(c));
-      sprintf(eta_temp_n[c][t],"%s_%s_eta_temp",T->Name(t),ev->Name(c));
-      sprintf(phi_temp_n[c][t],"%s_%s_phi_temp",T->Name(t),ev->Name(c));
-      sprintf(mass_temp_n[c][t],"%s_%s_mass_temp",T->Name(t),ev->Name(c));
-      sprintf(z_temp_n[c][t],"%s_%s_z_temp",T->Name(t),ev->Name(c));
+      printf("----- c=%d t=%d %s %s\n",c,t,ev->Name(c),T->Name(t));
+      for(Int_t ru=0; ru<MAXRUNS; ru++)
+      {
+        sprintf(pt_rdist_n[c][t][ru],"%s_%s_pt_rdist",T->Name(t),ev->Name(c));
+        sprintf(en_rdist_n[c][t][ru],"%s_%s_en_rdist",T->Name(t),ev->Name(c));
+        sprintf(eta_rdist_n[c][t][ru],"%s_%s_eta_rdist",T->Name(t),ev->Name(c));
+        sprintf(phi_rdist_n[c][t][ru],"%s_%s_phi_rdist",T->Name(t),ev->Name(c));
+        sprintf(mass_rdist_n[c][t][ru],"%s_%s_mass_rdist",T->Name(t),ev->Name(c));
+        sprintf(z_rdist_n[c][t][ru],"%s_%s_z_rdist",T->Name(t),ev->Name(c));
 
-      printf("%s\n",pt_temp_n[c][t]);
-      printf("%s\n",en_temp_n[c][t]);
-      printf("%s\n",eta_temp_n[c][t]);
-      printf("%s\n",phi_temp_n[c][t]);
-      printf("%s\n",mass_temp_n[c][t]);
-      printf("%s\n",z_temp_n[c][t]);
+        sprintf(pt_rdist_n_tmp[c][t][ru],"%s_%d",pt_rdist_n[c][t][ru],ru);
+        sprintf(en_rdist_n_tmp[c][t][ru],"%s_%d",en_rdist_n[c][t][ru],ru);
+        sprintf(eta_rdist_n_tmp[c][t][ru],"%s_%d",eta_rdist_n[c][t][ru],ru);
+        sprintf(phi_rdist_n_tmp[c][t][ru],"%s_%d",phi_rdist_n[c][t][ru],ru);
+        sprintf(mass_rdist_n_tmp[c][t][ru],"%s_%d",mass_rdist_n[c][t][ru],ru);
+        sprintf(z_rdist_n_tmp[c][t][ru],"%s_%d",z_rdist_n[c][t][ru],ru);
 
-      sprintf(pt_vs_run_n[c][t],"%s_%s_pt_vs_run",T->Name(t),ev->Name(c));
-      sprintf(en_vs_run_n[c][t],"%s_%s_en_vs_run",T->Name(t),ev->Name(c));
-      sprintf(eta_vs_run_n[c][t],"%s_%s_eta_vs_run",T->Name(t),ev->Name(c));
-      sprintf(phi_vs_run_n[c][t],"%s_%s_phi_vs_run",T->Name(t),ev->Name(c));
-      sprintf(mass_vs_run_n[c][t],"%s_%s_mass_vs_run",T->Name(t),ev->Name(c));
-      sprintf(z_vs_run_n[c][t],"%s_%s_z_vs_run",T->Name(t),ev->Name(c));
+        pt_rdist[c][t][ru] = new TH1D(pt_rdist_n_tmp[c][t][ru],pt_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,Pt_min,Pt_max);
+        en_rdist[c][t][ru] = new TH1D(en_rdist_n_tmp[c][t][ru],en_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,E12_min,E12_max);
+        eta_rdist[c][t][ru] = new TH1D(eta_rdist_n_tmp[c][t][ru],eta_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,Eta_min,Eta_max);
+        phi_rdist[c][t][ru] = new TH1D(phi_rdist_n_tmp[c][t][ru],phi_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,Phi_min,Phi_max);
+        mass_rdist[c][t][ru] = new TH1D(mass_rdist_n_tmp[c][t][ru],mass_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,low_mass,high_mass);
+        z_rdist[c][t][ru] = new TH1D(z_rdist_n_tmp[c][t][ru],z_rdist_n_tmp[c][t][ru],
+          NBINS_VS_RUN,0,1);
 
-      sprintf(pt_vs_run_t[c][t],"%s %s --- p_{T} vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-      sprintf(en_vs_run_t[c][t],"%s %s --- E vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-      sprintf(eta_vs_run_t[c][t],"%s %s --- #eta vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-      sprintf(phi_vs_run_t[c][t],"%s %s --- #phi vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-      sprintf(mass_vs_run_t[c][t],"%s %s --- M vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-      sprintf(z_vs_run_t[c][t],"%s %s --- Z vs. run index%s",
-        T->Name(t),ev->Title(c),RP_select);
-
-      pt_temp[c][t] = new TH1D(pt_temp_n[c][t],pt_temp_n[c][t],
-        NBINS_VS_RUN,Pt_min,Pt_max);
-      en_temp[c][t] = new TH1D(en_temp_n[c][t],en_temp_n[c][t],
-        NBINS_VS_RUN,E12_min,E12_max);
-      eta_temp[c][t] = new TH1D(eta_temp_n[c][t],eta_temp_n[c][t],
-        NBINS_VS_RUN,Eta_min,Eta_max);
-      phi_temp[c][t] = new TH1D(phi_temp_n[c][t],phi_temp_n[c][t],
-        NBINS_VS_RUN,Phi_min,Phi_max);
-      mass_temp[c][t] = new TH1D(mass_temp_n[c][t],mass_temp_n[c][t],
-        NBINS_VS_RUN,low_mass,high_mass);
-      z_temp[c][t] = new TH1D(z_temp_n[c][t],z_temp_n[c][t],
-        NBINS_VS_RUN,0,1);
-
-      pt_vs_run[c][t] = new TH2D(pt_vs_run_n[c][t],pt_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Pt_min,Pt_max);
-      en_vs_run[c][t] = new TH2D(en_vs_run_n[c][t],en_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,E12_min,E12_max);
-      eta_vs_run[c][t] = new TH2D(eta_vs_run_n[c][t],eta_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Eta_min,Eta_max);
-      phi_vs_run[c][t] = new TH2D(phi_vs_run_n[c][t],phi_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,Phi_min,Phi_max);
-      mass_vs_run[c][t] = new TH2D(mass_vs_run_n[c][t],mass_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,low_mass,high_mass);
-      z_vs_run[c][t] = new TH2D(z_vs_run_n[c][t],z_vs_run_t[c][t],
-        MAXRUNS,0,MAXRUNS,NBINS_VS_RUN,0,1);
+      };
     };
   };
 
@@ -398,17 +359,19 @@ void Diagnostics(const char * RP_select="")
 
   // fill histograms
   Int_t runnum_tmp=0;
-  Int_t runcount=0;
+  Int_t runcount=-1;
   Double_t pt_bc,en_bc,eta_bc,phi_bc,z_bc,mass_bc;
   Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
 
   Int_t ENT = tr->GetEntries();
-  //ENT = 100000; // uncomment to do a short loop for testing
+  ENT = 100000; // uncomment to do a short loop for testing
   if(!strcmp(RP_select,"")) system("touch diag_run_table.dat; rm diag_run_table.dat");
   for(Int_t x=0; x<ENT; x++)
   {
     if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
     tr->GetEntry(x);
+    if(x==0) runnum_tmp = runnum;
+
     kicked = RD->Kicked(runnum,bx);
 
     // get new polarisation and check rellum
@@ -419,61 +382,35 @@ void Diagnostics(const char * RP_select="")
       y_pol = RD->YellPol(runnum);
       isConsistent = RD->RellumConsistent(runnum);
 
-      if(runnum_tmp!=0) runcount++;
-      if(runcount>0)
+      if(x+1==ENT) runnum_tmp=runnum;
+      runcount++;
+      for(Int_t t=0; t<N_TRIG; t++)
       {
-        for(Int_t t=0; t<N_TRIG; t++)
+        for(Int_t c=0; c<N_CLASS; c++)
         {
-          for(Int_t c=0; c<N_CLASS; c++)
-          {
-            pt_temp[c][t]->Scale(1/pt_temp[c][t]->Integral());
-            en_temp[c][t]->Scale(1/en_temp[c][t]->Integral());
-            eta_temp[c][t]->Scale(1/eta_temp[c][t]->Integral());
-            phi_temp[c][t]->Scale(1/phi_temp[c][t]->Integral());
-            z_temp[c][t]->Scale(1/z_temp[c][t]->Integral());
-            mass_temp[c][t]->Scale(1/mass_temp[c][t]->Integral());
-            for(Int_t b=1; b<NBINS_VS_RUN; b++)
-            {
-              pt_bc = pt_temp[c][t]->GetBinCenter(b);
-              en_bc = en_temp[c][t]->GetBinCenter(b);
-              eta_bc = eta_temp[c][t]->GetBinCenter(b);
-              phi_bc = phi_temp[c][t]->GetBinCenter(b);
-              z_bc = z_temp[c][t]->GetBinCenter(b);
-              mass_bc = mass_temp[c][t]->GetBinCenter(b);
+      printf(">>>>>>>>> t=%d c=%d %s\n",t,c,pt_rdist_n[c][t][runcount]);
+          sprintf(pt_rdist_n[c][t][runcount],"%s_%d",pt_rdist_n[c][t][runcount],runnum_tmp);
+          sprintf(en_rdist_n[c][t][runcount],"%s_%d",en_rdist_n[c][t][runcount],runnum_tmp);
+          sprintf(eta_rdist_n[c][t][runcount],"%s_%d",eta_rdist_n[c][t][runcount],runnum_tmp);
+          sprintf(phi_rdist_n[c][t][runcount],"%s_%d",phi_rdist_n[c][t][runcount],runnum_tmp);
+          sprintf(z_rdist_n[c][t][runcount],"%s_%d",z_rdist_n[c][t][runcount],runnum_tmp);
+          sprintf(mass_rdist_n[c][t][runcount],"%s_%d",mass_rdist_n[c][t][runcount],runnum_tmp);
 
-              pt_bn = pt_vs_run[c][t]->FindBin(runcount,pt_bc);
-              en_bn = en_vs_run[c][t]->FindBin(runcount,en_bc);
-              eta_bn = eta_vs_run[c][t]->FindBin(runcount,eta_bc);
-              phi_bn = phi_vs_run[c][t]->FindBin(runcount,phi_bc);
-              z_bn = z_vs_run[c][t]->FindBin(runcount,z_bc);
-              mass_bn = mass_vs_run[c][t]->FindBin(runcount,mass_bc);
+      printf("|||||||||||| t=%d c=%d %s\n",t,c,pt_rdist_n[c][t][runcount]);
 
-              pt_vs_run[c][t]->SetBinContent(pt_bn,pt_temp[c][t]->GetBinContent(b));
-              en_vs_run[c][t]->SetBinContent(en_bn,en_temp[c][t]->GetBinContent(b));
-              eta_vs_run[c][t]->SetBinContent(eta_bn,eta_temp[c][t]->GetBinContent(b));
-              phi_vs_run[c][t]->SetBinContent(phi_bn,phi_temp[c][t]->GetBinContent(b));
-              z_vs_run[c][t]->SetBinContent(z_bn,z_temp[c][t]->GetBinContent(b));
-              mass_vs_run[c][t]->SetBinContent(mass_bn,mass_temp[c][t]->GetBinContent(b));
+          pt_rdist[c][t][runcount]->SetName(pt_rdist_n[c][t][runcount]);
+          en_rdist[c][t][runcount]->SetName(en_rdist_n[c][t][runcount]);
+          eta_rdist[c][t][runcount]->SetName(eta_rdist_n[c][t][runcount]);
+          phi_rdist[c][t][runcount]->SetName(phi_rdist_n[c][t][runcount]);
+          z_rdist[c][t][runcount]->SetName(z_rdist_n[c][t][runcount]);
+          mass_rdist[c][t][runcount]->SetName(mass_rdist_n[c][t][runcount]);
 
-              //printf("%s %s -- pt_bn=%d runcount=%d pt_bc=%f content=%f\n",
-                //T->Name(t),ev->Name(c),pt_bn,runcount,pt_bc,pt_temp[c][t]->GetBinContent(b));
-
-            };
-            pt_temp[c][t]->Reset();
-            en_temp[c][t]->Reset();
-            eta_temp[c][t]->Reset();
-            phi_temp[c][t]->Reset();
-            z_temp[c][t]->Reset();
-            mass_temp[c][t]->Reset();
-          };
-        };
-
-        printf("%d -----------------------\n",runnum_tmp);
-        if(!strcmp(RP_select,""))
-        {
-          gSystem->RedirectOutput("diag_run_table.dat","a");
-          printf("%d %d\n",runcount,runnum_tmp);
-          gSystem->RedirectOutput(0);
+          pt_rdist[c][t][runcount]->SetTitle(pt_rdist_n[c][t][runcount]);
+          en_rdist[c][t][runcount]->SetTitle(en_rdist_n[c][t][runcount]);
+          eta_rdist[c][t][runcount]->SetTitle(eta_rdist_n[c][t][runcount]);
+          phi_rdist[c][t][runcount]->SetTitle(phi_rdist_n[c][t][runcount]);
+          z_rdist[c][t][runcount]->SetTitle(z_rdist_n[c][t][runcount]);
+          mass_rdist[c][t][runcount]->SetTitle(mass_rdist_n[c][t][runcount]);
         };
       };
       runnum_tmp=runnum;
@@ -516,10 +453,10 @@ void Diagnostics(const char * RP_select="")
                 pt_vs_en[c][t]->Fill(E12,Pt);
                 y_vs_x[c][t]->Fill(ev->Xd,ev->Yd);
 
-                pt_temp[c][t]->Fill(Pt);
-                en_temp[c][t]->Fill(E12);
-                eta_temp[c][t]->Fill(Eta);
-                phi_temp[c][t]->Fill(Phi);
+                pt_rdist[c][t][runcount]->Fill(Pt);
+                en_rdist[c][t][runcount]->Fill(E12);
+                eta_rdist[c][t][runcount]->Fill(Eta);
+                phi_rdist[c][t][runcount]->Fill(Phi);
               };
 
               // fill trigger overlap matrices
@@ -560,7 +497,7 @@ void Diagnostics(const char * RP_select="")
               mass_dist[c][t]->Fill(M12);
               mass_vs_en[c][t]->Fill(E12,M12);
               mass_vs_pt[c][t]->Fill(Pt,M12);
-              mass_temp[c][t]->Fill(M12);
+              mass_rdist[c][t][runcount]->Fill(M12);
               // fill kinematic-dependent mass distributions for pions
               if(c==ev->Idx("pi0"))
               {
@@ -588,7 +525,7 @@ void Diagnostics(const char * RP_select="")
               z_vs_eta[c][t]->Fill(Eta,Z);
               z_vs_phi[c][t]->Fill(Phi,Z);
               z_dist[c][t]->Fill(Z);
-              z_temp[c][t]->Fill(Z);
+              z_rdist[c][t][runcount]->Fill(Z);
             };
           };
         };
@@ -614,13 +551,6 @@ void Diagnostics(const char * RP_select="")
   TObjArray * mass_dist_for_enbin_arr[10];
   TObjArray * mass_dist_for_ptbin_arr[10];
 
-  TObjArray * pt_vs_run_arr[N_CLASS];
-  TObjArray * en_vs_run_arr[N_CLASS];
-  TObjArray * eta_vs_run_arr[N_CLASS];
-  TObjArray * phi_vs_run_arr[N_CLASS];
-  TObjArray * z_vs_run_arr[N_CLASS];
-  TObjArray * mass_vs_run_arr[N_CLASS];
-
   char pt_vs_eta_arr_n[N_CLASS][32];
   char en_vs_eta_arr_n[N_CLASS][32];
   char pt_vs_phi_arr_n[N_CLASS][32];
@@ -636,12 +566,6 @@ void Diagnostics(const char * RP_select="")
   char z_dist_arr_n[N_CLASS][32];
   char mass_dist_for_enbin_arr_n[10][32];
   char mass_dist_for_ptbin_arr_n[10][32];
-  char pt_vs_run_arr_n[N_CLASS][32];
-  char en_vs_run_arr_n[N_CLASS][32];
-  char eta_vs_run_arr_n[N_CLASS][32];
-  char phi_vs_run_arr_n[N_CLASS][32];
-  char z_vs_run_arr_n[N_CLASS][32];
-  char mass_vs_run_arr_n[N_CLASS][32];
 
   for(Int_t c=0; c<N_CLASS; c++)
   {
@@ -658,12 +582,6 @@ void Diagnostics(const char * RP_select="")
     sprintf(mass_vs_pt_arr_n[c],"%s_mass_vs_pt_arr",ev->Name(c));
     sprintf(mass_dist_arr_n[c],"%s_mass_dist_arr",ev->Name(c));
     sprintf(z_dist_arr_n[c],"%s_z_dist_arr",ev->Name(c));
-    sprintf(pt_vs_run_arr_n[c],"%s_pt_vs_run_arr",ev->Name(c));
-    sprintf(en_vs_run_arr_n[c],"%s_en_vs_run_arr",ev->Name(c));
-    sprintf(eta_vs_run_arr_n[c],"%s_eta_vs_run_arr",ev->Name(c));
-    sprintf(phi_vs_run_arr_n[c],"%s_phi_vs_run_arr",ev->Name(c));
-    sprintf(z_vs_run_arr_n[c],"%s_z_vs_run_arr",ev->Name(c));
-    sprintf(mass_vs_run_arr_n[c],"%s_mass_vs_run_arr",ev->Name(c));
     pt_vs_eta_arr[c] = new TObjArray();
     en_vs_eta_arr[c] = new TObjArray();
     pt_vs_phi_arr[c] = new TObjArray();
@@ -677,12 +595,6 @@ void Diagnostics(const char * RP_select="")
     mass_vs_pt_arr[c] = new TObjArray();
     mass_dist_arr[c] = new TObjArray();
     z_dist_arr[c] = new TObjArray();
-    pt_vs_run_arr[c] = new TObjArray();
-    en_vs_run_arr[c] = new TObjArray();
-    eta_vs_run_arr[c] = new TObjArray();
-    phi_vs_run_arr[c] = new TObjArray();
-    z_vs_run_arr[c] = new TObjArray();
-    mass_vs_run_arr[c] = new TObjArray();
   };
   for(Int_t k=0; k<10; k++)
   {
@@ -709,12 +621,6 @@ void Diagnostics(const char * RP_select="")
       mass_vs_pt_arr[c]->AddLast(mass_vs_pt[c][t]);
       mass_dist_arr[c]->AddLast(mass_dist[c][t]);
       z_dist_arr[c]->AddLast(z_dist[c][t]);
-      pt_vs_run_arr[c]->AddLast(pt_vs_run[c][t]);
-      en_vs_run_arr[c]->AddLast(en_vs_run[c][t]);
-      eta_vs_run_arr[c]->AddLast(eta_vs_run[c][t]);
-      phi_vs_run_arr[c]->AddLast(phi_vs_run[c][t]);
-      z_vs_run_arr[c]->AddLast(z_vs_run[c][t]);
-      mass_vs_run_arr[c]->AddLast(mass_vs_run[c][t]);
     };
     for(Int_t k=0; k<10; k++)
     {
@@ -725,7 +631,15 @@ void Diagnostics(const char * RP_select="")
 
 
   // write output
+  char outfilename[256];
+  char RP_suffix[16];
+  sscanf(infile_name,"RedOutput%s",outfilename);
+  if(!strcmp(RP_select,"")) strcpy(RP_suffix,"");
+  else sprintf(RP_suffix,"_%s",RP_select);
+  sprintf(outfilename,"diagset/diag%s.%s",RP_suffix,outfilename);
+  TFile * outfile = new TFile(outfilename,"RECREATE");
   outfile->cd();
+
   trig_dist->Write();
   outfile->mkdir("overlap_matrices");
   outfile->cd("overlap_matrices");
@@ -737,12 +651,20 @@ void Diagnostics(const char * RP_select="")
   outfile->cd("hot_tower_search");
   for(Int_t c=0; c<N_CLASS; c++)
   {
-    pt_vs_run_arr[c]->Write(pt_vs_run_arr_n[c],TObject::kSingleKey);
-    en_vs_run_arr[c]->Write(en_vs_run_arr_n[c],TObject::kSingleKey);
-    eta_vs_run_arr[c]->Write(eta_vs_run_arr_n[c],TObject::kSingleKey);
-    phi_vs_run_arr[c]->Write(phi_vs_run_arr_n[c],TObject::kSingleKey);
-    z_vs_run_arr[c]->Write(z_vs_run_arr_n[c],TObject::kSingleKey);
-    mass_vs_run_arr[c]->Write(mass_vs_run_arr_n[c],TObject::kSingleKey);
+    for(Int_t ru=0; ru<=runcount; ru++)
+    {
+      printf("ru=%d c=%d %p\n",ru,c,(void*)pt_rdist[c][t][ru]);
+      if(pt_rdist[c][t][ru]!=NULL)
+      {
+        printf("%s\n",pt_rdist_n[c][t][ru]);
+        pt_rdist[c][t][ru]->Write(pt_rdist_n[c][t][ru]);
+        en_rdist[c][t][ru]->Write(en_rdist_n[c][t][ru]);
+        eta_rdist[c][t][ru]->Write(eta_rdist_n[c][t][ru]);
+        phi_rdist[c][t][ru]->Write(phi_rdist_n[c][t][ru]);
+        z_rdist[c][t][ru]->Write(z_rdist_n[c][t][ru]);
+        mass_rdist[c][t][ru]->Write(mass_rdist_n[c][t][ru]);
+      };
+    };
   };
   outfile->cd();
   for(Int_t c=0; c<N_CLASS; c++)
