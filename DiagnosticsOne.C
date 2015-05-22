@@ -9,7 +9,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
 {
 
   const Int_t NBINS=400; // NUMBER OF BINS
-  const Int_t NBINS_VS_RUN=100; // number of bins for variable vs. run index plots
+  const Int_t NBINS_RDIST=100; // number of bins for variable vs. run index plots
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
   gSystem->Load("src/RunData.so");
@@ -191,7 +191,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
       sprintf(y_vs_x_t[c][t],"%s %s --- y vs. x%s;x;y",
         T->Name(t),ev->Title(c),RP_select_t);
 
-      printf("here\n");
+      //printf("here\n");
       sprintf(z_vs_eta_t[c][t],"%s %s --- Z vs. #eta (%s cuts w/o Z-cut)%s;#eta;Z",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
       sprintf(z_vs_phi_t[c][t],"%s %s --- Z vs. #phi (%s cuts w/o Z-cut)%s;#phi;Z",
@@ -200,13 +200,13 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
       sprintf(mass_vs_pt_t[c][t],"%s %s --- M vs. p_{T} (%s cuts w/o M-cut)%s;p_{T};M",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
-      printf("VVVVV\n");
+      //printf("VVVVV\n");
       sprintf(mass_dist_t[c][t],"%s %s --- M distribution (%s cuts w/o M-cut)%s;M",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
-      printf("%s\n",mass_dist_t[c][t]);
+      //printf("%s\n",mass_dist_t[c][t]);
       sprintf(z_dist_t[c][t],"%s %s --- Z distribution (%s cuts w/o Z-cut)%s;Z",
         T->Name(t),ev->Title(c),ev->Title(c),RP_select_t);
-      printf("^^^^^\n");
+      //printf("^^^^^\n");
 
       pt_vs_eta[c][t] = new TH2D(pt_vs_eta_n[c][t],pt_vs_eta_t[c][t],
         NBINS,Eta_min,Eta_max,NBINS,Pt_min,Pt_max);
@@ -234,7 +234,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
       z_dist[c][t] = new TH1D(z_dist_n[c][t],z_dist_t[c][t],NBINS,0,1);
       mass_dist[c][t] = new TH1D(mass_dist_n[c][t],mass_dist_t[c][t],NBINS,low_mass,high_mass);
 
-      printf("----- c=%d t=%d %s %s\n",c,t,ev->Name(c),T->Name(t));
+      //printf("----- c=%d t=%d %s %s\n",c,t,ev->Name(c),T->Name(t));
       for(Int_t ru=0; ru<MAXRUNS; ru++)
       {
         sprintf(pt_rdist_n[c][t][ru],"%s_%s_pt_rdist",T->Name(t),ev->Name(c));
@@ -252,17 +252,17 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
         sprintf(z_rdist_n_tmp[c][t][ru],"%s_%d",z_rdist_n[c][t][ru],ru);
 
         pt_rdist[c][t][ru] = new TH1D(pt_rdist_n_tmp[c][t][ru],pt_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,Pt_min,Pt_max);
+          NBINS_RDIST,Pt_min,Pt_max);
         en_rdist[c][t][ru] = new TH1D(en_rdist_n_tmp[c][t][ru],en_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,E12_min,E12_max);
+          NBINS_RDIST,E12_min,E12_max);
         eta_rdist[c][t][ru] = new TH1D(eta_rdist_n_tmp[c][t][ru],eta_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,Eta_min,Eta_max);
+          NBINS_RDIST,Eta_min,Eta_max);
         phi_rdist[c][t][ru] = new TH1D(phi_rdist_n_tmp[c][t][ru],phi_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,Phi_min,Phi_max);
+          NBINS_RDIST,Phi_min,Phi_max);
         mass_rdist[c][t][ru] = new TH1D(mass_rdist_n_tmp[c][t][ru],mass_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,low_mass,high_mass);
+          NBINS_RDIST,low_mass,high_mass);
         z_rdist[c][t][ru] = new TH1D(z_rdist_n_tmp[c][t][ru],z_rdist_n_tmp[c][t][ru],
-          NBINS_VS_RUN,0,1);
+          NBINS_RDIST,0,1);
 
       };
     };
@@ -298,7 +298,8 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
       sprintf(mass_dist_for_ptbin_t[t][pp],
         "%s M_{#gamma#gamma} distribution for p_{T}#in[%d,%d) GeV/c",
         T->Name(t),pp,pp+1);
-      mass_dist_for_ptbin[t][pp] = new TH1D(mass_dist_for_ptbin_n[t][pp],mass_dist_for_ptbin_t[t][pp],NBINS,0,1);
+      mass_dist_for_ptbin[t][pp] = 
+        new TH1D(mass_dist_for_ptbin_n[t][pp],mass_dist_for_ptbin_t[t][pp],NBINS,0,1);
     };
   };
 
@@ -364,39 +365,34 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
   Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
 
   Int_t ENT = tr->GetEntries();
-  ENT = 100000; // uncomment to do a short loop for testing
-  if(!strcmp(RP_select,"")) system("touch diag_run_table.dat; rm diag_run_table.dat");
+  //ENT = 100000; // uncomment to do a short loop for testing
   for(Int_t x=0; x<ENT; x++)
   {
     if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
     tr->GetEntry(x);
-    if(x==0) runnum_tmp = runnum;
 
     kicked = RD->Kicked(runnum,bx);
 
     // get new polarisation and check rellum
     // also fill kinematic vs. run plots
-    if(runnum!=runnum_tmp || x+1==ENT)
+    if(runnum!=runnum_tmp)
     {
       b_pol = RD->BluePol(runnum);
       y_pol = RD->YellPol(runnum);
       isConsistent = RD->RellumConsistent(runnum);
 
-      if(x+1==ENT) runnum_tmp=runnum;
       runcount++;
+      printf(">>> %d <<<\n",runnum);
       for(Int_t t=0; t<N_TRIG; t++)
       {
         for(Int_t c=0; c<N_CLASS; c++)
         {
-      printf(">>>>>>>>> t=%d c=%d %s\n",t,c,pt_rdist_n[c][t][runcount]);
-          sprintf(pt_rdist_n[c][t][runcount],"%s_%d",pt_rdist_n[c][t][runcount],runnum_tmp);
-          sprintf(en_rdist_n[c][t][runcount],"%s_%d",en_rdist_n[c][t][runcount],runnum_tmp);
-          sprintf(eta_rdist_n[c][t][runcount],"%s_%d",eta_rdist_n[c][t][runcount],runnum_tmp);
-          sprintf(phi_rdist_n[c][t][runcount],"%s_%d",phi_rdist_n[c][t][runcount],runnum_tmp);
-          sprintf(z_rdist_n[c][t][runcount],"%s_%d",z_rdist_n[c][t][runcount],runnum_tmp);
-          sprintf(mass_rdist_n[c][t][runcount],"%s_%d",mass_rdist_n[c][t][runcount],runnum_tmp);
-
-      printf("|||||||||||| t=%d c=%d %s\n",t,c,pt_rdist_n[c][t][runcount]);
+          sprintf(pt_rdist_n[c][t][runcount],"%s_%d",pt_rdist_n[c][t][runcount],runnum);
+          sprintf(en_rdist_n[c][t][runcount],"%s_%d",en_rdist_n[c][t][runcount],runnum);
+          sprintf(eta_rdist_n[c][t][runcount],"%s_%d",eta_rdist_n[c][t][runcount],runnum);
+          sprintf(phi_rdist_n[c][t][runcount],"%s_%d",phi_rdist_n[c][t][runcount],runnum);
+          sprintf(z_rdist_n[c][t][runcount],"%s_%d",z_rdist_n[c][t][runcount],runnum);
+          sprintf(mass_rdist_n[c][t][runcount],"%s_%d",mass_rdist_n[c][t][runcount],runnum);
 
           pt_rdist[c][t][runcount]->SetName(pt_rdist_n[c][t][runcount]);
           en_rdist[c][t][runcount]->SetName(en_rdist_n[c][t][runcount]);
@@ -551,6 +547,13 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
   TObjArray * mass_dist_for_enbin_arr[10];
   TObjArray * mass_dist_for_ptbin_arr[10];
 
+  TObjArray * pt_rdist_arr[N_CLASS][MAXRUNS];
+  TObjArray * en_rdist_arr[N_CLASS][MAXRUNS];
+  TObjArray * eta_rdist_arr[N_CLASS][MAXRUNS];
+  TObjArray * phi_rdist_arr[N_CLASS][MAXRUNS];
+  TObjArray * z_rdist_arr[N_CLASS][MAXRUNS];
+  TObjArray * mass_rdist_arr[N_CLASS][MAXRUNS];
+
   char pt_vs_eta_arr_n[N_CLASS][32];
   char en_vs_eta_arr_n[N_CLASS][32];
   char pt_vs_phi_arr_n[N_CLASS][32];
@@ -567,6 +570,14 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
   char mass_dist_for_enbin_arr_n[10][32];
   char mass_dist_for_ptbin_arr_n[10][32];
 
+  char pt_rdist_arr_n[N_CLASS][MAXRUNS][32];
+  char en_rdist_arr_n[N_CLASS][MAXRUNS][32];
+  char eta_rdist_arr_n[N_CLASS][MAXRUNS][32];
+  char phi_rdist_arr_n[N_CLASS][MAXRUNS][32];
+  char z_rdist_arr_n[N_CLASS][MAXRUNS][32];
+  char mass_rdist_arr_n[N_CLASS][MAXRUNS][32];
+
+
   for(Int_t c=0; c<N_CLASS; c++)
   {
     sprintf(pt_vs_eta_arr_n[c],"%s_pt_vs_eta_arr",ev->Name(c));
@@ -582,6 +593,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
     sprintf(mass_vs_pt_arr_n[c],"%s_mass_vs_pt_arr",ev->Name(c));
     sprintf(mass_dist_arr_n[c],"%s_mass_dist_arr",ev->Name(c));
     sprintf(z_dist_arr_n[c],"%s_z_dist_arr",ev->Name(c));
+
     pt_vs_eta_arr[c] = new TObjArray();
     en_vs_eta_arr[c] = new TObjArray();
     pt_vs_phi_arr[c] = new TObjArray();
@@ -595,6 +607,22 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
     mass_vs_pt_arr[c] = new TObjArray();
     mass_dist_arr[c] = new TObjArray();
     z_dist_arr[c] = new TObjArray();
+
+    for(Int_t ru=0; ru<MAXRUNS; ru++)
+    {
+      sprintf(pt_rdist_arr_n[c][ru],"%s_pt_rdist_arr_%d",ev->Name(c),ru);
+      sprintf(en_rdist_arr_n[c][ru],"%s_en_rdist_arr_%d",ev->Name(c),ru);
+      sprintf(eta_rdist_arr_n[c][ru],"%s_eta_rdist_arr_%d",ev->Name(c),ru);
+      sprintf(phi_rdist_arr_n[c][ru],"%s_phi_rdist_arr_%d",ev->Name(c),ru);
+      sprintf(z_rdist_arr_n[c][ru],"%s_z_rdist_arr_%d",ev->Name(c),ru);
+      sprintf(mass_rdist_arr_n[c][ru],"%s_mass_rdist_arr_%d",ev->Name(c),ru);
+      pt_rdist_arr[c][ru] = new TObjArray();
+      en_rdist_arr[c][ru] = new TObjArray();
+      eta_rdist_arr[c][ru] = new TObjArray();
+      phi_rdist_arr[c][ru] = new TObjArray();
+      z_rdist_arr[c][ru] = new TObjArray();
+      mass_rdist_arr[c][ru] = new TObjArray();
+    };
   };
   for(Int_t k=0; k<10; k++)
   {
@@ -621,6 +649,15 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
       mass_vs_pt_arr[c]->AddLast(mass_vs_pt[c][t]);
       mass_dist_arr[c]->AddLast(mass_dist[c][t]);
       z_dist_arr[c]->AddLast(z_dist[c][t]);
+      for(Int_t ru=0; ru<=runcount; ru++)
+      {
+        pt_rdist_arr[c][ru]->AddLast(pt_rdist[c][t][ru]);
+        en_rdist_arr[c][ru]->AddLast(en_rdist[c][t][ru]);
+        eta_rdist_arr[c][ru]->AddLast(eta_rdist[c][t][ru]);
+        phi_rdist_arr[c][ru]->AddLast(phi_rdist[c][t][ru]);
+        z_rdist_arr[c][ru]->AddLast(z_rdist[c][t][ru]);
+        mass_rdist_arr[c][ru]->AddLast(mass_rdist[c][t][ru]);
+      };
     };
     for(Int_t k=0; k<10; k++)
     {
@@ -647,23 +684,20 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
   for(Int_t c=0; c<N_CLASS; c++) trig_rp_mix[c]->Write();
   for(Int_t c=0; c<N_CLASS; c++) trig_fmsrp_mix[c]->Write();
   outfile->cd();
-  outfile->mkdir("hot_tower_search");
-  outfile->cd("hot_tower_search");
+  outfile->mkdir("rdists");
+  outfile->cd("rdists");
   for(Int_t c=0; c<N_CLASS; c++)
   {
     for(Int_t ru=0; ru<=runcount; ru++)
     {
-      printf("ru=%d c=%d %p\n",ru,c,(void*)pt_rdist[c][t][ru]);
-      if(pt_rdist[c][t][ru]!=NULL)
-      {
-        printf("%s\n",pt_rdist_n[c][t][ru]);
-        pt_rdist[c][t][ru]->Write(pt_rdist_n[c][t][ru]);
-        en_rdist[c][t][ru]->Write(en_rdist_n[c][t][ru]);
-        eta_rdist[c][t][ru]->Write(eta_rdist_n[c][t][ru]);
-        phi_rdist[c][t][ru]->Write(phi_rdist_n[c][t][ru]);
-        z_rdist[c][t][ru]->Write(z_rdist_n[c][t][ru]);
-        mass_rdist[c][t][ru]->Write(mass_rdist_n[c][t][ru]);
-      };
+      //printf("ru=%d c=%d %p\n",ru,c,(void*)pt_rdist_arr_n[c][ru]);
+      //printf("%s\n",pt_rdist_arr_n[c][ru]);
+      pt_rdist_arr[c][ru]->Write(pt_rdist_arr_n[c][ru],TObject::kSingleKey);
+      en_rdist_arr[c][ru]->Write(en_rdist_arr_n[c][ru],TObject::kSingleKey);
+      eta_rdist_arr[c][ru]->Write(eta_rdist_arr_n[c][ru],TObject::kSingleKey);
+      phi_rdist_arr[c][ru]->Write(phi_rdist_arr_n[c][ru],TObject::kSingleKey);
+      z_rdist_arr[c][ru]->Write(z_rdist_arr_n[c][ru],TObject::kSingleKey);
+      mass_rdist_arr[c][ru]->Write(mass_rdist_arr_n[c][ru],TObject::kSingleKey);
     };
   };
   outfile->cd();

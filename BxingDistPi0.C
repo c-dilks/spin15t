@@ -43,6 +43,7 @@ void BxingDistPi0()
   Int_t iter=-1;
   Int_t runnum_tmp=0;
   Int_t spin_set;
+  system("touch RUNLIST.dat; rm RUNLIST.dat; touch RUNLIST.dat");
   for(Int_t i=0; i<tc->GetEntries(); i++)
   {
     tc->GetEntry(i);
@@ -58,6 +59,12 @@ void BxingDistPi0()
         sprintf(bxing_dist_t[iter][s],
           "pi0 bXing dist (Grn:-- Orn:-+ Red:+- Blue:++ Blk:all) -- run %d",runnum);
         bxing_dist[iter][s] = new TH1D(bxing_dist_n[iter][s],bxing_dist_t[iter][s],120,0,120);
+        if(s==0)
+        {
+          gSystem->RedirectOutput("RUNLIST.dat");
+          printf("%d\n",runnum);
+          gSystem->RedirectOutput(0);
+        };
       };
     };
     /*

@@ -14,6 +14,7 @@ Environ::Environ()
   sscanf(gSystem->Getenv("SPINDIR"),"%s",SpinDir);
   sscanf(gSystem->Getenv("TRIGGER_TYPE"),"%s",TriggerType);
   sscanf(gSystem->Getenv("MASS_CUT_TYPE"),"%s",MassCutType);
+  sscanf(gSystem->Getenv("RP_SELECT"),"%s",RPselect);
 
   sscanf(gSystem->Getenv("PHI_BINS"),"%d",&PhiBins);
   sscanf(gSystem->Getenv("ETA_BINS"),"%d",&EtaBins);

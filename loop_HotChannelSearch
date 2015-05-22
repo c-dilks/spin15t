@@ -1,0 +1,32 @@
+#!/bin/bash
+# runs HotChannelSearch.C as a condor job
+
+echo "removing chandists/*.root in 5 seconds..."
+sleep 5
+rm -r chandists/*.root
+
+job="hotchan.bat"
+> $job
+
+echo "building batch file..."
+echo "Executable = `which root`" >> $job
+echo "Universe = vanilla" >> $job
+echo "notification = never" >> $job
+echo "getenv = True" >> $job
+echo '+Experiment = "star"' >> $job
+echo '+Job_Type = "cas"' >> $job
+echo "" >> $job
+log="logfiles"
+
+while read run; do
+  echo $run
+  let cnt++
+  echo "Arguments = -b -q HotChannelSearch.C(${run})" >> $job
+  echo "Log    = ${log}/Hot.${run}.log" >> $job
+  echo "Output = ${log}/Hot.${run}.out" >> $job
+  echo "Error  = ${log}/Hot.${run}.err" >> $job
+  echo "Queue" >> $job
+  echo "" >> $job
+done < RUNLIST.dat
+echo "Submitting $cnt jobs to condor"
+condor_submit $job

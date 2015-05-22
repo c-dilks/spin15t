@@ -15,6 +15,7 @@ class Environ : public TObject
     char SpinDir[256];
     char TriggerType[32];
     char MassCutType[32];
+    char RPselect[32];
     Int_t PhiBins,EtaBins,PtBins,EnBins;
     Float_t PhiLow,PhiHigh;
     Float_t EtaLow,EtaHigh;

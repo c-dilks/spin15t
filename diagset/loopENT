@@ -1,0 +1,15 @@
+#!/bin/bash
+
+> counts.txt
+for file in $(ls diag_EOR*.root); do
+  root -b -q -l ENT.C'("'$file'")'
+done
+
+sum=0
+while read s; do 
+  let sum+=$s
+done < counts.txt
+
+echo "sum: $sum"
+echo "all.root total:"
+root -b -q -l ENT.C'("all.root",0)'

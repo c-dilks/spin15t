@@ -24,6 +24,10 @@ void Bin_Splitter(Int_t phi_bins = 10,
   // en or pt dependent mass cuts
   char cut_type[16]; strcpy(cut_type,"en");
 
+  // RP selecction
+  // use "N" for no restriction
+  char RP_select[16]; strcpy(RP_select,"N");
+
   Double_t phi_low=-3.15;
   Double_t phi_high=3.15;
 
@@ -172,6 +176,7 @@ void Bin_Splitter(Int_t phi_bins = 10,
   };
   printf("\nexport TRIGGER_TYPE=\"%s\"\n",trigger);
   printf("export MASS_CUT_TYPE=\"%s\"\n",cut_type);
+  printf("export RP_SELECT=\"%s\"\n",RP_select);
   
   gSystem->RedirectOutput(0);
   char cat[128];
