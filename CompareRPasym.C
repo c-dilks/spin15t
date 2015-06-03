@@ -3,17 +3,18 @@
 // asym: A_Sigma, R_blue, R_yellow
 //       A_TT, A_N_blue, A_N_yellow
 
-void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blue")
+void CompareRPasym(char * kinvar="en", char * evclass="pi0",
+                   char * asym="A_N_blue", char * binselect="")
 {
-  const Int_t NRP = 9;
-  enum rp_enum {kAll,kET,kIT,kSDE,kSDW,kEOR,kWOR,kEXOR,kWXOR};
+  const Int_t NRP = 10;
+  enum rp_enum {kAll,kET,kIT,kSDE,kSDW,kEOR,kWOR,kEXOR,kWXOR,kDD};
 
   // draw switch
   Bool_t draw[NRP];
   draw[kAll] = 1;
 
-  draw[kET] = 1;
-  draw[kIT] = 1;
+  draw[kET] = 0;
+  draw[kIT] = 0;
 
   draw[kSDE] = 0;
   draw[kSDW] = 0;
@@ -23,6 +24,9 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
 
   draw[kEXOR] = 1;
   draw[kWXOR] = 1;
+
+  draw[kDD] = 0;
+
 
   /////////////////////////
 
@@ -36,6 +40,7 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   strcpy(rp_name[kWOR],"WOR");
   strcpy(rp_name[kEXOR],"EXOR");
   strcpy(rp_name[kWXOR],"WXOR");
+  strcpy(rp_name[kDD],"DD");
 
   Int_t rp_plot_color[NRP];
   rp_plot_color[kAll] = (Int_t) kRed;
@@ -47,14 +52,16 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   rp_plot_color[kWOR] = (Int_t) kBlue;
   rp_plot_color[kEXOR] = (Int_t) kGreen+2;
   rp_plot_color[kWXOR] = (Int_t) kBlue;
+  rp_plot_color[kDD] = (Int_t) kBlack;
 
   Int_t A,Z;
-  if(!strcmp(asym,"A_Sigma")) { Z=0; A=3; }
-  else if(!strcmp(asym,"R_blue")) { Z=0; A=2; }
-  else if(!strcmp(asym,"R_yellow")) { Z=0; A=1; }
-  else if(!strcmp(asym,"A_TT")) { Z=1; A=3; }
-  else if(!strcmp(asym,"A_N_blue")) { Z=1; A=2; }
-  else if(!strcmp(asym,"A_N_yellow")) { Z=1; A=1; }
+  TString asym_str;
+  if(!strcmp(asym,"A_Sigma")) { Z=0; A=3; asym_str="A_{#Sigma}";}
+  else if(!strcmp(asym,"R_blue")) { Z=0; A=2; asym_str="R^{B}";}
+  else if(!strcmp(asym,"R_yellow")) { Z=0; A=1; asym_str="R^{Y}";}
+  else if(!strcmp(asym,"A_TT")) { Z=1; A=3; asym_str="A_{TT}";}
+  else if(!strcmp(asym,"A_N_blue")) { Z=1; A=2; asym_str="A_{N}^{B}";}
+  else if(!strcmp(asym,"A_N_yellow")) { Z=1; A=1; asym_str="A_{N}^{Y}";}
   else
   {
     fprintf(stderr,"ERROR: asym directory not valid\n");
@@ -62,37 +69,55 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",char * asym="A_N_blu
   };
   
   char gr_n[32];
-  if(!strcmp(kinvar,"en")) sprintf(gr_n,"%s/en_dep_z%d_a%d_g0_p0",asym,Z,A);
-  else if(!strcmp(kinvar,"pt")) sprintf(gr_n,"%s/pt_dep_z%d_a%d_g0_e0",asym,Z,A);
+  TString kinvar_str;
+  if(!strcmp(kinvar,"en")) 
+  {
+    sprintf(gr_n,"%s/en_dep_z%d_a%d_g0_p0",asym,Z,A);
+    kinvar_str="E";
+  }
+  else if(!strcmp(kinvar,"pt")) 
+  {
+    sprintf(gr_n,"%s/pt_dep_z%d_a%d_g0_e0",asym,Z,A);
+    kinvar_str="p_{T}";
+  }
   else 
   {
     fprintf(stderr,"ERROR: kinvar not valid\n");
     return;
   };
 
+  // QUICK TITLE FOR STAR COLLAB MEETING; CHANGE ME!!!
+  TString evclass_str;
+  if(!strcmp(evclass,"pi0")) evclass_str="#pi^{0}";
+  else evclass_str=Form("%s",evclass);
+
   TFile * infile[NRP]; 
   char infile_n[NRP][256];
   TGraphErrors * gr[NRP];
   TMultiGraph * multi_gr = new TMultiGraph();
   char multi_gr_title[64];
-  sprintf(multi_gr_title,"%s %s vs. %s",evclass,asym,kinvar);
+  sprintf(multi_gr_title,"%s %s vs. %s",evclass_str.Data(),asym_str.Data(),kinvar_str.Data());
+  if(strcmp(binselect,"")) sprintf(multi_gr_title,"%s (%s)",multi_gr_title,binselect);
   multi_gr->SetTitle(multi_gr_title);
   TLegend * leg = new TLegend(0.1,0.9,0.2,0.6);
   for(Int_t n=0; n<NRP; n++)
   {
-    sprintf(infile_n[n],"output_%s/spin_%s.root",rp_name[n],evclass);
-    printf("%s\n",infile_n[n]);
-    infile[n] = new TFile(infile_n[n],"READ");
-    //infile[n]->cd(asym);
-    gr[n] = (TGraphErrors*) infile[n]->Get(gr_n);
-    printf("infile @ %p   gr[%d] @ %p\n",(void*)infile[n],n,(void*)gr[n]);
-    gr[n]->SetMarkerColor(rp_plot_color[n]);
-    gr[n]->SetLineColor(rp_plot_color[n]);
-    gr[n]->SetMarkerSize(1.3);
-    gr[n]->SetMarkerStyle(kFullCircle);
-    gr[n]->SetLineWidth(2);
     if(draw[n])
     {
+      if(strcmp(binselect,"")) 
+        sprintf(infile_n[n],"output_collab_%s_%s_%s/spin_%s.root",kinvar,binselect,rp_name[n],evclass);
+      else 
+        sprintf(infile_n[n],"output_collab_%s_%s/spin_%s.root",kinvar,rp_name[n],evclass);
+      printf("%s\n",infile_n[n]);
+      infile[n] = new TFile(infile_n[n],"READ");
+      //infile[n]->cd(asym);
+      gr[n] = (TGraphErrors*) infile[n]->Get(gr_n);
+      printf("infile @ %p   gr[%d] @ %p\n",(void*)infile[n],n,(void*)gr[n]);
+      gr[n]->SetMarkerColor(rp_plot_color[n]);
+      gr[n]->SetLineColor(rp_plot_color[n]);
+      gr[n]->SetMarkerSize(1.3);
+      gr[n]->SetMarkerStyle(kFullCircle);
+      gr[n]->SetLineWidth(2);
       leg->AddEntry(gr[n],rp_name[n],"LPE");
       multi_gr->Add(gr[n]);
     };

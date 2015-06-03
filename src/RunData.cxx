@@ -168,6 +168,7 @@ void RunData::Construct(char * spindir0)
       b_pol_err_map[fill_pol-fill_thou] = b_pol_err;
       y_pol_err_map[fill_pol-fill_thou] = y_pol_err;
     }
+    else if(fill_pol/1000==19) continue;
     else
     {
       fprintf(stderr,"ERROR: variable fill_thou is not correct\n");

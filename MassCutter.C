@@ -19,7 +19,7 @@ void MassCutter()
 
 
   // load mass dists for each en bin
-  TFile * infile = new TFile("diag.root","READ");
+  TFile * infile = new TFile("diagset/all.root","READ");
   TObjArray * mdist_arr[10];
   TH1D  * mdist[10];
   char mdist_arr_n[10][64];

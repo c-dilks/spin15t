@@ -1,7 +1,7 @@
 // takes overlap matrices in diag.root and divides each overlap amount
 // by the total number of RP-unbiased FMS trigger
 
-void OverlapFMSRP(const char * filename="diag.root")
+void OverlapFMSRP(const char * filename="diagset/all.root")
 {
   TFile * infile = new TFile(filename,"READ");
   gSystem->Load("src/RunData.so");

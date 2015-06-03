@@ -233,7 +233,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
 
 
         /////////////////////////////////////////////
-        RP_satisfied=true; // (no RP restriction)
+        //RP_satisfied=true; // (no RP restriction)
         //if(tcu->FiredRP("EOR")) RP_satisfied=true;
         //if(tcu->FiredRP("WOR")) RP_satisfied=true;
         //if(tcu->FiredRP("EXOR")) RP_satisfied=true;
@@ -242,7 +242,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         //if(tcu->FiredRP("SDW")) RP_satisfied=true;
         //if(tcu->FiredRP("ET")) RP_satisfied=true;
         //if(tcu->FiredRP("IT")) RP_satisfied=true;
-        //if(tcu->FiredRP("DD")) RP_satisfied=true;
+        if(tcu->FiredRP("DD")) RP_satisfied=true;
         //
         //
         //

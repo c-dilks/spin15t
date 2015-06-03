@@ -1,0 +1,24 @@
+#!/bin/bash
+# FOR STAR COLLABORATION MEETING
+
+phibins=10
+
+RP=$1
+
+# en-dependence
+root -b -q Bin_Splitter.C'('${phibins}',1,1,0)'
+source env_bins.sh
+echo PT_BINS=$PT_BINS EN_BINS=$EN_BINS PT_DIV_0=$PT_DIV_0 EN_DIV_0=$EN_DIV_0
+./loop_PhiDists
+./wait_for_condor
+root -b -q toa_add.C
+./asym_call_jets output_collab_en_$RP
+
+# pt-dependence
+root -b -q Bin_Splitter.C'('${phibins}',1,0,1)'
+source env_bins.sh
+echo PT_BINS=$PT_BINS EN_BINS=$EN_BINS PT_DIV_0=$PT_DIV_0 EN_DIV_0=$EN_DIV_0
+./loop_PhiDists
+./wait_for_condor
+root -b -q toa_add.C
+./asym_call_jets output_collab_pt_$RP
