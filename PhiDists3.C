@@ -229,9 +229,11 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
         tcu->SetBits(lastdsm);
 
-        RP_satisfied=false; 
+        
+        RP_satisfied=(tcu->FiredRP(env->RPselect));
 
 
+        //RP_satisfied=false; 
         /////////////////////////////////////////////
         //RP_satisfied=true; // (no RP restriction)
         //if(tcu->FiredRP("EOR")) RP_satisfied=true;
@@ -242,7 +244,13 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
         //if(tcu->FiredRP("SDW")) RP_satisfied=true;
         //if(tcu->FiredRP("ET")) RP_satisfied=true;
         //if(tcu->FiredRP("IT")) RP_satisfied=true;
-        if(tcu->FiredRP("DD")) RP_satisfied=true;
+        //if(tcu->FiredRP("DD")) RP_satisfied=true;
+        //if(tcu->Fired("BBC-E")) RP_satisfied=true;
+        //if(tcu->Fired("BBC-W")) RP_satisfied=true;
+        //if(!(tcu->Fired("BBC-E"))) RP_satisfied=true;
+        //if(!(tcu->Fired("BBC-W"))) RP_satisfied=true;
+        //if(tcu->FiredRP("SDE1")) RP_satisfied=true;
+        //if(tcu->FiredRP("SDW1")) RP_satisfied=true;
         //
         //
         //

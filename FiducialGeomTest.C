@@ -6,9 +6,9 @@ void FiducialGeomTest(Double_t Cd=1.5)
   EventClass * ev = new EventClass();
 
   const Int_t NBINS=5000;
-  TH2D * etaphi = new TH2D("etaphi","#eta-#phi space fiducial cut",
+  TH2D * etaphi = new TH2D("etaphi","FMS in #eta-#phi space",
     NBINS,-3.142,3.142,NBINS,2.4,4.5);
-  TH2D * fmsmap = new TH2D("fmsmap","x-y space fiducial cut [units: cm]",
+  TH2D * fmsmap = new TH2D("fmsmap","FMS in x-y space [units: cm]",
     NBINS,-5.8*18,5.8*18,NBINS,-5.8*18,5.8*18);
 
   Double_t Eta,Phi,ZZ;

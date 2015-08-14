@@ -152,12 +152,17 @@ Single Diffraction to E: SDW = WOR & !ZDCW & !BBCW & (ZDCE | BBCE)
 
 Double Diffractive: DD = EOR & WOR & TOF & !BBC
 
+modified SD, suggested by Akio
+  SDE1 = EOR & !ZDCE
+  SDW1 = WOR & !ZDCW & (ZDCE | BBCE)
+
 [ In TCU inputs: EOR,WOR,ET,IT ]
 
 */
 Bool_t TCUbits::FiredRP(char * name0)
 {
-  if(!strcmp(name0,"EOR")) return Fired("RP_EOR");
+  if(!strcmp(name0,"N")) return true; // no RP bias
+  else if(!strcmp(name0,"EOR")) return Fired("RP_EOR");
   else if(!strcmp(name0,"WOR")) return Fired("RP_WOR");
 
   if(!strcmp(name0,"EXOR"))
@@ -175,6 +180,15 @@ Bool_t TCUbits::FiredRP(char * name0)
            !(Fired("ZDC-W")) && !(Fired("BBC-W")) &&
             (Fired("ZDC-E") || Fired("BBC-E")));
 
+  else if(!strcmp(name0,"SDE1"))
+    return (Fired("RP_EOR") &&
+           !(Fired("ZDC-E")));
+
+  else if(!strcmp(name0,"SDW1"))
+    return (Fired("RP_WOR") &&
+           !(Fired("ZDC-W")) &&
+            (Fired("ZDC-E") || Fired("BBC-E")));
+
   else if(!strcmp(name0,"IT")) return Fired("RP_IT");
   else if(!strcmp(name0,"ET")) return Fired("RP_ET");
 
@@ -183,6 +197,11 @@ Bool_t TCUbits::FiredRP(char * name0)
             Fired("RP_WOR") &&
             FiredTOF() &&
             !(FiredBBC()));
+
+  else if(!strcmp(name0,"BBCE")) return Fired("BBC-E");
+  else if(!strcmp(name0,"BBCW")) return Fired("BBC-W");
+  else if(!strcmp(name0,"NOT_BBCE")) return !(Fired("BBC-E"));
+  else if(!strcmp(name0,"NOT_BBCW")) return !(Fired("BBC-W"));
 };
 
 
