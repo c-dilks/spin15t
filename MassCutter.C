@@ -3,8 +3,8 @@
 void MassCutter()
 {
   // environment
-  gSystem->Load("src/RunData.so");
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
 
   // check mass cut type

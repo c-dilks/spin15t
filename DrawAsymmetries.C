@@ -6,7 +6,7 @@ void DrawAsymmetries(const char * evclass="pi0", const char * filetype="png", co
   TFile * asym_tfile = new TFile(asym_file,"READ");
 
   // environment
-  gSystem->Load("src/RunData.so");
+  gSystem->Load("src/RunInfo.so");
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
 

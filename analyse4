@@ -1,18 +1,18 @@
 #!/bin/bash
 
-#analyse3 N
-#analyse3 EOR
-#analyse3 WOR
+analyse3 EOR
+analyse3 WOR
 #analyse3 EXOR
 #analyse3 WXOR
-#analyse3 SDE
-#analyse3 SDW
+analyse3 SDE
+analyse3 SDW
 #analyse3 SDE1
 #analyse3 SDW1
 analyse3 IT
 analyse3 ET
-analyse3 DD
-analyse3 BBCE
-analyse3 BBCW
-analyse3 NOT_BBCE
-analyse3 NOT_BBCW
+#analyse3 DD
+#analyse3 BBCE
+#analyse3 BBCW
+#analyse3 NOT_BBCE
+#analyse3 NOT_BBCW
+analyse3 N

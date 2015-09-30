@@ -7,12 +7,12 @@
 //
 // 145ka
 
-void ReduceData(const char * filename="Outputset145ka.root",
+void ReduceData(const char * filename="Outputset079ai.root",
                 const char * dirname="../../Output")
 {
   // load polarization and rellum data
-  gSystem->Load("src/RunData.so");
-  RunData * RD = new RunData();
+  gSystem->Load("src/RunInfo.so");
+  RunInfo * RD = new RunInfo();
 
 
   char root_file[256];
@@ -47,8 +47,18 @@ void ReduceData(const char * filename="Outputset145ka.root",
   Float_t y_pol;
   Float_t b_pol_err;
   Float_t y_pol_err;
-  UInt_t L2sum[2];
+  Int_t L2sum[2];
   UInt_t lastdsm[8];
+  Short_t RPE_QTN;
+  Short_t RPW_QTN;
+  Short_t RPE_Idx[16]; // [rp chan]
+  Short_t RPE_TAC[16];
+  Short_t RPE_ADC[16];
+  Short_t RPW_Idx[16];
+  Short_t RPW_TAC[16];
+  Short_t RPW_ADC[16];
+  Float_t RPvertex;
+
   twotr->SetBranchAddress("M12",&M12);
   twotr->SetBranchAddress("N12",&N12);
   twotr->SetBranchAddress("E12",&E12);
@@ -62,6 +72,17 @@ void ReduceData(const char * filename="Outputset145ka.root",
   twotr->SetBranchAddress("Bunchid7bit",&Bunchid7bit);
   twotr->SetBranchAddress("L2sum",L2sum);
   twotr->SetBranchAddress("lastdsm",lastdsm);
+  
+  twotr->SetBranchAddress("RPE_QTN",&RPE_QTN);
+  twotr->SetBranchAddress("RPW_QTN",&RPW_QTN);
+  twotr->SetBranchAddress("RPE_Idx",RPE_Idx);
+  twotr->SetBranchAddress("RPE_TAC",RPE_TAC);
+  twotr->SetBranchAddress("RPE_ADC",RPE_ADC);
+  twotr->SetBranchAddress("RPW_Idx",RPW_Idx);
+  twotr->SetBranchAddress("RPW_TAC",RPW_TAC);
+  twotr->SetBranchAddress("RPW_ADC",RPW_ADC);
+  twotr->SetBranchAddress("RPvertex",&RPvertex);
+
   str->Branch("M12",&M12,"M12/F");
   str->Branch("N12",&N12,"N12/F");
   str->Branch("E12",&E12,"E12/F");
@@ -79,6 +100,16 @@ void ReduceData(const char * filename="Outputset145ka.root",
   str->Branch("fill",&fill,"fill/I");
   str->Branch("L2sum",L2sum,"L2sum[2]/i");
   str->Branch("lastdsm",lastdsm,"lastdsm[8]/i");
+
+  str->Branch("RPE_QTN",&RPE_QTN,"RPE_QTN/S");
+  str->Branch("RPW_QTN",&RPW_QTN,"RPW_QTN/S");
+  str->Branch("RPE_Idx",RPE_Idx,"RPE_Idx[RPE_QTN]/S");
+  str->Branch("RPE_TAC",RPE_TAC,"RPE_TAC[RPE_QTN]/S");
+  str->Branch("RPE_ADC",RPE_ADC,"RPE_ADC[RPE_QTN]/S");
+  str->Branch("RPW_Idx",RPW_Idx,"RPW_Idx[RPW_QTN]/S");
+  str->Branch("RPW_TAC",RPW_TAC,"RPW_TAC[RPW_QTN]/S");
+  str->Branch("RPW_ADC",RPW_ADC,"RPW_ADC[RPW_QTN]/S");
+  str->Branch("RPvertex",&RPvertex,"RPvertex/F");
 
   /*
   char R_bbc_n[10][32];
@@ -132,7 +163,7 @@ void ReduceData(const char * filename="Outputset145ka.root",
   {
     twotr->GetEntry(q);
 
-    if(q%1000 == 0) printf("%d/%d\n",q+1,twotr->GetEntries());
+    if(q%1000 == 0) printf("%d/%d (str ent=%d)\n",q+1,twotr->GetEntries(),str->GetEntries());
 
     // pi0 only reduction cut
     //if(N12==2 && fabs(M12-0.15)<0.15 && (TrigBits&0xFFF)>0)

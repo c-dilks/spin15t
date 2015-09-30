@@ -23,15 +23,6 @@ if [ $# -ne 1 ]; then
 fi
 RP=$1
 
-# en-dependence
-root -b -q Bin_Splitter.C'('${phibins}',1,1,0)'
-source env_bins.sh
-export RP_SELECT=$RP
-printstatus
-./loop_PhiDists
-./wait_for_condor
-root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_en_$RP
 
 # pt-dependence
 root -b -q Bin_Splitter.C'('${phibins}',1,0,1)'
@@ -41,11 +32,23 @@ printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_pt_$RP
-
+./asym_call_jets asym_plots/output_spinpwg_pt_$RP
 
 ##### EXIT PREMATURELY
 exit
+######################
+
+# en-dependence
+root -b -q Bin_Splitter.C'('${phibins}',1,1,0)'
+source env_bins.sh
+export RP_SELECT=$RP
+printstatus
+./loop_PhiDists
+./wait_for_condor
+root -b -q toa_add.C
+./asym_call_jets asym_plots/output_spinpwg_en_$RP
+
+
 ######################
 
 

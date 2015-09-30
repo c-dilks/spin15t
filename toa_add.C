@@ -72,7 +72,7 @@ void toa_add(Bool_t printPDFs=false, Int_t FILTER=0)
 
   
   // get bins from environment
-  gSystem->Load("src/RunData.so");
+  gSystem->Load("src/RunInfo.so");
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;

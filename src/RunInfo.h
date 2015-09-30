@@ -1,5 +1,5 @@
-#ifndef RunData_
-#define RunData_
+#ifndef RunInfo_
+#define RunInfo_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,11 +13,11 @@
 #include "TFile.h"
 
 
-class RunData : public TObject
+class RunInfo : public TObject
 {
   public:
-    RunData();
-    RunData(char * spindir0);
+    RunInfo();
+    RunInfo(char * spindir0);
     void Construct(char * spindir0);
     Int_t GetFill(Int_t runnum0);
     Int_t HashRun(Int_t runnum0);
@@ -85,7 +85,7 @@ class RunData : public TObject
     TTree * counts_tr;
     TTree * rtree_tr;
     TTree * pol_tr;
-    ClassDef(RunData,1);
+    ClassDef(RunInfo,1);
 };
 
 #endif

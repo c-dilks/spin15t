@@ -1,9 +1,9 @@
 // Implementation of L2 trigger daq ids, used for masking 
 // L2sum in the trigger files
 
-#include "Trigger.h"
+#include "LevelTwo.h"
 
-ClassImp(Trigger)
+ClassImp(LevelTwo)
 
 namespace
 {
@@ -28,7 +28,7 @@ namespace
   const Int_t int_max = 0xFFFFFFFF;
 };
 
-Trigger::Trigger()
+LevelTwo::LevelTwo()
 {
   N = N_TRIG;
   NRP = N_RPTRIG;
@@ -185,12 +185,12 @@ Trigger::Trigger()
 
 // fms accessors
 //////////////////
-Int_t Trigger::Index(char * trigger0)
+Int_t LevelTwo::Index(char * trigger0)
 {
   return trigger_idx.at(std::string(trigger0));
 };
 
-Int_t Trigger::Mask(Int_t run, char * trigger0, Int_t dword)
+Int_t LevelTwo::Mask(Int_t run, char * trigger0, Int_t dword)
 {
   Int_t retval;
   try { retval = (mask_map.at(run).at(Index(trigger0)) >> (32*dword)) & int_max; }
@@ -202,7 +202,7 @@ Int_t Trigger::Mask(Int_t run, char * trigger0, Int_t dword)
   return retval;
 };
 
-Int_t Trigger::Mask(Int_t run, Int_t num0, Int_t dword)
+Int_t LevelTwo::Mask(Int_t run, Int_t num0, Int_t dword)
 {
   Int_t retval;
   try { retval = (mask_map.at(run).at(num0) >> (32*dword)) & int_max; }
@@ -214,7 +214,7 @@ Int_t Trigger::Mask(Int_t run, Int_t num0, Int_t dword)
   return retval;
 };
 
-char * Trigger::Name(Int_t num0)
+char * LevelTwo::Name(Int_t num0)
 {
   return trigger_name.at(num0);
 };
@@ -222,12 +222,12 @@ char * Trigger::Name(Int_t num0)
 
 // rp accessors
 //////////////////
-Int_t Trigger::RP_Index(char * trigger0)
+Int_t LevelTwo::RP_Index(char * trigger0)
 {
   return rptrigger_idx.at(std::string(trigger0));
 };
 
-Int_t Trigger::RP_Mask(Int_t run, char * trigger0, Int_t dword)
+Int_t LevelTwo::RP_Mask(Int_t run, char * trigger0, Int_t dword)
 {
   Int_t retval;
   try { retval = (rpmask_map.at(run).at(RP_Index(trigger0)) >> (32*dword)) & int_max; }
@@ -239,7 +239,7 @@ Int_t Trigger::RP_Mask(Int_t run, char * trigger0, Int_t dword)
   return retval;
 };
 
-Int_t Trigger::RP_Mask(Int_t run, Int_t num0, Int_t dword)
+Int_t LevelTwo::RP_Mask(Int_t run, Int_t num0, Int_t dword)
 {
   Int_t retval;
   try { retval = (rpmask_map.at(run).at(num0) >> (32*dword)) & int_max; }
@@ -251,7 +251,7 @@ Int_t Trigger::RP_Mask(Int_t run, Int_t num0, Int_t dword)
   return retval;
 };
 
-char * Trigger::RP_Name(Int_t num0)
+char * LevelTwo::RP_Name(Int_t num0)
 {
   return rptrigger_name.at(num0);
 };

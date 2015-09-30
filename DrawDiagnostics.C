@@ -6,8 +6,8 @@ void DrawDiagnostics(const char * filename="diagset/all.root")
   Int_t RESX = 400;
   Int_t RESY = 2000;
 
-  gSystem->Load("src/RunData.so");
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  LevelTwo * T = new LevelTwo();
   EventClass * ev = new EventClass();
 
   gStyle->SetOptStat(0);

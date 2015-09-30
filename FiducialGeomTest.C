@@ -2,7 +2,7 @@
 
 void FiducialGeomTest(Double_t Cd=1.5)
 {
-  gSystem->Load("src/RunData.so");
+  gSystem->Load("src/RunInfo.so");
   EventClass * ev = new EventClass();
 
   const Int_t NBINS=5000;

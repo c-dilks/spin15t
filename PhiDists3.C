@@ -5,15 +5,21 @@
 // -- phi distributions are written to phiset/ directory with similar name; 
 //    they are named: phi_s[spinbit]_g[eta bin]_p[pt bin]_e[en bin]
 
-void PhiDists3(const char * filename="RedOutputset070aa.root")
+void PhiDists3(const char * filename="RedOutputset079ai.root")
 {
+  enum ew_enum {kE,kW};
+  enum ud_enum {kU,kD};
+  enum io_enum {kI,kO};
+  enum ns_enum {kN,kS};
+
   // load polarization and rellum data
-  gSystem->Load("src/RunData.so");
-  RunData * RD = new RunData();
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  RunInfo * RD = new RunInfo();
+  LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TCUbits * tcu = new TCUbits();
+  RPscint * rpsci = new RPscint();
 
   // get bins from environment
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
@@ -50,6 +56,16 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   tree->SetBranchAddress("Pt",&Pt);
   tree->SetBranchAddress("L2sum",L2sum);
   tree->SetBranchAddress("lastdsm",lastdsm);
+
+  tree->SetBranchAddress("RPE_QTN",&(rpsci->N[kE]));
+  tree->SetBranchAddress("RPW_QTN",&(rpsci->N[kW]));
+  tree->SetBranchAddress("RPE_Idx",rpsci->Idx[kE]);
+  tree->SetBranchAddress("RPE_TAC",rpsci->TAC[kE]);
+  tree->SetBranchAddress("RPE_ADC",rpsci->ADC[kE]);
+  tree->SetBranchAddress("RPW_Idx",rpsci->Idx[kW]);
+  tree->SetBranchAddress("RPW_TAC",rpsci->TAC[kW]);
+  tree->SetBranchAddress("RPW_ADC",rpsci->ADC[kW]);
+  tree->SetBranchAddress("RPvertex",rpsci->vertex);
 
 
   // define spinbit strings
@@ -185,6 +201,10 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
   printf("fill phi dists...\n");
   Bool_t usepi0;
   Bool_t RP_satisfied;
+  char RP_select[32];
+  strcpy(RP_select,env->RPselect);
+  Int_t stg1,stg2,mipn;
+
   for(Int_t x=0; x<tree->GetEntries(); x++)
   {
     if((x%10000)==0) printf("%.2f%%\n",100*((Float_t)x)/((Float_t)tree->GetEntries()));
@@ -226,12 +246,44 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
       // rellum consistency, polarization, and env->TriggerType cut
       if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
       {
+        // set kinematics variables for event, tcu bits, rp bits
         ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
-        tcu->SetBits(lastdsm);
+
+        RP_satisfied=false; // reset
+
+        stg1 = 3;
+        stg2 = 1;
+        mipn = 1;
+
+        if(!strcmp(RP_select,"N")) RP_satisfied = true;
+        else
+        {
+          rpsci->Process();
+          if(!strcmp(RP_select,"EOR")) RP_satisfied = rpsci->track_trg[kE][stg1][mipn];
+          else if(!strcmp(RP_select,"WOR")) RP_satisfied = rpsci->track_trg[kW][stg1][mipn];
+          else if(!strcmp(RP_select,"ET")) RP_satisfied = rpsci->elastic_trg[stg2][mipn];
+          else if(!strcmp(RP_select,"IT")) RP_satisfied = rpsci->inelastic_trg[stg2][mipn];
+          else
+          {
+            tcu->SetBits(lastdsm);
+            if(!strcmp(RP_select,"SDE")) 
+              RP_satisfied = rpsci->track_trg[kE][stg1][mipn] &&
+                             !(tcu->Fired("ZDC-E")) && !(tcu->Fired("BBC-E")) &&
+                              (tcu->Fired("ZDC-W") || tcu->Fired("BBC-W"));
+            else if(!strcmp(RP_select,"SDW")) 
+              RP_satisfied = rpsci->track_trg[kW][stg1][mipn] &&
+                             !(tcu->Fired("ZDC-W")) && !(tcu->Fired("BBC-W")) &&
+                              (tcu->Fired("ZDC-E") || tcu->Fired("BBC-E"));
+          };
+        };
 
         
-        RP_satisfied=(tcu->FiredRP(env->RPselect));
-
+        ///////////////////////////////////////////
+        /* TCU bits method -- DEPRECATED */
+        //////////////////////////////////////////
+        
+        //RP_satisfied=(tcu->FiredRP(env->RPselect));
+        //tcu->SetBits(lastdsm);
 
         //RP_satisfied=false; 
         /////////////////////////////////////////////
@@ -268,6 +320,7 @@ void PhiDists3(const char * filename="RedOutputset070aa.root")
           ) RP_satisfied=true; // NORP2
           */
         /////////////////////////////////////////////
+        
 
         if(RP_satisfied)
         {

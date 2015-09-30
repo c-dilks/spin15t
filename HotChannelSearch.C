@@ -9,8 +9,8 @@ void HotChannelSearch(Int_t runnum=16071001)
   if(checkstr!="SETFMSENV") { fprintf(stderr,"source SetFMSEnv first\n"); exit(); };
   gROOT->Macro("${FMSROOT}/start.C");
 
-  gSystem->Load("src/RunData.so");
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  LevelTwo * T = new LevelTwo();
  
   UInt_t nqtdata;
   UInt_t Qtdata[3700];

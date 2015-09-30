@@ -4,10 +4,11 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-#pragma link C++ class RunData+;
-#pragma link C++ class Trigger+;
+#pragma link C++ class RunInfo+;
+#pragma link C++ class LevelTwo+;
 #pragma link C++ class Environ+;
 #pragma link C++ class EventClass+;
 #pragma link C++ class TCUbits+;
+#pragma link C++ class RPscint+;
 
 #endif

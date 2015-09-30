@@ -21,8 +21,8 @@ void Asym3(const char * evclass="pi0", const char * filter_type="all",Int_t filt
 {
   const Float_t pi=3.1415;
   TFile * infile = new TFile("phiset/all.root","READ");
-  gSystem->Load("src/RunData.so");
-  RunData * RD = new RunData();
+  gSystem->Load("src/RunInfo.so");
+  RunInfo * RD = new RunInfo();
   Environ * env = new Environ();
 
   // get bins from environment

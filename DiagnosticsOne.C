@@ -12,9 +12,9 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
   const Int_t NBINS_RDIST=100; // number of bins for variable vs. run index plots
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
-  gSystem->Load("src/RunData.so");
-  RunData * RD = new RunData();
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  RunInfo * RD = new RunInfo();
+  LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TCUbits * tcu = new TCUbits();

@@ -4,7 +4,7 @@
 void OverlapFMSRP(const char * filename="diagset/all.root")
 {
   TFile * infile = new TFile(filename,"READ");
-  gSystem->Load("src/RunData.so");
+  gSystem->Load("src/RunInfo.so");
   EventClass * E = new EventClass();
   Int_t N_CLASS_tmp = E->N;
   const Int_t N_CLASS = N_CLASS_tmp;

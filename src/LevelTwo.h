@@ -1,8 +1,8 @@
 // Implementation of L2 trigger daq ids, used for masking 
 // L2sum in the trigger files
 
-#ifndef Trigger_
-#define Trigger_
+#ifndef LevelTwo_
+#define LevelTwo_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,10 +16,10 @@
 #include "TTree.h"
 #include "TString.h"
 
-class Trigger : public TObject
+class LevelTwo : public TObject
 {
   public:
-    Trigger();
+    LevelTwo();
 
     Int_t Mask(Int_t run, char * trigger0, Int_t dword);
     Int_t Mask(Int_t run, Int_t num0, Int_t dword);
@@ -58,7 +58,7 @@ class Trigger : public TObject
     std::map<std::string, Int_t> rptrigger_dbidx;
     std::map<Int_t, std::map<Int_t,Long_t> > rpmask_map;
 
-    ClassDef(Trigger,1);
+    ClassDef(LevelTwo,1);
 };
 
 #endif

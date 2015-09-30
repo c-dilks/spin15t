@@ -1,0 +1,8 @@
+#!/bin/bash
+
+analyse3en EOR
+analyse3en WOR
+analyse3en SDE
+analyse3en SDW
+analyse3both IT
+analyse3both ET

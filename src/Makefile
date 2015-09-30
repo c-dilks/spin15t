@@ -19,17 +19,17 @@ GLIBS = $(ROOTGLIBS) $(SYSLIBS)
 
 #-----------------------------------------------
 
-CXXFILES = Environ.cxx RunData.cxx Trigger.cxx EventClass.cxx TCUbits.cxx
-HEADERS = Environ.h RunData.h Trigger.h EventClass.h TCUbits.h
+CXXFILES = Environ.cxx RunInfo.cxx LevelTwo.cxx EventClass.cxx TCUbits.cxx RPscint.cxx
+HEADERS = Environ.h RunInfo.h LevelTwo.h EventClass.h TCUbits.h RPscint.h
 
 #-----------------------------------------------
 
-All: RunData.so
+All: RunInfo.so
 
-RunData.so: LinkDef.h $(HEADERS) $(CXXFILES)
+RunInfo.so: LinkDef.h $(HEADERS) $(CXXFILES)
 	@echo "generating dictionary $@..."
-	@rootcint -f RunDataDict.cxx -c $(HEADERS) LinkDef.h
-	g++ $(CXXFILES) RunDataDict.cxx -shared -o RunData.so $(CXXFLAGS) $(GLIBS)
+	@rootcint -f RunInfoDict.cxx -c $(HEADERS) LinkDef.h
+	g++ $(CXXFILES) RunInfoDict.cxx -shared -o RunInfo.so $(CXXFLAGS) $(GLIBS)
 
 clean:
-	@rm RunData.so
+	@rm RunInfo.so
