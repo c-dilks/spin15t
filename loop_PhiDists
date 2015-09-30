@@ -1,5 +1,5 @@
 #!/bin/bash
-# builds condor batch file for running PhiDists3.C on .redset/*.root
+# builds condor batch file for running PhiDists4.C on .redset/*.root
 # and executes it
 # (for core looper, see ploop_PhiDists)
 
@@ -56,7 +56,7 @@ popd > /dev/null
 cnt=1
 
 while read line; do
-  echo "Arguments = -b -q PhiDists3.C(\\\"${line}\\\")" >> $job
+  echo "Arguments = -b -q PhiDists4.C(\\\"${line}\\\")" >> $job
   echo "Log    = ${log}/Phi${cnt}.log" >> $job
   echo "Output = ${log}/Phi${cnt}.out" >> $job
   echo "Error  = ${log}/Phi${cnt}.err" >> $job

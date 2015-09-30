@@ -98,10 +98,6 @@ Int_t TCUbits::RPidx(char * name0)
 };
 
 
-void TCUbits::SetBits(UInt_t inbits[8])
-{
-  for(Int_t i=0; i<8; i++) thisdsm[i] = inbits[i];
-};
 
 Bool_t TCUbits::Fired(char * trg)
 {
@@ -119,12 +115,32 @@ Bool_t TCUbits::Fired(char * trg)
     return 0;
   };
   if(debug) printf("trigger=%s DSM=%s bit=%d TCUchan=%d\n",trg,dsm0.data(),bit0,tcuchan0);
-  return (thisdsm[tcuchan0] >> bit0) & 1;
+  return (lastdsm[tcuchan0] >> bit0) & 1;
+};
+
+
+// TOF trigger; returns true if anything seen in TOF
+Bool_t TCUbits::FiredTOF()
+{
+  return (Fired("TOF_UPC") ||
+          Fired("TOFmult0") ||
+          Fired("TOFmult1") ||
+          Fired("TOFmult2") ||
+          Fired("TOFmult3") ||
+          Fired("TOFsector0_3") ||
+          Fired("TOFsector1_4") ||
+          Fired("TOFsector2_5"));
+};
+
+// BBC trigger; returns true if anything seen in BBC
+Bool_t TCUbits::FiredBBC()
+{
+  return (Fired("BBC-E") || Fired("BBC-W"));
 };
 
 
 
-
+/*
 Bool_t TCUbits::FiredRP(Int_t idx0)
 {
   string name0;
@@ -136,6 +152,7 @@ Bool_t TCUbits::FiredRP(Int_t idx0)
   };
   return FiredRP((char*)(name0.data()));
 };
+*/
 
 
 // RP TRIGGER LOGIC DEFINITIONS ////////////////////////////////////
@@ -159,6 +176,7 @@ modified SD, suggested by Akio
 [ In TCU inputs: EOR,WOR,ET,IT ]
 
 */
+/*
 Bool_t TCUbits::FiredRP(char * name0)
 {
   if(!strcmp(name0,"N")) return true; // no RP bias
@@ -203,23 +221,4 @@ Bool_t TCUbits::FiredRP(char * name0)
   else if(!strcmp(name0,"NOT_BBCE")) return !(Fired("BBC-E"));
   else if(!strcmp(name0,"NOT_BBCW")) return !(Fired("BBC-W"));
 };
-
-
-// TOF trigger; returns true if anything seen in TOF
-Bool_t TCUbits::FiredTOF()
-{
-  return (Fired("TOF_UPC") ||
-          Fired("TOFmult0") ||
-          Fired("TOFmult1") ||
-          Fired("TOFmult2") ||
-          Fired("TOFmult3") ||
-          Fired("TOFsector0_3") ||
-          Fired("TOFsector1_4") ||
-          Fired("TOFsector2_5"));
-};
-
-// BBC trigger; returns true if anything seen in BBC
-Bool_t TCUbits::FiredBBC()
-{
-  return (Fired("BBC-E") || Fired("BBC-W"));
-};
+*/

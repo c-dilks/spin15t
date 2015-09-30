@@ -35,7 +35,7 @@ class RPscint : public TObject
     Double_t MIPthresh[16];
 
     // trigger bits
-    Bool_t track_trg[2][4][3]; // [e/w] [strength] [mip]
+    Bool_t track_trg[2][4][3]; // [e/w] [strength] [mipn]
      /* strength:
       * 0 = completely unrestricted: either inner or outer fires 
       *     (mip not selected for strenth 0)
@@ -44,20 +44,20 @@ class RPscint : public TObject
       * 3 = n/s restricted: inner u(d) fires outer u(d)
       *                           inner n(s) fires outer n(s)
       *
-      * mip:
+      * mipn:
       * 0 = unrestricted
       * 1 = inner channel in mip region
       * 2 = inner channel adc > mip region
       */
 
-    Bool_t ud_track_trg[2][2][2][3]; // [e/w] [u/d] [strength] [mip]
+    Bool_t ud_track_trg[2][2][2][3]; // [e/w] [u/d] [strength] [mipn]
      /* strength:
       * 0 = inner u(d) fires outer u(d)
       * 1 = n/s restricted: also inner n(s) fires outer n(s)
       */
 
-    Bool_t elastic_trg[2][3]; // [strength adopted from ud_track_trg] [mip]
-    Bool_t inelastic_trg[2][3]; // [strength adopted from ud_track_trg] [mip]
+    Bool_t elastic_trg[2][3]; // [strength adopted from ud_track_trg] [mipn]
+    Bool_t inelastic_trg[2][3]; // [strength adopted from ud_track_trg] [mipn]
 
 
   private:

@@ -26,24 +26,23 @@ class TCUbits : public TObject
     const char * RPname(Int_t idx0);
     Int_t RPidx(char * name);
 
-    void SetBits(UInt_t inbits[8]);
     Bool_t Fired(char * trg);
     
-    Bool_t FiredRP(Int_t idx0);
-    Bool_t FiredRP(char * name0);
-
     Bool_t FiredTOF();
     Bool_t FiredBBC();
 
+    //Bool_t FiredRP(Int_t idx0);
+    //Bool_t FiredRP(char * name0);
 
     Bool_t debug;
     Int_t NRP;
+
+    UInt_t lastdsm[8];
 
   private:
     Environ * env;
     TTree * tcu_tr;
     TTree * tcuchan_tr;
-    UInt_t thisdsm[8];
 
     std::map<std::string, std::pair<std::string,UInt_t> > tcu_bit; // trigger --> (DSM,input bit)
     std::map<std::string, UInt_t> tcu_chan; // DSM --> TCU channel
