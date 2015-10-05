@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# count number of defined RP triggers
+# there is probably an easier way to do this...
+f="tempo.C"
+echo "void tempo() {" > $f
+echo "gSystem->Load(\"src/RunData.so\");" >> $f
+echo "TCUbits * tcu = new TCUbits();" >> $f
+echo "gSystem->RedirectOutput(\"tempo.dat\",\"w\");" >> $f
+echo "for(Int_t r=0; r<tcu->NRP; r++)" >> $f
+echo "printf(\"%s\\n\",tcu->RPname(r));" >> $f
+echo "gSystem->RedirectOutput(0);" >> $f
+echo "};" >> $f
+root -b -q tempo.C
+cat tempo.dat
+nrp=$(cat tempo.dat | wc -l)
+echo "nrp=$nrp"
+rm tempo.C
+mv tempo.dat diagset/
+
+pushd diagset
+
+# hadd RP trigger files
+while read line; do
+  touch all_${line}.root
+  rm all_${line}.root
+  hadd all_${line}.root diag_${line}.*.root
+done < tempo.dat
+
+# hadd RP-unbiased files
+touch all.root
+rm all.root
+hadd all.root diag.*.root
+
+rm tempo.dat
+popd

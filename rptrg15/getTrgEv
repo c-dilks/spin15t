@@ -1,0 +1,62 @@
+#!/bin/tcsh
+
+set default=200
+
+if ( ! ($?BEAM) ) then
+  echo "BEAM env variable not set!"
+  setenv BEAM $default
+  echo "Defaulting to BEAM=${BEAM}"
+endif
+
+set runtype="trans|long2"
+rm trigger.dat
+
+
+# obtain data from online
+echo "downloading data..."
+mysql --host onldb.starp.bnl.gov --port 3501 RunLog -e\
+  "SELECT trgSetupName,runNumber,startRunTime,endRunTime FROM runDescriptor"\
+  > runDescriptor.dat
+mysql --host onldb.starp.bnl.gov --port 3501 RunLog -e\
+  "SELECT runNumber,blueEnergy,blueFillNumber FROM beamInfo"\
+  > beamInfo.dat
+mysql --host onldb.starp.bnl.gov --port 3501 RunLog -e \
+  "SELECT runNumber,frequency FROM clockFrequency WHERE entryTag=0" \
+  | uniq > freq_list.dat
+foreach trg ( "RP_SD" "RP_SDT" "RP_RPZMU" "RP_RPZE" "RP_ET" "RP_CP" "RP_RP2MU" "RP_RP2E" "RP_Zerobias" "RP_CPT2" "RP_CPEI" )
+  mysql --host onldb.starp.bnl.gov --port 3501 RunLog -e\
+  "SELECT runNumber,numberOfEvents,prescale FROM l0TriggerSet WHERE name='${trg}'"\
+  > $trg.dat
+  echo " ${trg} triggers obtained"
+end
+
+echo "building run number list..."
+grep -E $runtype runDescriptor.dat | awk '{print $2" "$3" "$4" "$1}' > runlist.dat
+
+
+echo "building trigger table..."
+touch trigger.dat
+foreach line ( "`cat runlist.dat`" )
+  set argv = ( $line )
+  set rn = $1
+  @ t = $3 - $2
+  set type = $4
+  set E = `grep $rn beamInfo.dat | head -n1 | awk '{print $2}'`
+  set fill = `grep $rn beamInfo.dat | head -n1 | awk '{print $3}'`
+  set freq = `grep $rn freq_list.dat | awk '{print $2}'`
+  set day = `echo $rn | cut -c3-5`
+  set run = `echo $rn | cut -c6-8`
+  foreach trg ( "RP_SD" "RP_SDT" "RP_RPZMU" "RP_RPZE" "RP_ET" "RP_CP" "RP_RP2MU" "RP_RP2E" "RP_Zerobias" "RP_CPT2" "RP_CPEI" )
+    set tmp = `grep $rn $trg.dat | awk '{print $2" "$3}'`
+    set trg2 = `echo $trg | sed 's/-//g'`
+    set $trg2 = "$tmp"
+    if ( "$tmp" == "" ) set $trg2 = "0 0"
+  end
+
+  if ( "$RP_Zerobias" == "0 0" ) continue
+
+  echo "$rn $day $run $type $fill $E $t $freq $RP_SD $RP_SDT $RP_RPZMU $RP_RPZE $RP_ET $RP_CP $RP_RP2MU $RP_RP2E $RP_Zerobias $RP_CPT2 $RP_CPEI" >> trigger.dat
+  echo " $rn"
+end
+
+echo "trigger.dat built; now filter goodruns.dat by executing cull_runs"

@@ -6,11 +6,11 @@ namespace
 {
   //------------------------------------------------------------------------------
   // trigger parameters: see RPscint.h for full documentation
-  const Int_t STG1 = 3; // RPscint::track_trg strength
-  const Int_t STG2 = 1; // RPscint::ud_track_trg strength
-  const Int_t MIPN = 1; // RPscint::(trigger) mipn
-  const Bool_t USE_TCU_BITS = false; // if true, uses TCU bits EOR,WOR,IT,ET
-                                     // instead of the strengthed booleans via QT
+  const Int_t STG1 = 0; // RPscint::track_trg strength
+  const Int_t STG2 = 0; // RPscint::ud_track_trg strength
+  const Int_t MIPN = 0; // RPscint::(trigger) mipn
+  const Bool_t USE_TCU_BITS = 1; // if true, uses TCU bits EOR,WOR,IT,ET
+                                 // instead of the strengthed booleans via QT
   //------------------------------------------------------------------------------
 
   enum ew_enum {kE,kW};
@@ -40,6 +40,7 @@ TriggerBoolean::TriggerBoolean()
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("ET"),ii++));
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("IT"),ii++));
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("DD"),ii++));
+  trg_idx.insert(std::pair<std::string,Int_t>(std::string("SDOR"),ii++));
 
   NBOOL = ii;
 
@@ -100,8 +101,8 @@ Bool_t TriggerBoolean::Fired(char * name0)
     {
       EOR = TCU->Fired("RP_EOR");
       WOR = TCU->Fired("RP_WOR");
-      ET = TCU->Fired("ET");
-      IT = TCU->Fired("IT");
+      ET = TCU->Fired("RP_ET");
+      IT = TCU->Fired("RP_IT");
     }
     else
     {
@@ -116,6 +117,7 @@ Bool_t TriggerBoolean::Fired(char * name0)
     else if(!strcmp(name0,"WOR")) return WOR;
     else if(!strcmp(name0,"ET")) return ET;
     else if(!strcmp(name0,"IT")) return IT;
+    else if(!strcmp(name0,"SDOR")) return EOR || WOR;
     else
     {
       if(!strcmp(name0,"SDE")) 

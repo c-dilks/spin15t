@@ -27,21 +27,21 @@ export ETA_DIV_1=4.200000
 
 export PT_LOW=0.000000
 export PT_HIGH=10.000000
-export PT_BINS=1
+export PT_BINS=7
 export PT_DIV_0=0.000000
-export PT_DIV_1=10.000000
+export PT_DIV_1=1.500000
+export PT_DIV_2=2.500000
+export PT_DIV_3=3.500000
+export PT_DIV_4=4.750000
+export PT_DIV_5=6.000000
+export PT_DIV_6=8.000000
+export PT_DIV_7=10.000000
 
 export EN_LOW=0.000000
 export EN_HIGH=100.000000
-export EN_BINS=7
+export EN_BINS=1
 export EN_DIV_0=0.000000
-export EN_DIV_1=20.000000
-export EN_DIV_2=28.000000
-export EN_DIV_3=36.000000
-export EN_DIV_4=50.000000
-export EN_DIV_5=65.000000
-export EN_DIV_6=80.000000
-export EN_DIV_7=100.000000
+export EN_DIV_1=100.000000
 
 export TRIGGER_TYPE="All"
 export MASS_CUT_TYPE="en"

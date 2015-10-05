@@ -1,0 +1,14 @@
+obtain number of RP triggers and prescales for each run
+-------------------------------------------------------
+
+1. `getTrgEv` downloads number of RP triggers & prescales for all runs, producing `trigger.dat`
+   (MUST BE EXECUTED ON RCAS)
+
+2. `cull_runs` culls the good runs contained in `goodruns.dat`, producing `trigger_culled.dat`
+
+3. `mk_tree.C` builds `trigger_culled.dat` into a tree in `rptree.root`, which contains run numbers,
+   fill numbers, clock freq, run time, all RP triggers, and prescales, et al
+
+4. `DrawPdists.C` draws the probability of an RP trigger firing per bXing vs. run index; this script
+   uses `counts.root` from scaler analysis for bunch crossing counts; it's best to symlink it to this 
+   directory

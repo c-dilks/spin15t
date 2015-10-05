@@ -1,0 +1,15 @@
+#!/bin/bash
+
+f="trigger_culled.dat"
+>$f
+
+iter=0
+while read line; do 
+  run=$(echo $line | awk '{print $1}')
+  grepstr="$(grep -E ^${run} trigger.dat)"
+  if [ -n "$grepstr" ]; then 
+    echo "$iter $grepstr" >> $f
+    let iter++
+  fi
+done < goodruns.dat
+echo $f created

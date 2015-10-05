@@ -198,30 +198,13 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
   Int_t ss,gg,pp,ee,rr;
   rr=-1; runnum_tmp=0;
   printf("fill phi dists...\n");
-  Bool_t usepi0;
-  char RP_select[32];
-  strcpy(RP_select,env->RPselect);
-  Int_t stg1,stg2,mipn;
 
   for(Int_t x=0; x<tree->GetEntries(); x++)
   {
     if((x%10000)==0) printf("%.2f%%\n",100*((Float_t)x)/((Float_t)tree->GetEntries()));
     ss=gg=pp=ee=-1; // reset 
+
     tree->GetEntry(x);
-    blue = RD->BlueSpin(runnum,bx);
-    yell = RD->YellSpin(runnum,bx);
-    kicked = RD->Kicked(runnum,bx);
-
-    // spin --> array index
-    if(blue==-1 && yell==-1) ss=0;
-    else if(blue==-1 && yell==1) ss=1;
-    else if(blue==1 && yell==-1) ss=2;
-    else if(blue==1 && yell==1) ss=3;
-
-    // kinematic bins --> array indices
-    for(Int_t g=0; g<eta_bins; g++) { if(Eta>=env->EtaDiv(g) && Eta<env->EtaDiv(g+1)) gg=g; };
-    for(Int_t p=0; p<pt_bins;  p++) { if(Pt>=env->PtDiv(p)   && Pt<env->PtDiv(p+1)  ) pp=p; };
-    for(Int_t e=0; e<en_bins;  e++) { if(E12>=env->EnDiv(e)  && E12<env->EnDiv(e+1) ) ee=e; };
 
     // run number --> array index
     if(runnum != runnum_tmp)
@@ -235,28 +218,47 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
       y_pol = RD->YellPol(runnum);
     };
 
-    // check for valid array indices (filters out events outside kinematic boundaries)
-    //printf("%d %d %d %d %d\n",ss,gg,pp,ee,rr);
-    /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)>3.1415/2.0)*/ /* north cells only */
-    /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)<3.1415/2.0)*/ /* south cells only */
-    if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
+    // check for rellum consistency and valid polarization and FMS L2 trigger
+    if(isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
     {
-      // rellum consistency, polarization, and env->TriggerType cut
-      if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0 && (L2sum[1]&T->Mask(runnum,env->TriggerType,1)))
-      {
-        // set kinematics variables for event, tcu bits, rp bits
-        ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
+      blue = RD->BlueSpin(runnum,bx);
+      yell = RD->YellSpin(runnum,bx);
+      kicked = RD->Kicked(runnum,bx);
 
-        if(trg_bool->Fired(env->RPselect))
+      // check spin and kicked status
+      if(abs(blue)==1 && abs(yell)==1 && kicked==0)
+      {
+        // spin --> array index
+        ss = 2 * (blue>0) + (yell>0);
+
+        // kinematic bins --> array indices
+        for(Int_t g=0; g<eta_bins; g++) { if(Eta>=env->EtaDiv(g) && Eta<env->EtaDiv(g+1)) { gg=g; break; }; };
+        for(Int_t p=0; p<pt_bins;  p++) { if(Pt>=env->PtDiv(p)   && Pt<env->PtDiv(p+1)  ) { pp=p; break; }; };
+        for(Int_t e=0; e<en_bins;  e++) { if(E12>=env->EnDiv(e)  && E12<env->EnDiv(e+1) ) { ee=e; break; }; };
+
+
+        // check for valid array indices (filters out events outside kinematic boundaries)
+        //printf("%d %d %d %d %d\n",ss,gg,pp,ee,rr);
+        /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)>3.1415/2.0)*/ /* north cells only */
+        /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)<3.1415/2.0)*/ /* south cells only */
+        if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
         {
+          // set kinematics variables for event, tcu bits, rp bits
+          ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
+
+          // determine event class(es)
           for(Int_t c=0; c<N_CLASS; c++)
           {
             if(ev->Valid(c))
             {
-              phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
-              pt_wdist[c][gg][ee][rr]->Fill(Pt);
-              en_wdist[c][gg][pp][rr]->Fill(E12);
-              mm_wdist[c][gg][pp][ee][rr]->Fill(M12);
+              // check roman pots / diffraction trigger boolean
+              if(trg_bool->Fired(env->RPselect))
+              {
+                phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
+                pt_wdist[c][gg][ee][rr]->Fill(Pt);
+                en_wdist[c][gg][pp][rr]->Fill(E12);
+                mm_wdist[c][gg][pp][ee][rr]->Fill(M12);
+              };
             };
           };
         };

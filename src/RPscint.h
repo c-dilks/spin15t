@@ -26,12 +26,16 @@ class RPscint : public TObject
     Int_t EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0);
     TString RPname(Int_t idx0);
 
-    // variables
+    //---------------------------------------------------------
+    // EVENT VARIABLES
     Short_t N[2]; // [0=east 1=west]
     Short_t Idx[2][16]; // [east/west] [sorted # (max 16)]
     Short_t ADC[2][16];
     Short_t TAC[2][16];
     Float_t vertex;
+    //---------------------------------------------------------
+    
+    
     Double_t MIPthresh[16];
 
     // trigger bits

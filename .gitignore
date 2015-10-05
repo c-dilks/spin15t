@@ -22,3 +22,4 @@ diag_plots/*.pdf
 *.gz
 asym_plots/*
 wdist_pdfs/*
+rptrg15/*.dat

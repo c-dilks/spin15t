@@ -4,14 +4,14 @@ ClassImp(EventClass)
 
 namespace
 {
-  const Int_t N_CLASS = 5;
+  const Int_t N_CLASS = 4;
   enum class_enum
   {
     kSph,
     kPi0,
     kThr,
-    kEtm,
-    kJps,
+    kEtm
+    /*kJps*/
   };
 
   const Double_t Zd = 720;  // distance from IP [cm]
@@ -20,7 +20,7 @@ namespace
 
   const Double_t pi0_mass = 0.135; // pi0 mass [GeV]
   const Double_t etm_mass = 0.548; // eta mass [GeV]
-  const Double_t jps_mass = 3.097; // j/psi mass [GeV]
+  //const Double_t jps_mass = 3.097; // j/psi mass [GeV]
 };
 
 // constructor
@@ -33,14 +33,14 @@ EventClass::EventClass()
   class_name.insert(std::pair<Int_t,char*>(kPi0,"pi0")); // pi0's
   class_name.insert(std::pair<Int_t,char*>(kThr,"thr")); // three or more photons
   class_name.insert(std::pair<Int_t,char*>(kEtm,"etm")); // eta's
-  class_name.insert(std::pair<Int_t,char*>(kJps,"jps")); // j/psi's
+  //class_name.insert(std::pair<Int_t,char*>(kJps,"jps")); // j/psi's
 
   // event class titles
   class_title.insert(std::pair<Int_t,char*>(kSph,"Single #gamma")); // single photons
   class_title.insert(std::pair<Int_t,char*>(kPi0,"#pi^{0}")); // pi0's
   class_title.insert(std::pair<Int_t,char*>(kThr,"N_{#gamma}>2")); // three or more photons
   class_title.insert(std::pair<Int_t,char*>(kEtm,"#eta-meson")); // eta's
-  class_title.insert(std::pair<Int_t,char*>(kJps,"J/#psi")); // j/psi's
+  //class_title.insert(std::pair<Int_t,char*>(kJps,"J/#psi")); // j/psi's
 
   // event class index from name
   for(Int_t n=0; n<N_CLASS; n++)
@@ -165,6 +165,7 @@ Bool_t EventClass::Valid(Int_t idx)
   }
 
   // j/psi cuts
+  /*
   else if(idx==kJps)
   {
     if( fabs(N12-2)<0.1 &&
@@ -175,6 +176,7 @@ Bool_t EventClass::Valid(Int_t idx)
         E12>60 && E12<100 &&
         Pt>1) return true;
   }
+  */
 
   return false;
 };
@@ -189,7 +191,7 @@ Bool_t EventClass::ValidWithoutMcut(Int_t idx)
   // set M12 to optimal meson masses
   if(idx==kPi0) M12 = pi0_mass;
   else if(idx==kEtm) M12 = etm_mass;
-  else if(idx==kJps) M12 = jps_mass;
+  /*else if(idx==kJps) M12 = jps_mass;*/
   boole = Valid(idx);
   M12 = M12_tmp; // restore value of M12
   return boole;

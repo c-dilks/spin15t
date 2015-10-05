@@ -6,12 +6,16 @@
 void CompareRPasym(char * kinvar="en", char * evclass="pi0",
                    char * asym="A_N_blue", char * binselect="")
 {
+  char dir[32];
+  strcpy(dir,"expedited");
+  strcpy(dir,"spinpwg");
+
   const Int_t NRP = 10;
   enum rp_enum {kAll,kET,kIT,kSDE,kSDW,kEOR,kWOR,kEXOR,kWXOR,kDD};
 
   // draw switch
   Bool_t draw[NRP];
-  draw[kAll] = 1;
+  draw[kAll] = 0;
 
   draw[kET] = 0;
   draw[kIT] = 0;
@@ -19,19 +23,20 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   draw[kSDE] = 0;
   draw[kSDW] = 0;
 
-  draw[kEOR] = 0;
+  draw[kEOR] = 1;
   draw[kWOR] = 0;
 
-  draw[kEXOR] = 1;
-  draw[kWXOR] = 1;
-
   draw[kDD] = 0;
+
+  draw[kEXOR] = 0;
+  draw[kWXOR] = 0;
+
 
 
   /////////////////////////
 
   char rp_name[NRP][16];
-  strcpy(rp_name[kAll],"all");
+  strcpy(rp_name[kAll],"N");
   strcpy(rp_name[kET],"ET");
   strcpy(rp_name[kIT],"IT");
   strcpy(rp_name[kSDE],"SDE");
@@ -105,9 +110,9 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
     if(draw[n])
     {
       if(strcmp(binselect,"")) 
-        sprintf(infile_n[n],"output_collab_%s_%s_%s/spin_%s.root",kinvar,binselect,rp_name[n],evclass);
+        sprintf(infile_n[n],"asym_plots/output_%s_%s_%s_%s/spin_%s.root",dir,kinvar,binselect,rp_name[n],evclass);
       else 
-        sprintf(infile_n[n],"output_collab_%s_%s/spin_%s.root",kinvar,rp_name[n],evclass);
+        sprintf(infile_n[n],"asym_plots/output_%s_%s_%s/spin_%s.root",dir,kinvar,rp_name[n],evclass);
       printf("%s\n",infile_n[n]);
       infile[n] = new TFile(infile_n[n],"READ");
       //infile[n]->cd(asym);

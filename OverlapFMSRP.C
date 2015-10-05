@@ -12,7 +12,7 @@ void OverlapFMSRP(const char * filename="diagset/all.root")
   Int_t NX,NY;
   Int_t xp,yp,zp;
   Int_t bn;
-  Double_t bc;
+  Double_t bc,div;
   TH2D * mx_in[N_CLASS];
   TH2D * mx_out[N_CLASS];
   TString mx_in_name[N_CLASS];

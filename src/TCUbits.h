@@ -37,7 +37,10 @@ class TCUbits : public TObject
     Bool_t debug;
     Int_t NRP;
 
+    //-------------------------------
+    // EVENT VARIABLES
     UInt_t lastdsm[8];
+    //-------------------------------
 
   private:
     Environ * env;

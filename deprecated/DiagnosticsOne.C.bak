@@ -4,24 +4,20 @@
 // this script only stream in one redset file and is to be run
 // within condor
 
-void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
+void DiagnosticsOne(const char * infile_name = "RedOutputset080s5.root",
+                    const char * RP_select="")
 {
 
-  const Int_t NBINS=10; // NUMBER OF BINS (default 400)
-  const Int_t NBINS_RDIST=10; // number of bins for variable vs. run index plots (default 100)
+  const Int_t NBINS=400; // NUMBER OF BINS
+  const Int_t NBINS_RDIST=100; // number of bins for variable vs. run index plots
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
-
-  enum ew_enum {kE,kW};
-  enum io_enum {kI,kO};
-  enum ud_enum {kU,kD};
-  enum ns_enum {kN,kS};
 
   gSystem->Load("src/RunInfo.so");
   RunInfo * RD = new RunInfo();
   LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
-  TriggerBoolean * trg_bool = new TriggerBoolean();
+  TCUbits * tcu = new TCUbits();
 
 
   // open tree
@@ -52,19 +48,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("Z",&Z);
   tr->SetBranchAddress("N12",&N12);
   tr->SetBranchAddress("L2sum",L2sum);
-  tr->SetBranchAddress("lastdsm",trg_bool->TCU->lastdsm);
-
-  tr->SetBranchAddress("RPE_QTN",&(trg_bool->RPSCI->N[kE]));
-  tr->SetBranchAddress("RPW_QTN",&(trg_bool->RPSCI->N[kW]));
-  tr->SetBranchAddress("RPE_Idx",trg_bool->RPSCI->Idx[kE]);
-  tr->SetBranchAddress("RPE_TAC",trg_bool->RPSCI->TAC[kE]);
-  tr->SetBranchAddress("RPE_ADC",trg_bool->RPSCI->ADC[kE]);
-  tr->SetBranchAddress("RPW_Idx",trg_bool->RPSCI->Idx[kW]);
-  tr->SetBranchAddress("RPW_TAC",trg_bool->RPSCI->TAC[kW]);
-  tr->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
-  tr->SetBranchAddress("RPvertex",trg_bool->RPSCI->vertex);
-
-
+  tr->SetBranchAddress("lastdsm",lastdsm);
 
   // trigger list
   Int_t N_TRIG_tmp = T->N;
@@ -152,8 +136,8 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   char z_rdist_n_tmp[N_CLASS][N_TRIG][MAXRUNS][64];
 
   char RP_select_t[32];
-  if(!strcmp(env->RPselect,"")) strcpy(RP_select_t,"");
-  else sprintf(RP_select_t," --- %s boolean only",env->RPselect);
+  if(!strcmp(RP_select,"")) strcpy(RP_select_t,"");
+  else sprintf(RP_select_t," --- %s RP only",RP_select);
 
   Float_t low_mass,high_mass;
 
@@ -172,13 +156,11 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
       {
         low_mass=0.3;
       }
-      /*
       else if(c==ev->Idx("jps"))
       {
         low_mass=0;
         high_mass=6;
       };
-      */
 
       sprintf(pt_vs_eta_n[c][t],"%s_%s_pt_vs_eta",T->Name(t),ev->Name(c));
       sprintf(en_vs_eta_n[c][t],"%s_%s_en_vs_eta",T->Name(t),ev->Name(c));
@@ -321,7 +303,6 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
     };
   };
 
-
   // trigger distribution
   char trig_dist_t[64];
   sprintf(trig_dist_t,"Trigger Counts%s",RP_select_t);
@@ -329,9 +310,8 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   for(Int_t t=0; t<N_TRIG; t++) trig_dist->GetXaxis()->SetBinLabel(t+1,T->Name(t));
 
   // trigger mix for FMS and RP
-  Int_t N_RP_tmp = trg_bool->NBOOL;
+  Int_t N_RP_tmp = tcu->NRP;
   const Int_t N_RP = N_RP_tmp;
-  printf("N_RP=%d\n",N_RP);
 
   TH2D * trig_fms_mix[N_CLASS]; // overlap matrix of FMS triggers
   TH2D * trig_rp_mix[N_CLASS]; // overlap matrix of RP triggers
@@ -370,9 +350,9 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
     };
     for(Int_t t=0; t<N_RP; t++)
     {
-      trig_rp_mix[c]->GetXaxis()->SetBinLabel(t+1,trg_bool->Name(t));
-      trig_rp_mix[c]->GetYaxis()->SetBinLabel(t+1,trg_bool->Name(t));
-      trig_fmsrp_mix[c]->GetXaxis()->SetBinLabel(t+1,trg_bool->Name(t));
+      trig_rp_mix[c]->GetXaxis()->SetBinLabel(t+1,tcu->RPname(t));
+      trig_rp_mix[c]->GetYaxis()->SetBinLabel(t+1,tcu->RPname(t));
+      trig_fmsrp_mix[c]->GetXaxis()->SetBinLabel(t+1,tcu->RPname(t));
     };
     trig_fmsrp_mix[c]->GetXaxis()->SetBinLabel(N_RP+1,"n/a");
   };
@@ -435,10 +415,11 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
     // rellum / pol cut
     if( kicked==0 && isConsistent==1 && b_pol>0 && y_pol>0)
     {
-      // fill fms trigger plot
+      // fill trigger plot
       for(Int_t t=0; t<N_TRIG; t++)
       {
-        if(L2sum[1] & T->Mask(runnum,t,1) && trg_bool->Fired(env->RPselect))
+        if(L2sum[1] & T->Mask(runnum,t,1) &&
+           (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
           trig_dist->Fill(t);
       };
 
@@ -447,6 +428,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
       // then loop through all triggers
 
       ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
+      tcu->SetBits(lastdsm);
       for(Int_t c=0; c<N_CLASS; c++)
       {
         // fill main kinematic correlation plots
@@ -457,7 +439,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
           {
             if(L2sum[1] & T->Mask(runnum,t,1))
             {
-              if(trg_bool->Fired(env->RPselect))
+              if(!strcmp(RP_select,"") || tcu->FiredRP(RP_select))
               {
                 pt_vs_eta[c][t]->Fill(Eta,Pt);
                 en_vs_eta[c][t]->Fill(Eta,E12);
@@ -481,7 +463,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
               };
               for(Int_t r=0; r<N_RP; r++)
               {
-                if(trg_bool->Fired(r))
+                if(tcu->FiredRP(r))
                 {
                   trig_fmsrp_mix[c]->Fill(r,t);
 
@@ -490,7 +472,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
                   {
                     for(Int_t rr=0; rr<N_RP; rr++)
                     {
-                      if(trg_bool->Fired(rr)) trig_rp_mix[c]->Fill(r,rr);
+                      if(tcu->FiredRP(rr)) trig_rp_mix[c]->Fill(r,rr);
                     };
                   };
                 };
@@ -505,25 +487,23 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
         {
           for(Int_t t=0; t<N_TRIG; t++)
           {
-            if(L2sum[1] & T->Mask(runnum,t,1))
+            if(L2sum[1] & T->Mask(runnum,t,1) &&
+               (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
             {
-              if(trg_bool->Fired(env->RPselect))
+              mass_dist[c][t]->Fill(M12);
+              mass_vs_en[c][t]->Fill(E12,M12);
+              mass_vs_pt[c][t]->Fill(Pt,M12);
+              mass_rdist[c][t][runcount]->Fill(M12);
+              // fill kinematic-dependent mass distributions for pions
+              if(c==ev->Idx("pi0"))
               {
-                mass_dist[c][t]->Fill(M12);
-                mass_vs_en[c][t]->Fill(E12,M12);
-                mass_vs_pt[c][t]->Fill(Pt,M12);
-                mass_rdist[c][t][runcount]->Fill(M12);
-                // fill kinematic-dependent mass distributions for pions
-                if(c==ev->Idx("pi0"))
+                for(Int_t ee=0; ee<10; ee++)
                 {
-                  for(Int_t ee=0; ee<10; ee++)
-                  {
-                    if(E12>=(ee*10) && E12<((ee+1)*10)) mass_dist_for_enbin[t][ee]->Fill(M12);
-                  };
-                  for(Int_t pp=0; pp<10; pp++)
-                  {
-                    if(Pt>=pp && Pt<(pp+1)) mass_dist_for_ptbin[t][pp]->Fill(M12);
-                  };
+                  if(E12>=(ee*10) && E12<((ee+1)*10)) mass_dist_for_enbin[t][ee]->Fill(M12);
+                };
+                for(Int_t pp=0; pp<10; pp++)
+                {
+                  if(Pt>=pp && Pt<(pp+1)) mass_dist_for_ptbin[t][pp]->Fill(M12);
                 };
               };
             };
@@ -531,19 +511,17 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
         };
 
         // fill z plots
-        if((c==ev->Idx("pi0") || c==ev->Idx("etm") /*|| c==ev->Idx("jps")*/) && ev->ValidWithoutZcut(c))
+        if((c==ev->Idx("pi0") || c==ev->Idx("etm") || c==ev->Idx("jps")) && ev->ValidWithoutZcut(c))
         {
           for(Int_t t=0; t<N_TRIG; t++)
           {
-            if(L2sum[1] & T->Mask(runnum,t,1))
+            if(L2sum[1] & T->Mask(runnum,t,1) &&
+               (!strcmp(RP_select,"") || tcu->FiredRP(RP_select)))
             {
-              if(trg_bool->Fired(env->RPselect))
-              {
-                z_vs_eta[c][t]->Fill(Eta,Z);
-                z_vs_phi[c][t]->Fill(Phi,Z);
-                z_dist[c][t]->Fill(Z);
-                z_rdist[c][t][runcount]->Fill(Z);
-              };
+              z_vs_eta[c][t]->Fill(Eta,Z);
+              z_vs_phi[c][t]->Fill(Phi,Z);
+              z_dist[c][t]->Fill(Z);
+              z_rdist[c][t][runcount]->Fill(Z);
             };
           };
         };
@@ -693,8 +671,8 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   char outfilename[256];
   char RP_suffix[16];
   sscanf(infile_name,"RedOutput%s",outfilename);
-  if(!strcmp(env->RPselect,"")) strcpy(RP_suffix,"");
-  else sprintf(RP_suffix,"_%s",env->RPselect);
+  if(!strcmp(RP_select,"")) strcpy(RP_suffix,"");
+  else sprintf(RP_suffix,"_%s",RP_select);
   sprintf(outfilename,"diagset/diag%s.%s",RP_suffix,outfilename);
   TFile * outfile = new TFile(outfilename,"RECREATE");
   outfile->cd();
