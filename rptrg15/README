@@ -12,3 +12,5 @@ obtain number of RP triggers and prescales for each run
 4. `DrawPdists.C` draws the probability of an RP trigger firing per bXing vs. run index; this script
    uses `counts.root` from scaler analysis for bunch crossing counts; it's best to symlink it to this 
    directory
+   --> outputs `pvsi_plots.root`, which contains trigger probability vs. run index plots as 
+       well as a TTree

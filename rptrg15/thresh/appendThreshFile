@@ -1,0 +1,40 @@
+#!/bin/bash
+# takes results of triggerThresholds and writes them to a
+# file called "thresh.dat"
+
+if [ $# -eq 2 ]; then
+  runnum=$1
+  index=$2
+else
+  echo "usage: $0 [run number] [index number]" >&2
+  exit 1
+fi
+
+fname="thfiles/th_$runnum"
+
+ADCTH=$(grep "PP2PP_QT_ADC_Th" $fname | awk '{print $2}')
+TACL=$(grep "PP2PP_QT_TAC_Min" $fname | awk '{print $2}')
+TACH=$(grep "PP2PP_QT_TAC_Max" $fname | awk '{print $2}')
+
+
+ADCTH_def=$(grep "PP2PP_QT_ADC_Th" $fname | awk '{print $3}')
+TACL_def=$(grep "PP2PP_QT_TAC_Min" $fname | awk '{print $3}')
+TACH_def=$(grep "PP2PP_QT_TAC_Max" $fname | awk '{print $3}')
+
+
+if [ $ADCTH -eq -1 ]; then ADCTH=$ADCTH_def; fi
+if [ $TACL -eq -1 ]; then TACL=$TACL_def; fi
+if [ $TACH -eq -1 ]; then TACH=$TACH_def; fi
+
+write=1
+
+if [ -z "$ADCTH" ]; then write=0; fi
+if [ -z "$TACL" ]; then write=0; fi
+if [ -z "$TACH" ]; then write=0; fi
+
+echo "----------- ADCTH=$ADCTH TAC::$TACL-$TACH write=$write"
+
+if [ $write -eq 1 ]; then
+  echo "$runnum $index $ADCTH $TACL $TACH"\
+    >> thresh.dat
+fi
