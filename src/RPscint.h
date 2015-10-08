@@ -37,10 +37,11 @@ class RPscint : public TObject
     
     
     Double_t MIPthresh[16];
+    Double_t TACshift[16];
 
     // trigger bits
     Bool_t track_trg[2][4][3]; // [e/w] [strength] [mipn]
-     /* strength:
+     /* strength stg1:
       * 0 = completely unrestricted: either inner or outer fires 
       *     (mip not selected for strenth 0)
       * 1 = i/o restricted: any inner fires any outer
@@ -54,14 +55,15 @@ class RPscint : public TObject
       * 2 = inner channel adc > mip region
       */
 
-    Bool_t ud_track_trg[2][2][2][3]; // [e/w] [u/d] [strength] [mipn]
-     /* strength:
-      * 0 = inner u(d) fires outer u(d)
-      * 1 = n/s restricted: also inner n(s) fires outer n(s)
+    Bool_t ud_track_trg[2][2][3][3]; // [e/w] [u/d] [strength] [mipn]
+     /* strength stg2:
+      * 0 = either inner u(d) or outer u(d) fires
+      * 1 = both inner u(d) and  outer u(d) fire
+      * 2 = n/s restricted: also inner n(s) fires outer n(s)
       */
 
-    Bool_t elastic_trg[2][3]; // [strength adopted from ud_track_trg] [mipn]
-    Bool_t inelastic_trg[2][3]; // [strength adopted from ud_track_trg] [mipn]
+    Bool_t elastic_trg[3][3]; // [strength adopted from ud_track_trg] [mipn]
+    Bool_t inelastic_trg[3][3]; // [strength adopted from ud_track_trg] [mipn]
 
 
   private:
@@ -69,6 +71,7 @@ class RPscint : public TObject
     Int_t udi,udo,nsi,nso;
     Bool_t fired[16];
     Double_t ADCtmp[16];
+    Double_t TACtmp[16];
     Int_t ii,oo,mipn;
 
     ClassDef(RPscint,1);

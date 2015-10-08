@@ -30,6 +30,11 @@ Environ::Environ()
   sscanf(gSystem->Getenv("ETA_HIGH"),"%f",&EtaHigh);
   sscanf(gSystem->Getenv("EN_HIGH"),"%f",&EnHigh);
   sscanf(gSystem->Getenv("PT_HIGH"),"%f",&PtHigh);
+
+  sscanf(gSystem->Getenv("STG1"),"%d",&STG1);
+  sscanf(gSystem->Getenv("STG2"),"%d",&STG2);
+  sscanf(gSystem->Getenv("MIPN"),"%d",&MIPN);
+  sscanf(gSystem->Getenv("USE_TCU_BITS"),"%d",&USE_TCU_BITS);
   
   Float_t d;
   char s[32];

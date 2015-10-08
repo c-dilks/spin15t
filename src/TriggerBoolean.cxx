@@ -4,15 +4,6 @@ ClassImp(TriggerBoolean)
 
 namespace
 {
-  //------------------------------------------------------------------------------
-  // trigger parameters: see RPscint.h for full documentation
-  const Int_t STG1 = 0; // RPscint::track_trg strength
-  const Int_t STG2 = 0; // RPscint::ud_track_trg strength
-  const Int_t MIPN = 0; // RPscint::(trigger) mipn
-  const Bool_t USE_TCU_BITS = 1; // if true, uses TCU bits EOR,WOR,IT,ET
-                                 // instead of the strengthed booleans via QT
-  //------------------------------------------------------------------------------
-
   enum ew_enum {kE,kW};
   enum io_enum {kI,kO};
   enum ud_enum {kU,kD};
@@ -25,8 +16,13 @@ namespace
 };
 
 
-TriggerBoolean::TriggerBoolean()
+TriggerBoolean::TriggerBoolean(Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
 {
+  STG1 = stg1_in;
+  STG2 = stg2_in;
+  MIPN = mipn_in;
+  USE_TCU_BITS = use_tcu;
+   
   TCU = new TCUbits();
   RPSCI = new RPscint();
 
@@ -39,7 +35,7 @@ TriggerBoolean::TriggerBoolean()
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("SDW"),ii++));
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("ET"),ii++));
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("IT"),ii++));
-  trg_idx.insert(std::pair<std::string,Int_t>(std::string("DD"),ii++));
+  //trg_idx.insert(std::pair<std::string,Int_t>(std::string("DD"),ii++));
   trg_idx.insert(std::pair<std::string,Int_t>(std::string("SDOR"),ii++));
 
   NBOOL = ii;
@@ -97,7 +93,7 @@ Bool_t TriggerBoolean::Fired(char * name0)
   if(!strcmp(name0,"N")) return true; // no RP bias
   else
   {
-    if(USE_TCU_BITS)
+    if(USE_TCU_BITS==1)
     {
       EOR = TCU->Fired("RP_EOR");
       WOR = TCU->Fired("RP_WOR");
@@ -134,5 +130,46 @@ Bool_t TriggerBoolean::Fired(char * name0)
   };
   fprintf(stderr,"ERROR: unrecognised trigger boolean\n");
   return false;
+};
+
+
+Bool_t TriggerBoolean::FiredAlternate(Int_t idx0, 
+                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
+{
+  std::string name0;
+  try { name0 = trg_name.at(idx0); }
+  catch(const std::out_of_range& e)
+  {
+    fprintf(stderr,"ERROR: RP idx out of range\n");
+    return 0;
+  };
+  return FiredAlternate((char*)(name0.data()),stg1_in,stg2_in,mipn_in,use_tcu);
+};
+
+
+// changes trigger strength / mip parameters to alternate values, checks if that fired, 
+// then changes the parameters back (note that the parameters are initialised in the constructor,
+// and since they're private, cannot be changed outside the class)
+Bool_t TriggerBoolean::FiredAlternate(char * name0, 
+                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
+{
+  STG1_tmp = STG1;
+  STG2_tmp = STG2;
+  MIPN_tmp = MIPN;
+  USE_TCU_BITS_tmp = USE_TCU_BITS;
+  
+  STG1 = stg1_in;
+  STG2 = stg2_in;
+  MIPN = mipn_in;
+  USE_TCU_BITS = use_tcu;
+
+  Bool_t return_val = Fired(name0);
+
+  STG1 = STG1_tmp;
+  STG2 = STG2_tmp;
+  MIPN = MIPN_tmp;
+  USE_TCU_BITS = USE_TCU_BITS_tmp;
+
+  return return_val;
 };
 

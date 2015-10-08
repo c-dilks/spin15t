@@ -1,0 +1,25 @@
+#!/bin/bash
+if [ $# -ne 1 ]; then
+  echo "usage: $0 [dir name] in asym_plots/output_[dirname]_[casename]*"
+  exit
+fi
+dirname="$1"
+
+while read line; do
+  stg1=$(echo $line | awk '{print $1}')
+  stg2=$(echo $line | awk '{print $2}')
+  mipn=$(echo $line | awk '{print $3}')
+  use_tcu=$(echo $line | awk '{print $4}')
+  casename=$(echo $line | awk '{print $5}')
+  fulldirname="${dirname}_${casename}"
+
+  #analyse3 N $fulldirname
+  pushd asym_plots; ln -sv output_en_N output_${fulldirname}_en_N; popd
+
+  analyse3 EOR $fulldirname $stg1 $stg2 $mipn $use_tcu
+  analyse3 WOR $fulldirname $stg1 $stg2 $mipn $use_tcu
+  analyse3 SDE $fulldirname $stg1 $stg2 $mipn $use_tcu
+  analyse3 SDW $fulldirname $stg1 $stg2 $mipn $use_tcu
+  analyse3 IT $fulldirname $stg1 $stg2 $mipn $use_tcu
+  analyse3 ET $fulldirname $stg1 $stg2 $mipn $use_tcu
+done < boolean_cases.dat

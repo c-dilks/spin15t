@@ -21,7 +21,8 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
-  TriggerBoolean * trg_bool = new TriggerBoolean();
+  TriggerBoolean * trg_bool = 
+    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
 
 
   // open tree

@@ -1,10 +1,15 @@
 #!/bin/bash
+if [ $# -ne 1 ]; then
+  echo "usage: $0 [dir name] in asym_plots/output_[dirname]_*"
+  exit
+fi
+dirname="$1"
 
-analyse3 N
-analyse3 EOR
-analyse3 WOR
-analyse3 SDE
-analyse3 SDW
-analyse3 IT
-analyse3 ET
-analyse3 DD
+#analyse3 N $dirname
+analyse3 EOR $dirname
+analyse3 WOR $dirname
+analyse3 SDE $dirname
+analyse3 SDW $dirname
+analyse3 IT $dirname
+analyse3 ET $dirname
+#analyse3 DD $dirname

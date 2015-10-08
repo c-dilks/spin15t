@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ $# -ne 1 ]; then
+  echo "usage: $0 [dir name] in asym_plots/output_[dirname]_[casename]*"
+  exit
+fi
+dirname="$1"
+
+while read line; do
+  casename=$(echo $line | awk '{print $5}')
+  dirname="${dirname}_${casename}"
+  echo "$casename badname=$dirname"
+done < boolean_cases.dat

@@ -17,38 +17,46 @@ printstatus()
 phibins=10
 
 
-if [ $# -ne 1 ]; then
-  echo "usage: $0 [RP BOOLEAN NAME]"
+if [ $# -ne 6 ]; then
+  echo "usage: $0 [RP BOOLEAN NAME] [dir name]"
   exit
 fi
 RP=$1
+dirname="$2"
+stg1=$3
+stg2=$4
+mipn=$5
+use_tcu=$6
+
 
 # en-dependence
-root -b -q Bin_Splitter.C'('${phibins}',1,1,0)'
+root -b -q Bin_Splitter.C'('${phibins}',1,1,0',${stg1}','${stg2}','${mipn}','${use_tcu}')'
 source env_bins.sh
 export RP_SELECT=$RP
 printstatus
+echo "dirname=$dirname"
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_NEW_BY_SCI_en_$RP
-
-
-
-# pt-dependence
-root -b -q Bin_Splitter.C'('${phibins}',1,0,1)'
-source env_bins.sh
-export RP_SELECT=$RP
-printstatus
-./loop_PhiDists
-./wait_for_condor
-root -b -q toa_add.C
-./asym_call_jets asym_plots/output_NEW_BY_SCI_pt_$RP
-
+./asym_call_jets asym_plots/output_${dirname}_en_$RP
 
 ##### EXIT PREMATURELY
 exit
 ######################
+
+
+# pt-dependence
+root -b -q Bin_Splitter.C'('${phibins}',1,0,1',${stg1}','${stg2}','${mipn}','${use_tcu}')'
+source env_bins.sh
+export RP_SELECT=$RP
+printstatus
+echo "dirname=$dirname"
+./loop_PhiDists
+./wait_for_condor
+root -b -q toa_add.C
+./asym_call_jets asym_plots/output_${dirname}_pt_$RP
+
+
 
 
 
@@ -57,7 +65,7 @@ exit
 
 
 # en-dependence for 3 pt regions
-root -b -q Bin_Splitter.C'('${phibins}',1,1,0)'
+root -b -q Bin_Splitter.C'('${phibins}',1,1,0',${stg1}','${stg2}','${mipn}','${use_tcu}')'
 source env_bins.sh
 export RP_SELECT=$RP
 export PT_DIV_0=0
@@ -66,24 +74,24 @@ printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_en_lowpt_$RP
+./asym_call_jets asym_plots/output_${dirname}_en_lowpt_$RP
 export PT_DIV_0=3.3
 export PT_DIV_1=6.7
 printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_en_midpt_$RP
+./asym_call_jets asym_plots/output_${dirname}_en_midpt_$RP
 export PT_DIV_0=6.7
 export PT_DIV_1=10
 printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_en_highpt_$RP
+./asym_call_jets asym_plots/output_${dirname}_en_highpt_$RP
 
 # pt-dependence for 3 en regions
-root -b -q Bin_Splitter.C'('${phibins}',1,0,1)'
+root -b -q Bin_Splitter.C'('${phibins}',1,0,1',${stg1}','${stg2}','${mipn}','${use_tcu}')'
 source env_bins.sh
 export RP_SELECT=$RP
 export EN_DIV_0=0
@@ -92,18 +100,18 @@ printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_pt_lowen_$RP
+./asym_call_jets asym_plots/output_${dirname}_pt_lowen_$RP
 export EN_DIV_0=33.3
 export EN_DIV_1=66.7
 printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_pt_miden_$RP
+./asym_call_jets asym_plots/output_${dirname}_pt_miden_$RP
 export EN_DIV_0=66.7
 export EN_DIV_1=100
 printstatus
 ./loop_PhiDists
 ./wait_for_condor
 root -b -q toa_add.C
-./asym_call_jets asym_plots/output_collab_pt_highen_$RP
+./asym_call_jets asym_plots/output_${dirname}_pt_highen_$RP

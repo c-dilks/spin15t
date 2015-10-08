@@ -13,7 +13,11 @@
 void Bin_Splitter(Int_t phi_bins = 10,
                   Int_t eta_bins = 1,
                   Int_t pt_bins = 1,
-                  Int_t en_bins = 0
+                  Int_t en_bins = 0,
+                  Int_t STG1_in = 3,
+                  Int_t STG2_in = 2,
+                  Int_t MIPN_in = 1,
+                  Int_t USE_TCU_BITS_in = 0 
 )
 {
   // CONTROL VARIABLES
@@ -27,6 +31,16 @@ void Bin_Splitter(Int_t phi_bins = 10,
   // RP selecction
   // use "N" for no restriction
   char RP_select[16]; strcpy(RP_select,"N");
+
+
+  Int_t STG1,STG2,MIPN,USE_TCU_BITS;
+  STG1 = STG1_in;
+  STG2 = STG2_in;
+  MIPN = MIPN_in;
+  USE_TCU_BITS = USE_TCU_BITS_in;
+
+
+
 
   Double_t phi_low=-3.15;
   Double_t phi_high=3.15;
@@ -177,6 +191,11 @@ void Bin_Splitter(Int_t phi_bins = 10,
   printf("\nexport TRIGGER_TYPE=\"%s\"\n",trigger);
   printf("export MASS_CUT_TYPE=\"%s\"\n",cut_type);
   printf("export RP_SELECT=\"%s\"\n",RP_select);
+  printf("\n");
+  printf("export STG1=%d\n",STG1);
+  printf("export STG2=%d\n",STG2);
+  printf("export MIPN=%d\n",MIPN);
+  printf("export USE_TCU_BITS=%d\n",USE_TCU_BITS);
   
   gSystem->RedirectOutput(0);
   char cat[128];

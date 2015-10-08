@@ -13,12 +13,18 @@ namespace
   const TString sIO[2] = {"I","O"};
   const TString sUD[2] = {"U","D"};
   const TString sNS[2] = {"N","S"};
+
+  // ADC threshold and TAC bounds which were used for the RP
+  // triggers and TCU bits
+  const Double_t ADC_TRIGGER_THRESH = 100;
+  const Double_t TAC_TRIGGER_MIN = 100;
+  const Double_t TAC_TRIGGER_MAX = 2500;
 };
 
 
 RPscint::RPscint()
 {
-  for(ch=0; ch<16; ch++) printf("%s %d\n",RPname(ch).Data(),ch);
+  //for(ch=0; ch<16; ch++) printf("%s %d\n",RPname(ch).Data(),ch);
 
   // set default values
   for(ew=0; ew<2; ew++)
@@ -33,7 +39,7 @@ RPscint::RPscint()
   };
   vertex=0;
 
-  // MIP region ADC thresholds
+  // MIP region ADC thresholds (naive, determined visually from code in ../RP)
   MIPthresh[0]  = 230;
   MIPthresh[1]  = 230;
   MIPthresh[2]  = 230;
@@ -50,12 +56,35 @@ RPscint::RPscint()
   MIPthresh[13] = 125;
   MIPthresh[14] = 240;
   MIPthresh[15] = 260;
+
+  // TAC shifts
+  // these were the shifts of the TAC distributions applied in the PullRP class, which
+  // read the RP QTs; in this RPscint class, they are used to shift the TAC dists back to where
+  // the were so that the actual TAC value read in the QT can be compared to the 
+  // TAC_TRIGGER_MIN and TAC_TRIGGER_MAX values, which are what were applied to the TCU
+  // bits
+  // TAC in OFile = TAC from QT - TACshift
+  // --> TAC from QT = TAC in OFile + TACshift
+  TACshift[0]  = 553;
+  TACshift[1]  = 537;
+  TACshift[2]  = 528;
+  TACshift[3]  = 600;
+  TACshift[4]  = 628;
+  TACshift[5]  = 446;
+  TACshift[6]  = 491;
+  TACshift[7]  = 521;
+  TACshift[8]  = 338;
+  TACshift[9]  = 290;
+  TACshift[10] = 440;
+  TACshift[11] = 163;
+  TACshift[12] = 704;
+  TACshift[13] = 768;
+  TACshift[14] = 642;
+  TACshift[15] = 757;
 };
 
 Bool_t RPscint::Process()
 {
-  if(N[kE]==0 && N[kW]==0) return false;
-  
   // reset bits
   memset(fired,0,sizeof(fired));
   for(ew=0; ew<2; ew++)
@@ -65,7 +94,7 @@ Bool_t RPscint::Process()
       for(mipn=0; mipn<3; mipn++)
       {
         track_trg[ew][stg][mipn]=0;
-        if(stg<2)
+        if(stg<3)
         {
           for(ud=0; ud<2; ud++)
           {
@@ -75,6 +104,17 @@ Bool_t RPscint::Process()
       };
     };
   };
+  for(stg=0; stg<3; stg++)
+  {
+    for(mipn=0; mipn<3; mipn++)
+    {
+      elastic_trg[stg][mipn]=0;
+      inelastic_trg[stg][mipn]=0;
+    };
+  };
+
+
+  if(N[kE]==0 && N[kW]==0) return false;
 
 
   // loop through hit channels
@@ -82,8 +122,25 @@ Bool_t RPscint::Process()
   {
     for(q=0; q<N[ew]; q++)
     {
-      fired[Idx[ew][q]] = true;
       ADCtmp[Idx[ew][q]] = ADC[ew][q];
+
+      // re-shift TAC back to value recorded in QT (for comparing
+      // to thresholds, see comments in constructor)
+      TACtmp[Idx[ew][q]] = TAC[ew][q] + TACshift[Idx[ew][q]];
+
+      if( ADCtmp[Idx[ew][q]] > ADC_TRIGGER_THRESH &&
+          TACtmp[Idx[ew][q]] > TAC_TRIGGER_MIN &&
+          TACtmp[Idx[ew][q]] < TAC_TRIGGER_MAX)
+      {
+        fired[Idx[ew][q]] = true;
+
+        /* stg 0 track_trg same for all mipn */
+        for(mipn=0; mipn<3; mipn++) 
+        {
+          track_trg[ew][0][mipn]=1;
+          ud_track_trg[ew][iUD(Idx[ew][q])][0][mipn]=1;
+        };
+      };
     };
   };
 
@@ -91,13 +148,6 @@ Bool_t RPscint::Process()
   // track trigger bits
   for(ew=0; ew<2; ew++)
   {
-    if(N[ew]>0) 
-    {
-      /* stg 0 track_trig same for all mipn */
-      for(mipn=0; mipn<3; mipn++)
-        track_trg[ew][0][mipn]=1;
-    };
-
     // loop through inner seqs
     for(udi=0; udi<2; udi++)
     {
@@ -125,16 +175,16 @@ Bool_t RPscint::Process()
                 {
                   track_trg[ew][2][0]=1;
                   track_trg[ew][2][mipn]=1;
-                  ud_track_trg[ew][udo][0][0]=1;
-                  ud_track_trg[ew][udo][0][mipn]=1;
+                  ud_track_trg[ew][udo][1][0]=1;
+                  ud_track_trg[ew][udo][1][mipn]=1;
 
                   // n/s I hits n/s O
                   if(nso==nsi)
                   {
                     track_trg[ew][3][0]=1;
                     track_trg[ew][3][mipn]=1;
-                    ud_track_trg[ew][udo][1][0]=1;
-                    ud_track_trg[ew][udo][1][mipn]=1;
+                    ud_track_trg[ew][udo][2][0]=1;
+                    ud_track_trg[ew][udo][2][mipn]=1;
                   };
                 };
               }; // eo if outer seq fired
@@ -147,7 +197,7 @@ Bool_t RPscint::Process()
 
 
   // elatic and inelastic triggers
-  for(stg=0; stg<2; stg++)
+  for(stg=0; stg<3; stg++)
   {
     for(mipn=0; mipn<3; mipn++)
     {

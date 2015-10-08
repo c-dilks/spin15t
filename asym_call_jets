@@ -21,7 +21,7 @@ fi
 mkdir -p $outputdir
 rm $outputdir/*
 
-for class in "sph" "pi0" "thr" "etm" "jps"; do
+for class in "sph" "pi0" "thr" "etm"; do
   root -b -q -l 'Asym3.C('\"${class}\"','\"all\"')'
   root -b -q -l 'DrawAsymmetries.C('\"${class}\"')'
   mv -v spin.root ${outputdir}/spin_${class}.root
