@@ -4,18 +4,18 @@ echo "removing diagset/*.root in 5 seconds..."
 sleep 5
 rm -r diagset/*.root
 
-#ncondor="$(condor_config_val NUM_CPUS)"
-#if [ -z $ncondor ]; then
-  #echo "<X> WARNING: this is a memory intensive job! Are you sure you want condor"
-  #echo "    running with all available resources? You can limit the job by lowering"
-  #echo "    NUM_CPUS in /etc/condor/condor_config"
-  #echo "    - restart condor daeomon with condor_restart -startd && watch -n1 condor_status"
-  #echo ""
-  #echo " [sleeping for 10 seconds...]"
-  #sleep 10
-#else
-  #echo "<X> NOTE: condor will run a maximum of $ncondor simultaneous jobs"
-#fi
+ncondor="$(condor_config_val NUM_CPUS)"
+if [ -z $ncondor ]; then
+  echo "<X> WARNING: this is a memory intensive job! Are you sure you want condor"
+  echo "    running with all available resources? You can limit the job by lowering"
+  echo "    NUM_CPUS in /etc/condor/condor_config"
+  echo "    - restart condor daeomon with condor_restart -startd && watch -n1 condor_status"
+  echo ""
+  echo " [sleeping for 10 seconds...]"
+  sleep 10
+else
+  echo "<X> NOTE: condor will run a maximum of $ncondor simultaneous jobs"
+fi
 
 job="kincorr.bat"
 > $job

@@ -6,8 +6,12 @@
 
 void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
 {
+  // if enableOverlap=true, fill overlap matrices; I've moved this method to 
+  // TriggerBooleanOverlap.C in hopes of making this script faster.. it's use
+  // here is deprecated
+  const Bool_t enableOverlap = false;
 
-  const Int_t NBINS=10; // NUMBER OF BINS (default 400)
+  const Int_t NBINS=400; // NUMBER OF BINS (default 400)
   const Int_t NBINS_RDIST=10; // number of bins for variable vs. run index plots (default 100)
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
@@ -475,28 +479,31 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
               };
 
               // fill trigger overlap matrices
-              for(Int_t tt=0; tt<N_TRIG; tt++)
+              if(enableOverlap)
               {
-                if(L2sum[1] & T->Mask(runnum,tt,1))
-                  trig_fms_mix[c]->Fill(t,tt);
-              };
-              for(Int_t r=0; r<N_RP; r++)
-              {
-                if(trg_bool->Fired(r))
+                for(Int_t tt=0; tt<N_TRIG; tt++)
                 {
-                  trig_fmsrp_mix[c]->Fill(r,t);
-
-                  // only fill trig_rp_mix for OR of FMS triggers
-                  if(!strcmp(T->Name(t),"All"))
+                  if(L2sum[1] & T->Mask(runnum,tt,1))
+                    trig_fms_mix[c]->Fill(t,tt);
+                };
+                for(Int_t r=0; r<N_RP; r++)
+                {
+                  if(trg_bool->Fired(r))
                   {
-                    for(Int_t rr=0; rr<N_RP; rr++)
+                    trig_fmsrp_mix[c]->Fill(r,t);
+
+                    // only fill trig_rp_mix for OR of FMS triggers
+                    if(!strcmp(T->Name(t),"All"))
                     {
-                      if(trg_bool->Fired(rr)) trig_rp_mix[c]->Fill(r,rr);
+                      for(Int_t rr=0; rr<N_RP; rr++)
+                      {
+                        if(trg_bool->Fired(rr)) trig_rp_mix[c]->Fill(r,rr);
+                      };
                     };
                   };
                 };
+                trig_fmsrp_mix[c]->Fill(N_RP,t); // fill "n/a" column
               };
-              trig_fmsrp_mix[c]->Fill(N_RP,t); // fill "n/a" column
             };
           };
         };
@@ -701,11 +708,15 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   outfile->cd();
 
   trig_dist->Write();
-  outfile->mkdir("overlap_matrices");
-  outfile->cd("overlap_matrices");
-  for(Int_t c=0; c<N_CLASS; c++) trig_fms_mix[c]->Write();
-  for(Int_t c=0; c<N_CLASS; c++) trig_rp_mix[c]->Write();
-  for(Int_t c=0; c<N_CLASS; c++) trig_fmsrp_mix[c]->Write();
+
+  if(enableOverlap)
+  {
+    outfile->mkdir("overlap_matrices");
+    outfile->cd("overlap_matrices");
+    for(Int_t c=0; c<N_CLASS; c++) trig_fms_mix[c]->Write();
+    for(Int_t c=0; c<N_CLASS; c++) trig_rp_mix[c]->Write();
+    for(Int_t c=0; c<N_CLASS; c++) trig_fmsrp_mix[c]->Write();
+  };
   outfile->cd();
   outfile->mkdir("rdists");
   outfile->cd("rdists");

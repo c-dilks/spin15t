@@ -32,6 +32,7 @@ class RunInfo : public TObject
     Int_t YellSpin(Int_t runnum0, Int_t bXing);
     Bool_t Kicked(Int_t runnum0, Int_t bXing);
     Int_t Pattern(Int_t runnum0);
+    Bool_t RPnonzero(Int_t runnum0); // true if there are RP triggers in runlog
 
     char spindir[256];
 
@@ -65,6 +66,10 @@ class RunInfo : public TObject
     Float_t b_pol_err,y_pol_err; // polarization uncertainty
     Int_t pattern_no;
 
+    // branches -- rptrg tree
+    Int_t runnum_rp;
+    Double_t sd_rp;
+
     // data arrays
     Int_t fill_thou; // set to 17000 for run13
     Int_t blue_spin_map[2000][120]; // [max no. runs (assumed)] [no. bXings] 
@@ -82,9 +87,11 @@ class RunInfo : public TObject
     TFile * counts;
     TFile * rtree;
     TFile * pol;
+    TFile * rptrg_tfile;
     TTree * counts_tr;
     TTree * rtree_tr;
     TTree * pol_tr;
+    TTree * rptrg_tr;
     ClassDef(RunInfo,1);
 };
 

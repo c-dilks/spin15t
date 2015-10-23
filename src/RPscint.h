@@ -16,28 +16,31 @@ class RPscint : public TObject
 {
   public:
     RPscint();
-    Bool_t Process(); // return true if NQT>0
+    void Process();
 
     Int_t iEW(Int_t idx0) { return (Int_t)((idx0>>3)&0x1); };
     Int_t iIO(Int_t idx0) { return (Int_t)((idx0>>2)&0x1); };
     Int_t iUD(Int_t idx0) { return (Int_t)((idx0>>1)&0x1); };
     Int_t iNS(Int_t idx0) { return (Int_t)((idx0>>0)&0x1); };
     void IdxToEiun(Int_t idx0, Int_t &ew0, Int_t &io0, Int_t &ud0, Int_t &ns0);
-    Int_t EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0);
+    Short_t EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0);
     TString RPname(Int_t idx0);
+
+    void ResetBranches();
+    void ResetBits();
 
     //---------------------------------------------------------
     // EVENT VARIABLES
     Short_t N[2]; // [0=east 1=west]
-    Short_t Idx[2][16]; // [east/west] [sorted # (max 16)]
-    Short_t ADC[2][16];
-    Short_t TAC[2][16];
+    Short_t Idx[2][8]; // [east/west] [sorted # (max 8)]
+    Short_t ADC[2][8];
+    Short_t TAC[2][8];
     Float_t vertex;
     //---------------------------------------------------------
     
     
-    Double_t MIPthresh[16];
-    Double_t TACshift[16];
+    Short_t MIPthresh[16];
+    Short_t TACshift[16];
 
     // trigger bits
     Bool_t track_trg[2][4][3]; // [e/w] [strength] [mipn]
@@ -70,8 +73,8 @@ class RPscint : public TObject
     Int_t ch,ew,io,ud,ns,q,stg;
     Int_t udi,udo,nsi,nso;
     Bool_t fired[16];
-    Double_t ADCtmp[16];
-    Double_t TACtmp[16];
+    Short_t ADCtmp[16];
+    Short_t TACtmp[16];
     Int_t ii,oo,mipn;
 
     ClassDef(RPscint,1);

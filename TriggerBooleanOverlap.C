@@ -1,6 +1,6 @@
 // checks overlap between various trigger booleans with each other and with the FMS
 
-void TriggerBooleanOverlap(const char * set_name = "079ai")
+void TriggerBooleanOverlap(const char * set_name = "080ac")
 {
   const Int_t MAX_RUNS = 12; // assumed max number of runs in a set file
 
@@ -14,7 +14,8 @@ void TriggerBooleanOverlap(const char * set_name = "079ai")
     new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
 
   Int_t evc = ev->Idx("pi0"); // choose an event class
-  char l2trg[32]; strcpy(l2trg,"All"); // choose FMS L2 trigger mask (FMS OR = "All")
+  //char l2trg[32]; strcpy(l2trg,"All"); // choose FMS L2 trigger mask (FMS OR = "All")
+  char l2trg[32]; strcpy(l2trg,"JP2");
 
   int i,j;
   enum ew_enum {kE,kW};
@@ -251,7 +252,7 @@ void TriggerBooleanOverlap(const char * set_name = "079ai")
     kicked = RD->Kicked(runnum,bx);
 
     // if rellum and polarisation ok and if it's an FMS trigger, we check the event class
-    if(isConsistent==1 && b_pol>0 && y_pol>0 && kicked==0 && (L2sum[1] && T->Mask(runnum,l2trg,1)))
+    if(isConsistent==1 && b_pol>0 && y_pol>0 && kicked==0 && (L2sum[1] & T->Mask(runnum,l2trg,1)))
     {
       ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
       // if the event is valid, then we check the trigger booleans

@@ -26,18 +26,8 @@ RPscint::RPscint()
 {
   //for(ch=0; ch<16; ch++) printf("%s %d\n",RPname(ch).Data(),ch);
 
-  // set default values
-  for(ew=0; ew<2; ew++)
-  {
-    N[ew]=0;
-    for(ch=0; ch<16; ch++)
-    {
-      Idx[ew][ch]=0;
-      ADC[ew][ch]=0;
-      TAC[ew][ch]=0;
-    };
-  };
-  vertex=0;
+  ResetBranches();
+  ResetBits();
 
   // MIP region ADC thresholds (naive, determined visually from code in ../RP)
   MIPthresh[0]  = 230;
@@ -83,132 +73,105 @@ RPscint::RPscint()
   TACshift[15] = 757;
 };
 
-Bool_t RPscint::Process()
+void RPscint::Process()
 {
-  // reset bits
-  memset(fired,0,sizeof(fired));
-  for(ew=0; ew<2; ew++)
+  ResetBits();
+
+  if(!(N[kE]==0 && N[kW]==0))
   {
-    for(stg=0; stg<4; stg++)
+    // loop through hit channels
+    for(ew=0; ew<2; ew++)
+    {
+      for(q=0; q<N[ew]; q++)
+      {
+        ADCtmp[Idx[ew][q]] = ADC[ew][q];
+
+        // re-shift TAC back to value recorded in QT (for comparing
+        // to thresholds, see comments in constructor)
+        TACtmp[Idx[ew][q]] = TAC[ew][q] + TACshift[Idx[ew][q]];
+
+        if( ADCtmp[Idx[ew][q]] > ADC_TRIGGER_THRESH &&
+            TACtmp[Idx[ew][q]] > TAC_TRIGGER_MIN &&
+            TACtmp[Idx[ew][q]] < TAC_TRIGGER_MAX)
+        {
+          fired[Idx[ew][q]] = true;
+
+          /* stg 0 track_trg same for all mipn */
+          for(mipn=0; mipn<3; mipn++) 
+          {
+            track_trg[ew][0][mipn]=1;
+            ud_track_trg[ew][iUD(Idx[ew][q])][0][mipn]=1;
+          };
+        };
+      };
+    };
+
+
+    // track trigger bits
+    for(ew=0; ew<2; ew++)
+    {
+      // loop through inner seqs
+      for(udi=0; udi<2; udi++)
+      {
+        for(nsi=0; nsi<2; nsi++)
+        {
+          // loop through outer seqs if inner seq fired
+          ii = EiunToIdx(ew,kI,udi,nsi);
+          if(fired[ii])
+          {
+            mipn = (ADCtmp[ii] < MIPthresh[ii]) ? 1:2;
+            for(udo=0; udo<2; udo++)
+            {
+              for(nso=0; nso<2; nso++)
+              {
+                // if outer seq fired too, check it's alignment
+                // w.r.t. inner seq
+                oo = EiunToIdx(ew,kO,udo,nso);
+                if(fired[oo]) 
+                {
+                  track_trg[ew][1][0]=1;
+                  track_trg[ew][1][mipn]=1;
+
+                  // u/d I hits u/d O
+                  if(udo==udi)
+                  {
+                    track_trg[ew][2][0]=1;
+                    track_trg[ew][2][mipn]=1;
+                    ud_track_trg[ew][udo][1][0]=1;
+                    ud_track_trg[ew][udo][1][mipn]=1;
+
+                    // n/s I hits n/s O
+                    if(nso==nsi)
+                    {
+                      track_trg[ew][3][0]=1;
+                      track_trg[ew][3][mipn]=1;
+                      ud_track_trg[ew][udo][2][0]=1;
+                      ud_track_trg[ew][udo][2][mipn]=1;
+                    };
+                  };
+                }; // eo if outer seq fired
+              };
+            };
+          }; // eo if innner seq fired
+        };
+      }; // eo inner seq loop
+    }; // eo e/w loop
+
+
+    // elatic and inelastic triggers
+    for(stg=0; stg<3; stg++)
     {
       for(mipn=0; mipn<3; mipn++)
       {
-        track_trg[ew][stg][mipn]=0;
-        if(stg<3)
-        {
-          for(ud=0; ud<2; ud++)
-          {
-            ud_track_trg[ew][ud][stg][mipn]=0;
-          };
-        };
+        elastic_trg[stg][mipn] = (ud_track_trg[kE][kU][stg][mipn] && ud_track_trg[kW][kD][stg][mipn]) ||
+                                 (ud_track_trg[kE][kD][stg][mipn] && ud_track_trg[kW][kU][stg][mipn]);
+        inelastic_trg[stg][mipn] = (ud_track_trg[kE][kU][stg][mipn] && ud_track_trg[kW][kU][stg][mipn]) ||
+                                   (ud_track_trg[kE][kD][stg][mipn] && ud_track_trg[kW][kD][stg][mipn]);
       };
     };
-  };
-  for(stg=0; stg<3; stg++)
-  {
-    for(mipn=0; mipn<3; mipn++)
-    {
-      elastic_trg[stg][mipn]=0;
-      inelastic_trg[stg][mipn]=0;
-    };
-  };
+  }; // eo multiplity>0 cut
 
-
-  if(N[kE]==0 && N[kW]==0) return false;
-
-
-  // loop through hit channels
-  for(ew=0; ew<2; ew++)
-  {
-    for(q=0; q<N[ew]; q++)
-    {
-      ADCtmp[Idx[ew][q]] = ADC[ew][q];
-
-      // re-shift TAC back to value recorded in QT (for comparing
-      // to thresholds, see comments in constructor)
-      TACtmp[Idx[ew][q]] = TAC[ew][q] + TACshift[Idx[ew][q]];
-
-      if( ADCtmp[Idx[ew][q]] > ADC_TRIGGER_THRESH &&
-          TACtmp[Idx[ew][q]] > TAC_TRIGGER_MIN &&
-          TACtmp[Idx[ew][q]] < TAC_TRIGGER_MAX)
-      {
-        fired[Idx[ew][q]] = true;
-
-        /* stg 0 track_trg same for all mipn */
-        for(mipn=0; mipn<3; mipn++) 
-        {
-          track_trg[ew][0][mipn]=1;
-          ud_track_trg[ew][iUD(Idx[ew][q])][0][mipn]=1;
-        };
-      };
-    };
-  };
-
-
-  // track trigger bits
-  for(ew=0; ew<2; ew++)
-  {
-    // loop through inner seqs
-    for(udi=0; udi<2; udi++)
-    {
-      for(nsi=0; nsi<2; nsi++)
-      {
-        // loop through outer seqs if inner seq fired
-        ii = EiunToIdx(ew,kI,udi,nsi);
-        if(fired[ii])
-        {
-          mipn = (ADCtmp[ii] < MIPthresh[ii]) ? 1:2;
-          for(udo=0; udo<2; udo++)
-          {
-            for(nso=0; nso<2; nso++)
-            {
-              // if outer seq fired too, check it's alignment
-              // w.r.t. inner seq
-              oo = EiunToIdx(ew,kO,udo,nso);
-              if(fired[oo]) 
-              {
-                track_trg[ew][1][0]=1;
-                track_trg[ew][1][mipn]=1;
-
-                // u/d I hits u/d O
-                if(udo==udi)
-                {
-                  track_trg[ew][2][0]=1;
-                  track_trg[ew][2][mipn]=1;
-                  ud_track_trg[ew][udo][1][0]=1;
-                  ud_track_trg[ew][udo][1][mipn]=1;
-
-                  // n/s I hits n/s O
-                  if(nso==nsi)
-                  {
-                    track_trg[ew][3][0]=1;
-                    track_trg[ew][3][mipn]=1;
-                    ud_track_trg[ew][udo][2][0]=1;
-                    ud_track_trg[ew][udo][2][mipn]=1;
-                  };
-                };
-              }; // eo if outer seq fired
-            };
-          };
-        }; // eo if innner seq fired
-      };
-    }; // eo inner seq loop
-  }; // eo e/w loop
-
-
-  // elatic and inelastic triggers
-  for(stg=0; stg<3; stg++)
-  {
-    for(mipn=0; mipn<3; mipn++)
-    {
-      elastic_trg[stg][mipn] = (ud_track_trg[kE][kU][stg][mipn] && ud_track_trg[kW][kD][stg][mipn]) ||
-                               (ud_track_trg[kE][kD][stg][mipn] && ud_track_trg[kW][kU][stg][mipn]);
-      inelastic_trg[stg][mipn] = (ud_track_trg[kE][kU][stg][mipn] && ud_track_trg[kW][kU][stg][mipn]) ||
-                                 (ud_track_trg[kE][kD][stg][mipn] && ud_track_trg[kW][kD][stg][mipn]);
-    };
-  };
-
-  return true;
+  return;
 };
 
 void RPscint::IdxToEiun(Int_t idx0, Int_t &ew0, Int_t &io0, Int_t &ud0, Int_t &ns0)
@@ -219,7 +182,7 @@ void RPscint::IdxToEiun(Int_t idx0, Int_t &ew0, Int_t &io0, Int_t &ud0, Int_t &n
   ns0 = iNS(idx0);
 };
   
-Int_t RPscint::EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0)
+Short_t RPscint::EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0)
 {
   return 8*ew0 + 4*io0 + 2*ud0 + ns0;
 };
@@ -227,4 +190,84 @@ Int_t RPscint::EiunToIdx(Int_t ew0, Int_t io0, Int_t ud0, Int_t ns0)
 TString RPscint::RPname(Int_t idx0)
 {
   return sEW[iEW(idx0)] + sIO[iIO(idx0)] + sUD[iUD(idx0)] + sNS[iNS(idx0)];
+};
+
+
+void RPscint::ResetBranches()
+{
+  // reset ADC, TAC, and multiplicity
+  for(ew=0; ew<2; ew++)
+  {
+    N[ew]=0;
+    for(ch=0; ch<8; ch++)
+    {
+      Idx[ew][ch]=0;
+      ADC[ew][ch]=0;
+      TAC[ew][ch]=0;
+    };
+  };
+  vertex=0;
+};
+
+
+void RPscint::ResetBits()
+{
+  // reset bits
+  for(int i=0; i<16; i++) fired[i]=false;
+  for(ew=0; ew<2; ew++)
+  {
+    for(stg=0; stg<4; stg++)
+    {
+      for(mipn=0; mipn<3; mipn++)
+      {
+        track_trg[ew][stg][mipn]=false;
+        if(stg<3)
+        {
+          for(ud=0; ud<2; ud++)
+          {
+            ud_track_trg[ew][ud][stg][mipn]=false;
+          };
+        };
+      };
+    };
+  };
+  for(stg=0; stg<3; stg++)
+  {
+    for(mipn=0; mipn<3; mipn++)
+    {
+      elastic_trg[stg][mipn]=false;
+      inelastic_trg[stg][mipn]=false;
+    };
+  };
+
+  // debug reset-------------------------
+  /*
+  for(int i=0; i<16; i++) fired[i]=false;
+  for(ew=0; ew<2; ew++)
+  {
+    for(stg=0; stg<4; stg++)
+    {
+      for(mipn=0; mipn<3; mipn++)
+      {
+        printf("trac_trg[%d][%d][%d]=%d\n",ew,stg,mipn,track_trg[ew][stg][mipn]=false);
+        if(stg<3)
+        {
+          for(ud=0; ud<2; ud++)
+          {
+            printf("ud_track[%d][%d][%d][%d]=%d\n",ew,ud,stg,mipn,ud_track_trg[ew][ud][stg][mipn]=false);
+          };
+        };
+      };
+    };
+  };
+  for(stg=0; stg<3; stg++)
+  {
+    for(mipn=0; mipn<3; mipn++)
+    {
+      printf("elastic_trg[%d][%d]=%d\n",stg,mipn,elastic_trg[stg][mipn]=false);
+      printf("inelastic_trg[%d][%d]=%d\n",stg,mipn,inelastic_trg[stg][mipn]=false);
+    };
+  };
+  */
+  // debug reset-------------------------
 };

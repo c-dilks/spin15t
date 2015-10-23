@@ -16,13 +16,13 @@ class EventClass : public TObject
   public:
     EventClass();
     void SetKinematics(Int_t runnum_,
-                       Double_t E12_,
-                       Double_t Pt_,
-                       Double_t Eta_,
-                       Double_t Phi_,
-                       Double_t M12_,
-                       Double_t Z_,
-                       Double_t N12_);
+                       Float_t E12_,
+                       Float_t Pt_,
+                       Float_t Eta_,
+                       Float_t Phi_,
+                       Float_t M12_,
+                       Float_t Z_,
+                       Float_t N12_);
     Int_t Idx(char * name);
     char * Name(Int_t idx);
     char * Title(Int_t idx);
@@ -30,14 +30,14 @@ class EventClass : public TObject
     Bool_t Valid(Int_t idx); // returns true if cuts pass
     Bool_t ValidWithoutMcut(Int_t idx); // Valid(), but don't cut on mass
     Bool_t ValidWithoutZcut(Int_t idx); // Valid(), but don't cut on Z
-    Bool_t CheckMass(Double_t M12_);
-    Bool_t FiducialGeom(Double_t Eta_,Double_t Phi_, Double_t Cd);
+    Bool_t CheckMass(Float_t M12_);
+    Bool_t FiducialGeom(Float_t Eta_,Float_t Phi_, Float_t Cd);
 
     Int_t N;
     Int_t runnum;
-    Double_t E12,Pt,Eta,Phi,M12,Z,N12;
+    Float_t E12,Pt,Eta,Phi,M12,Z,N12;
 
-    Double_t Theta,Xd,Yd;
+    Float_t Theta,Xd,Yd;
 
   protected:
     std::map<Int_t, char*> class_name; // idx --> name
@@ -46,7 +46,7 @@ class EventClass : public TObject
 
     Environ * env;
     TTree * mass_tr;
-    Double_t kbinL,kbinH,massL,massM,massH;
+    Float_t kbinL,kbinH,massL,massM,massH;
     TTree * exclude_tr;
     Int_t exc_run;
 

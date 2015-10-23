@@ -5,8 +5,9 @@
 // -- phi distributions are written to phiset/ directory with similar name; 
 //    they are named: phi_s[spinbit]_g[eta bin]_p[pt bin]_e[en bin]
 
-void PhiDists4(const char * filename="RedOutputset079ai.root")
+void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false)
 {
+  if(debug) system("rm debug/debug.dat");
   enum ew_enum {kE,kW};
   enum ud_enum {kU,kD};
   enum io_enum {kI,kO};
@@ -36,7 +37,7 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
   // read redset tree and set output file name
   Int_t runnum,bx,blue,yell,pattern;
   Float_t M12,N12,E12,Z,Phi,Eta,Pt,b_pol,y_pol;
-  Bool_t kicked,isConsistent;
+  Bool_t kicked,isConsistent,RP_nonzero;
   UInt_t L2sum[2];
   UInt_t lastdsm[8];
   char setname[32];
@@ -66,7 +67,8 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
   tree->SetBranchAddress("RPW_Idx",trg_bool->RPSCI->Idx[kW]);
   tree->SetBranchAddress("RPW_TAC",trg_bool->RPSCI->TAC[kW]);
   tree->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
-  tree->SetBranchAddress("RPvertex",trg_bool->RPSCI->vertex);
+  tree->SetBranchAddress("RPvertex",&(trg_bool->RPSCI->vertex));
+  tree->SetBranchAddress("BBCvertex",&(trg_bool->BBCvertex));
 
 
   // define spinbit strings
@@ -206,6 +208,8 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
     if((x%10000)==0) printf("%.2f%%\n",100*((Float_t)x)/((Float_t)tree->GetEntries()));
     ss=gg=pp=ee=-1; // reset 
 
+    trg_bool->RPSCI->ResetBranches(); // to ensure full arrays get reset between every event
+    trg_bool->RPSCI->ResetBits(); // to ensure bits get reset between every event
     tree->GetEntry(x);
 
     // run number --> array index
@@ -218,6 +222,7 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
       pattern = RD->Pattern(runnum);
       b_pol = RD->BluePol(runnum);
       y_pol = RD->YellPol(runnum);
+      RP_nonzero = RD->RPnonzero(runnum);
     };
 
     // check for rellum consistency and valid polarization and FMS L2 trigger
@@ -254,8 +259,16 @@ void PhiDists4(const char * filename="RedOutputset079ai.root")
             if(ev->Valid(c))
             {
               // check roman pots / diffraction trigger boolean
-              if(trg_bool->Fired(env->RPselect))
+              // (RP_nonzero=true means nonzero RP_SD in runlog)
+              if(trg_bool->Fired(env->RPselect) && RP_nonzero)
               {
+                if(debug)
+                {
+                  gSystem->RedirectOutput("debug/debug.dat");
+                  trg_bool->Diagnostic(runnum,x);
+                  gSystem->RedirectOutput(0);
+                };
+
                 phi_dist[10*c+ss][gg][pp][ee][rr]->Fill(Phi);
                 pt_wdist[c][gg][ee][rr]->Fill(Pt);
                 en_wdist[c][gg][pp][rr]->Fill(E12);

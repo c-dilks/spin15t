@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+  echo "usage: $0 [3-digit day]"
+  exit
+fi
+day="$1"
+
+pdir="$(pwd)"
+pushd ~/15tran/Run15/Day$day
+ls *.root | sed 's/run//;s/\.root//' | sed 's/\./ /' > $pdir/to_check.lst
+popd
+
+
+while read line; do
+  runnum=$(echo $line | awk '{print $1}')
+  segnum=$(echo $line | awk '{print $2}')
+  root -b -q DSMcheck.C'(1,'$runnum','$segnum')'
+done < to_check.lst
+rm to_check.lst
+
+

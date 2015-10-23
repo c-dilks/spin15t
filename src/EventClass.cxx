@@ -14,13 +14,13 @@ namespace
     /*kJps*/
   };
 
-  const Double_t Zd = 720;  // distance from IP [cm]
-  const Double_t Sd = 3.8; // small cell dimension [cm]
-  const Double_t Ld = 5.8; // large cell dimension [cm]
+  const Float_t Zd = 720;  // distance from IP [cm]
+  const Float_t Sd = 3.8; // small cell dimension [cm]
+  const Float_t Ld = 5.8; // large cell dimension [cm]
 
-  const Double_t pi0_mass = 0.135; // pi0 mass [GeV]
-  const Double_t etm_mass = 0.548; // eta mass [GeV]
-  //const Double_t jps_mass = 3.097; // j/psi mass [GeV]
+  const Float_t pi0_mass = 0.135; // pi0 mass [GeV]
+  const Float_t etm_mass = 0.548; // eta mass [GeV]
+  //const Float_t jps_mass = 3.097; // j/psi mass [GeV]
 };
 
 // constructor
@@ -51,7 +51,7 @@ EventClass::EventClass()
   mass_tr = new TTree();
   char mass_tr_file[512];
   sprintf(mass_tr_file,"%s/mass_cuts.dat",env->SpinDir);
-  mass_tr->ReadFile(mass_tr_file,"kbinL/D:kbinH/D:massL/D:massM/D:massH/D");
+  mass_tr->ReadFile(mass_tr_file,"kbinL/F:kbinH/F:massL/F:massM/F:massH/F");
   mass_tr->SetBranchAddress("kbinL",&kbinL);
   mass_tr->SetBranchAddress("kbinH",&kbinH);
   mass_tr->SetBranchAddress("massL",&massL);
@@ -69,13 +69,13 @@ EventClass::EventClass()
 
 // sets kinematic variables for the event, used to check cuts with Valid()
 void EventClass::SetKinematics(Int_t runnum_,
-                               Double_t E12_,
-                               Double_t Pt_,
-                               Double_t Eta_,
-                               Double_t Phi_,
-                               Double_t M12_,
-                               Double_t Z_,
-                               Double_t N12_)
+                               Float_t E12_,
+                               Float_t Pt_,
+                               Float_t Eta_,
+                               Float_t Phi_,
+                               Float_t M12_,
+                               Float_t Z_,
+                               Float_t N12_)
 {
   runnum = runnum_;
   E12 = E12_;
@@ -186,7 +186,7 @@ Bool_t EventClass::Valid(Int_t idx)
 // checks Valid(), but ignores Mass cut
 Bool_t EventClass::ValidWithoutMcut(Int_t idx)
 {
-  Double_t M12_tmp = M12; // store M12 to tmp variable
+  Float_t M12_tmp = M12; // store M12 to tmp variable
   Bool_t boole;
   // set M12 to optimal meson masses
   if(idx==kPi0) M12 = pi0_mass;
@@ -201,8 +201,8 @@ Bool_t EventClass::ValidWithoutMcut(Int_t idx)
 // checks Valid(), but ignores Z cut
 Bool_t EventClass::ValidWithoutZcut(Int_t idx)
 {
-  Double_t Z_tmp = Z; // store Z to tmp variable
-  Double_t boole;
+  Float_t Z_tmp = Z; // store Z to tmp variable
+  Float_t boole;
   Z = 0; // set Z to optimal value
   boole = Valid(idx);
   Z = Z_tmp; // restore value of Z
@@ -211,7 +211,7 @@ Bool_t EventClass::ValidWithoutZcut(Int_t idx)
 
 
 // check E-dependent or Pt-dependent mass cut; returns true if passed
-Bool_t EventClass::CheckMass(Double_t M12_)
+Bool_t EventClass::CheckMass(Float_t M12_)
 {
   for(Int_t q=0; q<mass_tr->GetEntries(); q++)
   {
@@ -226,7 +226,7 @@ Bool_t EventClass::CheckMass(Double_t M12_)
 
 // checks if Eta and Phi are within fiducial area cut, defined as Cd-cells
 // from cell boundaries
-Bool_t EventClass::FiducialGeom(Double_t Eta_, Double_t Phi_, Double_t Cd)
+Bool_t EventClass::FiducialGeom(Float_t Eta_, Float_t Phi_, Float_t Cd)
 {
   Bool_t boole = false;
   Theta = 2*atan2(exp(-1*Eta_),1); // polar angle

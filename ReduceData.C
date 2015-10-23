@@ -7,7 +7,7 @@
 //
 // 145ka
 
-void ReduceData(const char * filename="Outputset079ai.root",
+void ReduceData(const char * filename="Outputset080ac.root",
                 const char * dirname="../../Output")
 {
   // load polarization and rellum data
@@ -58,6 +58,15 @@ void ReduceData(const char * filename="Outputset079ai.root",
   Short_t RPW_TAC[16];
   Short_t RPW_ADC[16];
   Float_t RPvertex;
+  Char_t BBCE_QTN;
+  Char_t BBCW_QTN;
+  Char_t BBCE_Idx[16];
+  Short_t BBCE_TAC[16];
+  Short_t BBCE_ADC[16];
+  Char_t BBCW_Idx[16];
+  Short_t BBCW_TAC[16];
+  Short_t BBCW_ADC[16];
+  Float_t BBCvertex;
 
   twotr->SetBranchAddress("M12",&M12);
   twotr->SetBranchAddress("N12",&N12);
@@ -82,6 +91,16 @@ void ReduceData(const char * filename="Outputset079ai.root",
   twotr->SetBranchAddress("RPW_TAC",RPW_TAC);
   twotr->SetBranchAddress("RPW_ADC",RPW_ADC);
   twotr->SetBranchAddress("RPvertex",&RPvertex);
+
+  twotr->SetBranchAddress("QTNE",&BBCE_QTN);
+  twotr->SetBranchAddress("QTNW",&BBCW_QTN);
+  twotr->SetBranchAddress("QTEBBCInd",BBCE_Idx);
+  twotr->SetBranchAddress("QTEBBCTAC",BBCE_TAC);
+  twotr->SetBranchAddress("QTEBBCADC",BBCE_ADC);
+  twotr->SetBranchAddress("QTWBBCInd",BBCW_Idx);
+  twotr->SetBranchAddress("QTWBBCTAC",BBCW_TAC);
+  twotr->SetBranchAddress("QTWBBCADC",BBCW_ADC);
+  twotr->SetBranchAddress("QTBVertex",&BBCvertex);
 
   str->Branch("M12",&M12,"M12/F");
   str->Branch("N12",&N12,"N12/F");
@@ -110,6 +129,16 @@ void ReduceData(const char * filename="Outputset079ai.root",
   str->Branch("RPW_TAC",RPW_TAC,"RPW_TAC[RPW_QTN]/S");
   str->Branch("RPW_ADC",RPW_ADC,"RPW_ADC[RPW_QTN]/S");
   str->Branch("RPvertex",&RPvertex,"RPvertex/F");
+
+  str->Branch("BBCE_QTN",&BBCE_QTN,"BBCE_QTN/B");
+  str->Branch("BBCW_QTN",&BBCW_QTN,"BBCW_QTN/B");
+  str->Branch("BBCE_Idx",BBCE_Idx,"BBCE_Idx[BBCE_QTN]/B");
+  str->Branch("BBCE_TAC",BBCE_TAC,"BBCE_TAC[BBCE_QTN]/S");
+  str->Branch("BBCE_ADC",BBCE_ADC,"BBCE_ADC[BBCE_QTN]/S");
+  str->Branch("BBCW_Idx",BBCW_Idx,"BBCW_Idx[BBCW_QTN]/B");
+  str->Branch("BBCW_TAC",BBCW_TAC,"BBCW_TAC[BBCW_QTN]/S");
+  str->Branch("BBCW_ADC",BBCW_ADC,"BBCW_ADC[BBCW_QTN]/S");
+  str->Branch("BBCvertex",&BBCvertex,"BBCvertex/F");
 
   /*
   char R_bbc_n[10][32];

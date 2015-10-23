@@ -26,6 +26,7 @@ void RunInfo::Construct(char * spindir0)
   char counts_file[256];
   char rtree_file[256];
   char pol_file[256];
+  char rptrg_file[256];
   if(!strcmp(spindir0,""))
   {
     if(gSystem->Getenv("SPINDIR")==NULL){fprintf(stderr,"ERROR: source env vars\n");return;};
@@ -42,6 +43,9 @@ void RunInfo::Construct(char * spindir0)
   counts_tr = (TTree*) counts->Get("sca");
   rtree_tr = (TTree*) rtree->Get("rellum");
   pol_tr = (TTree*) pol->Get("pol");
+  sprintf(rptrg_file,"%s/rptrg15/rptree.root",spindir);
+  rptrg_tfile = new TFile(rptrg_file,"READ");
+  rptrg_tr = (TTree*) rptrg_tfile->Get("tr");
   
 
   // set rtree branch addresses
@@ -99,6 +103,11 @@ void RunInfo::Construct(char * spindir0)
   pol_tr->SetBranchAddress("y_pol",&y_pol);
   pol_tr->SetBranchAddress("b_pol_e",&b_pol_err);
   pol_tr->SetBranchAddress("y_pol_e",&y_pol_err);
+
+
+  // set rptrg tree branch addresses
+  rptrg_tr->SetBranchAddress("runnum",&runnum_rp);
+  rptrg_tr->SetBranchAddress("RP_SD",&sd_rp);
 
 
   // build spin maps --> gives blue/yell spin + kicked status for 
@@ -338,3 +347,19 @@ Int_t RunInfo::Pattern(Int_t runnum0)
     return pattern_map[fill0-fill_thou];
   else return 0;
 };
+
+
+Bool_t RunInfo::RPnonzero(Int_t runnum0)
+{
+  for(int xx=0; xx<rptrg_tr->GetEntries(); xx++)
+  {
+    rptrg_tr->GetEntry(xx);
+    if(runnum_rp==runnum0)
+    {
+      if(sd_rp>0) return true;
+      else return false;
+    };
+  };
+  return false;
+};
+

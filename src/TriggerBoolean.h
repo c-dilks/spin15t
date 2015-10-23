@@ -30,12 +30,15 @@ class TriggerBoolean : public TObject
     Bool_t FiredAlternate(Int_t idx0, Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu);
     Bool_t FiredAlternate(char * name0, Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu);
     void PrintParameters() { printf("STG1=%d STG2=%d MIPN=%d USE_TCU_BITS=%d\n",STG1,STG2,MIPN,USE_TCU_BITS); };
+    void Diagnostic(Int_t runnum0, Int_t event0);
 
     // pointers to TCUbits and RPscint instances, set in the constructor
     TCUbits * TCU;
     RPscint * RPSCI;
 
     Int_t NBOOL;
+
+    Float_t BBCvertex;
 
 
   private:

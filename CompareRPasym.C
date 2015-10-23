@@ -9,7 +9,7 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   char dir[32];
 
   // strongest scint-based trg, selecting on inner MIPs
-  strcpy(dir,"scint-mips");
+  //strcpy(dir,"scint-mips");
 
   // strongest scint-based trg, excluding inner MIPs
   //strcpy(dir,"scint-nomips");
@@ -21,12 +21,12 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   //strcpy(dir,"tcu-like");
 
   // TCU-based trigger
-  //strcpy(dir,"tcu");
+  strcpy(dir,"tcu");
 
   //---------------------------------------------------------------
 
   // prepend dir name
-  sprintf(dir,"FIXED2_%s",dir);
+  sprintf(dir,"NUEVE_%s",dir);
 
 
   //---------------------------------------------------------------
@@ -41,14 +41,9 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   Bool_t draw[NPLOTS][NRP];
   TString png_name[NPLOTS];
   for(int i=0; i<NPLOTS; i++) for(int j=0; j<NRP; j++) draw[i][j] = false;
-  png_name[0] = "EOR_v_WOR.png";
-    draw[0][kAll]=true; draw[0][kEOR]=true; draw[0][kWOR]=true;
-  ///*
-  png_name[1] = "ET_v_IT.png";
-    draw[1][kAll]=true; draw[1][kET]=true; draw[1][kIT]=true;
-  png_name[2] = "SDE_v_SDW.png";
-    draw[2][kAll]=true; draw[2][kSDE]=true; draw[2][kSDW]=true;
-    //*/
+  png_name[0] = "EOR_v_WOR"; draw[0][kAll]=true; draw[0][kEOR]=true; draw[0][kWOR]=true;
+  png_name[1] = "ET_v_IT";   draw[1][kAll]=true; draw[1][kET]=true; draw[1][kIT]=true;
+  png_name[2] = "SDE_v_SDW"; draw[2][kAll]=true; draw[2][kSDE]=true; draw[2][kSDW]=true;
    
 
 
@@ -138,12 +133,12 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
         if(strcmp(binselect,"")) 
         {
           sprintf(infile_n[n],"asym_plots/output_%s_%s_%s_%s/spin_%s.root",dir,kinvar,binselect,rp_name[n],evclass);
-          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s_%s",dir,kinvar,binselect,evclass,png_name[i].Data());
+          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s_%s.png",dir,kinvar,binselect,evclass,png_name[i].Data());
         }
         else 
         {
           sprintf(infile_n[n],"asym_plots/output_%s_%s_%s/spin_%s.root",dir,kinvar,rp_name[n],evclass);
-          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s",dir,kinvar,evclass,png_name[i].Data());
+          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s.png",dir,kinvar,evclass,png_name[i].Data());
         };
         printf("%s\n",infile_n[n]);
         infile[n] = new TFile(infile_n[n],"READ");
@@ -161,13 +156,21 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
     };
   };
 
-  TCanvas * canv = new TCanvas("canv","canv",800,800);
+  TCanvas * canv[NPLOTS];
+  //TString canv_n[NPLOTS];
   for(int i=0; i<NPLOTS; i++)
   {
-    canv->Clear();
-    canv->SetGrid(1,1);
+    //canv_n[i] = Form("canv%d",i);
+    canv[i] = new TCanvas(png_name[i].Data(),png_name[i].Data(),800,800);
+    canv[i]->SetGrid(1,1);
     multi_gr[i]->Draw("ape");
     leg[i]->Draw();
-    canv->Print(print_name[i].Data(),"png");
   };
+  /*
+  // this png printing does not work correctly for me. no idea why
+  for(int i=0; i<NPLOTS; i++)
+  {
+    canv[i]->Print(print_name[i].Data(),"png");
+  };
+  */
 };

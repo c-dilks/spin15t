@@ -45,6 +45,8 @@ TriggerBoolean::TriggerBoolean(Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_
   {
     trg_name.insert(std::pair<Int_t,std::string>(iter->second,iter->first));
   };
+
+  BBCvertex=0;
 };
 
 
@@ -113,19 +115,19 @@ Bool_t TriggerBoolean::Fired(char * name0)
     else if(!strcmp(name0,"WOR")) return WOR;
     else if(!strcmp(name0,"ET")) return ET;
     else if(!strcmp(name0,"IT")) return IT;
-    else if(!strcmp(name0,"SDOR")) return EOR || WOR;
+    else if(!strcmp(name0,"SDOR")) return (EOR || WOR);
     else
     {
       if(!strcmp(name0,"SDE")) 
-        return EOR &&
-               !(TCU->Fired("ZDC-E")) && !(TCU->Fired("BBC-E")) &&
-              (  TCU->Fired("ZDC-W")  ||   TCU->Fired("BBC-W")  );
+        return (EOR &&
+                !(TCU->Fired("ZDC-E")) && !(TCU->Fired("BBC-E")) &&
+               (  TCU->Fired("ZDC-W")  ||   TCU->Fired("BBC-W")  ));
       else if(!strcmp(name0,"SDW")) 
-        return WOR &&
-               !(TCU->Fired("ZDC-W")) && !(TCU->Fired("BBC-W")) &&
-              (  TCU->Fired("ZDC-E")  ||   TCU->Fired("BBC-E")  );
+        return (WOR &&
+                !(TCU->Fired("ZDC-W")) && !(TCU->Fired("BBC-W")) &&
+               (  TCU->Fired("ZDC-E")  ||   TCU->Fired("BBC-E")  ));
       else if(!strcmp(name0,"DD"))
-        return EOR && WOR && TCU->FiredTOF() && !(TCU->FiredBBC());
+        return (EOR && WOR && TCU->FiredTOF() && !(TCU->FiredBBC()));
     };
   };
   fprintf(stderr,"ERROR: unrecognised trigger boolean\n");
@@ -173,3 +175,47 @@ Bool_t TriggerBoolean::FiredAlternate(char * name0,
   return return_val;
 };
 
+
+void TriggerBoolean::Diagnostic(Int_t runnum0, Int_t event0)
+{
+  /*
+   PrintParameters();
+   printf("NE=%d NW=%d\n",RPSCI->N[kE],RPSCI->N[kW]);
+   */
+
+  for(int eee=0; eee<2; eee++)
+  {
+    for(int zz=0; zz<8; zz++)
+    {
+      if(RPSCI->ADC[eee][zz]>0)
+      {
+        // runnum, eventnum, NE NW ew Idx ADC TAC TCU_EOR TCU_WOR TCU_ET TCU_IT TCUlike_EOR ... mismatch
+        printf("%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f\n",
+            runnum0,event0,
+            RPSCI->N[kE],RPSCI->N[kW],eee,
+            RPSCI->Idx[eee][zz],RPSCI->ADC[eee][zz],RPSCI->TAC[eee][zz],
+            TCU->Fired("RP_EOR"),TCU->Fired("RP_WOR"),TCU->Fired("RP_ET"),TCU->Fired("RP_IT"),
+            EOR,WOR,ET,IT,
+            (EOR==TCU->Fired("RP_EOR"))&&(WOR==TCU->Fired("RP_WOR"))&&(ET==TCU->Fired("RP_ET"))&&(IT==TCU->Fired("RP_IT")),
+            BBCvertex);
+        /*
+           printf("ee=%d %d %d %d\n",
+           eee,(Int_t)(RPSCI->Idx[eee][zz]),
+           (Int_t)(RPSCI->ADC[eee][zz]),
+           (Int_t)(RPSCI->TAC[eee][zz]));
+           */
+      };
+    };
+  };
+
+  /*
+     printf("case: EOR=%d WOR=%d ET=%d IT=%d\n",EOR,WOR,ET,IT);
+     printf("TCU:  EOR=%d WOR=%d ET=%d IT=%d\n",
+     TCU->Fired("RP_EOR"),TCU->Fired("RP_WOR"),TCU->Fired("RP_ET"),TCU->Fired("RP_IT"));
+     printf("allmatch=%d EOR-%d WOR-%d ET-%d IT-%d\n",
+     (EOR==TCU->Fired("RP_EOR"))&&(WOR==TCU->Fired("RP_WOR"))&&(ET==TCU->Fired("RP_ET"))&&(IT==TCU->Fired("RP_IT")),
+     EOR==TCU->Fired("RP_EOR"),WOR==TCU->Fired("RP_WOR"),ET==TCU->Fired("RP_ET"),IT==TCU->Fired("RP_IT"));
+     printf("\n");
+     */
+  //-----------
+};

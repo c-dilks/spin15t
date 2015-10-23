@@ -40,8 +40,6 @@ echo "dirname=$dirname"
 root -b -q toa_add.C
 ./asym_call_jets asym_plots/output_${dirname}_en_$RP
 
-##### EXIT PREMATURELY
-exit
 ######################
 
 
@@ -56,6 +54,9 @@ echo "dirname=$dirname"
 root -b -q toa_add.C
 ./asym_call_jets asym_plots/output_${dirname}_pt_$RP
 
+
+##### EXIT PREMATURELY
+exit
 
 
 

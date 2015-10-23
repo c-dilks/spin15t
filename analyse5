@@ -13,8 +13,8 @@ while read line; do
   casename=$(echo $line | awk '{print $5}')
   fulldirname="${dirname}_${casename}"
 
-  #analyse3 N $fulldirname
-  pushd asym_plots; ln -sv output_en_N output_${fulldirname}_en_N; popd
+  analyse3 N $fulldirname
+  #pushd asym_plots; ln -sv output_en_N output_${fulldirname}_en_N; popd
 
   analyse3 EOR $fulldirname $stg1 $stg2 $mipn $use_tcu
   analyse3 WOR $fulldirname $stg1 $stg2 $mipn $use_tcu

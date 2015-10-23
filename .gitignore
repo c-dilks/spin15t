@@ -25,3 +25,4 @@ wdist_pdfs/*
 rptrg15/*.dat
 rptrg15/thresh/trgfiles/*
 rptrg15/thresh/thfiles/*
+debug/*
