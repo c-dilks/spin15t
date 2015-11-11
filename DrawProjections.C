@@ -3,12 +3,12 @@
 // asym: A_Sigma, R_blue, R_yellow
 //       A_TT, A_N_blue, A_N_yellow
 
-void CompareRPasym(char * kinvar="en", char * evclass="pi0",
-                   char * asym="A_N_blue", char * binselect="")
+void DrawProjections(char * kinvar="en", char * evclass="pi0",
+                     char * asym="A_N_blue", char * binselect="")
 {
   char dir[32];
 
-  Bool_t PROJECT = false;
+  Bool_t PROJECT = true;
 
   // strongest scint-based trg, selecting on inner MIPs
   //strcpy(dir,"scint-mips");
@@ -63,16 +63,28 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   strcpy(rp_name[kWXOR],"WXOR");
   strcpy(rp_name[kDD],"DD");
 
+  char rp_mod_name[NRP][16];
+  strcpy(rp_mod_name[kAll],"Full FMS data");
+  strcpy(rp_mod_name[kET],"Elastic");
+  strcpy(rp_mod_name[kIT],"Inelastic");
+  strcpy(rp_mod_name[kSDE],"SD East");
+  strcpy(rp_mod_name[kSDW],"SD West");
+  strcpy(rp_mod_name[kEOR],"EOR");
+  strcpy(rp_mod_name[kWOR],"WOR");
+  strcpy(rp_mod_name[kEXOR],"EXOR");
+  strcpy(rp_mod_name[kWXOR],"WXOR");
+  strcpy(rp_mod_name[kDD],"DPE");
+
   Int_t rp_plot_color[NRP];
   rp_plot_color[kAll] = (Int_t) kRed;
   rp_plot_color[kET] = (Int_t) kOrange;
   rp_plot_color[kIT] = (Int_t) kCyan+2;
-  rp_plot_color[kSDE] = (Int_t) kGreen+2;
-  rp_plot_color[kSDW] = (Int_t) kBlue;
-  rp_plot_color[kEOR] = (Int_t) kGreen+2;
-  rp_plot_color[kWOR] = (Int_t) kBlue;
-  rp_plot_color[kEXOR] = (Int_t) kGreen+2;
-  rp_plot_color[kWXOR] = (Int_t) kBlue;
+  rp_plot_color[kSDE] = (Int_t) kGreen+1;
+  rp_plot_color[kSDW] = (Int_t) kAzure+7;
+  rp_plot_color[kEOR] = (Int_t) kGreen+1;
+  rp_plot_color[kWOR] = (Int_t) kAzure+7;
+  rp_plot_color[kEXOR] = (Int_t) kGreen+1;
+  rp_plot_color[kWXOR] = (Int_t) kAzure+7;
   rp_plot_color[kDD] = (Int_t) kBlack;
 
   Int_t A,Z;
@@ -129,7 +141,7 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
   Int_t nnn;
   for(int i=0; i<NPLOTS; i++)
   {
-    leg[i] = new TLegend(0.1,0.9,0.2,0.6);
+    leg[i] = new TLegend(0.1,0.9,0.5,0.7);
     for(Int_t n=0; n<NRP; n++)
     {
       if(draw[i][n])
@@ -158,6 +170,7 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
             gr[i][n]->GetPoint(iii,xxx,yyy);
             xxxe = gr[i][n]->GetErrorX(iii);
             yyye = gr[i][n]->GetErrorY(iii);
+            yyye = yyye * 1/sqrt(0.95); // RP track reconstruction efficiency /////////////////////////////////////////////////////////////////
             gr[i][n]->SetPoint(iii,xxx,0);
             gr[i][n]->SetPointError(iii,xxxe,yyye);
           };
@@ -166,12 +179,13 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
         gr[i][n]->SetMarkerColor(rp_plot_color[n]);
         gr[i][n]->SetLineColor(rp_plot_color[n]);
         gr[i][n]->SetFillColor(rp_plot_color[n]);
-        gr[i][n]->SetFillStyle(3003);
-        gr[i][n]->SetMarkerSize(1.3);
-        gr[i][n]->SetMarkerStyle(kFullCircle);
-        gr[i][n]->SetLineWidth(2);
-        leg[i]->AddEntry(gr[i][n],rp_name[n],"LPE");
-        multi_gr[i]->Add(gr[i][n]);
+        gr[i][n]->SetFillStyle(0);
+        gr[i][n]->SetMarkerSize(2);
+        gr[i][n]->SetMarkerStyle(kDot);
+        gr[i][n]->SetLineWidth(5);
+        if(n==kAll) leg[i]->AddEntry(gr[i][n],rp_mod_name[n],"LPE");
+        else leg[i]->AddEntry(gr[i][n],rp_mod_name[n],"F");
+        if(n!=kAll) multi_gr[i]->Add(gr[i][n]);
       };
     };
   };
@@ -183,7 +197,20 @@ void CompareRPasym(char * kinvar="en", char * evclass="pi0",
     //canv_n[i] = Form("canv%d",i);
     canv[i] = new TCanvas(png_name[i].Data(),png_name[i].Data(),800,800);
     canv[i]->SetGrid(1,1);
-    multi_gr[i]->Draw("ape");
+    //if(i==kAll) multi_gr[i]->Draw("ape");
+    //else multi_gr[i]->Draw("ape2");
+    multi_gr[i]->Draw("ap5");
+    gr[i][kAll]->Draw("zp");
+    /*
+    for(int n=0; n<NRP; n++)
+    {
+      if(draw[i][n])
+      {
+        if(n==kAll) gr[i][n]->Draw("ape");
+        else gr[i][n]->Draw("2");
+      };
+    };
+    */
     leg[i]->Draw();
   };
   /*
