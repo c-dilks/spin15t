@@ -1,21 +1,24 @@
 // test EVP calculation
 //
 
-void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
+void EVPtest(const char * infile_name = "RedOutputset079ai.root")
 {
+  gStyle->SetOptStat(0);
   // if enableOverlap=true, fill overlap matrices; I've moved this method to 
   // TriggerBooleanOverlap.C in hopes of making this script faster.. it's use
   // here is deprecated
   const Bool_t enableOverlap = false;
 
-  const Int_t NBINS=400; // NUMBER OF BINS (default 400)
-  const Int_t NBINS_RDIST=10; // number of bins for variable vs. run index plots (default 100)
+  const Int_t NBINS=5; // NUMBER OF BINS (default 400)
+  const Int_t NBINS_RDIST=5; // number of bins for variable vs. run index plots (default 100)
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
   enum ew_enum {kE,kW};
   enum io_enum {kI,kO};
   enum ud_enum {kU,kD};
   enum ns_enum {kN,kS};
+
+  enum sl_enum {kBBCs,kBBCl};
 
   gSystem->Load("src/RunInfo.so");
   RunInfo * RD = new RunInfo();
@@ -24,6 +27,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   EventClass * ev = new EventClass();
   TriggerBoolean * trg_bool = 
     new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
+  BBCtiles * bbc = new BBCtiles();
 
 
   // open tree
@@ -43,6 +47,11 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   Float_t E12_max,Pt_max,Eta_max,Phi_max;
   E12_min=Pt_min=Eta_min=Phi_min=1000;
   E12_max=Pt_max=Eta_max=Phi_max=0;
+
+  Char_t BBC_QTN[2]; // [ew]
+  Char_t BBC_Idx[2][16]; // [ew] [channel]
+  Short_t BBC_ADC[2][16]; // [ew] [channel]
+  Short_t BBC_TAC[2][16]; // [ew] [channel]
 
   tr->SetBranchAddress("runnum",&runnum);
   tr->SetBranchAddress("Bunchid7bit",&bx);
@@ -65,6 +74,35 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("RPW_TAC",trg_bool->RPSCI->TAC[kW]);
   tr->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
   tr->SetBranchAddress("RPvertex",trg_bool->RPSCI->vertex);
+
+  tr->SetBranchAddress("BBCE_QTN",&(bbc->QTN[kE][0]));
+  tr->SetBranchAddress("BBCW_QTN",&(bbc->QTN[kW][0]));
+  tr->SetBranchAddress("BBCE_Idx",bbc->Idx[kE][0]);
+  tr->SetBranchAddress("BBCE_ADC",bbc->ADC[kE][0]);
+  tr->SetBranchAddress("BBCE_TAC",bbc->TAC[kE][0]);
+  tr->SetBranchAddress("BBCW_Idx",bbc->Idx[kW][0]);
+  tr->SetBranchAddress("BBCW_ADC",bbc->ADC[kW][0]);
+  tr->SetBranchAddress("BBCW_TAC",bbc->TAC[kW][0]);
+
+
+  // define output tree
+  char outfilename[256];
+  char RP_suffix[16];
+  sscanf(infile_name,"RedOutput%s",outfilename);
+  if(!strcmp(env->RPselect,"")) strcpy(RP_suffix,"");
+  else sprintf(RP_suffix,"_%s",env->RPselect);
+  sprintf(outfilename,"evpset/diag%s.%s",RP_suffix,outfilename);
+  TFile * outfile = new TFile(outfilename,"RECREATE");
+
+  TTree * outtr = new TTree();
+  Int_t ou_qtn[2];
+  Double_t ou_evp[2][2];
+  outtr->Branch("qtne",&(ou_qtn[kE]),"qtne/I");
+  outtr->Branch("qtnw",&(ou_qtn[kW]),"qtnw/I");
+  outtr->Branch("evpes",&(ou_evp[kE][0]),"evpes/D");
+  outtr->Branch("evpws",&(ou_evp[kW][0]),"evpws/D");
+  outtr->Branch("evpel",&(ou_evp[kE][1]),"evpel/D");
+  outtr->Branch("evpwl",&(ou_evp[kW][1]),"evpwl/D");
 
 
 
@@ -386,8 +424,16 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   Double_t pt_bc,en_bc,eta_bc,phi_bc,z_bc,mass_bc;
   Int_t pt_bn,en_bn,eta_bn,phi_bn,z_bn,mass_bn;
 
+  Double_t evp;
+
+  bbc->ev_canv->Clear();
+  bbc->ev_canv->Print("bbc_evdisp.pdf(","pdf");;
+
+
   Int_t ENT = tr->GetEntries();
-  //ENT = 100000; // uncomment to do a short loop for testing
+  ENT = 100000; // uncomment to do a short loop for testing
+  Int_t DrawLimit=1000; // how many bbc events to draw
+  Int_t DrawCount=0;
   for(Int_t x=0; x<ENT; x++)
   {
     if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
@@ -461,6 +507,37 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
             {
               if(trg_bool->Fired(env->RPselect))
               {
+                /**************************************************************/
+                // execute EVP test calculation
+                bbc->UpdateEvent();
+                if(bbc->QTN[0][0]>0 || bbc->QTN[1][0]>0)
+                {
+                  // only print the display if it's an FMSOR pi0
+                  if(c==1 && t==0)
+                  {
+                    bbc->DrawEvent();
+                    if(DrawCount<DrawLimit)
+                    {
+                      bbc->ev_canv->Print("bbc_evdisp.pdf","pdf");
+                      DrawCount++;
+                    };
+                    for(int ew=0; ew<2; ew++)
+                    {
+                      for(int sl=0; sl<2; sl++)
+                      {
+                        printf("ew=%d sl=%d evp=%.2f\n",ew,sl,bbc->EVP[ew][sl]*180.0/3.1415);
+                        ou_evp[ew][sl]=bbc->EVP[ew][sl];
+                      };
+                    };
+                    ou_qtn[ew]=(bbc->QTN[ew][0]);
+                    outtr->Fill();
+                  };
+                };
+
+                /**************************************************************/
+
+
+                /*
                 pt_vs_eta[c][t]->Fill(Eta,Pt);
                 en_vs_eta[c][t]->Fill(Eta,E12);
                 pt_vs_phi[c][t]->Fill(Phi,Pt);
@@ -473,6 +550,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
                 en_rdist[c][t][runcount]->Fill(E12);
                 eta_rdist[c][t][runcount]->Fill(Eta);
                 phi_rdist[c][t][runcount]->Fill(Phi);
+                */
               };
 
               // fill trigger overlap matrices
@@ -506,6 +584,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
         };
 
         // fill mass plots
+        /*
         if(c!=ev->Idx("sph") && ev->ValidWithoutMcut(c))
         {
           for(Int_t t=0; t<N_TRIG; t++)
@@ -536,7 +615,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
         };
 
         // fill z plots
-        if((c==ev->Idx("pi0") || c==ev->Idx("etm") /*|| c==ev->Idx("jps")*/) && ev->ValidWithoutZcut(c))
+        if((c==ev->Idx("pi0") || c==ev->Idx("etm") ) && ev->ValidWithoutZcut(c))
         {
           for(Int_t t=0; t<N_TRIG; t++)
           {
@@ -552,12 +631,23 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
             };
           };
         };
+        */
       };
     };
   };
 
+  bbc->ev_canv->Clear();
+  bbc->ev_canv->Print("bbc_evdisp.pdf)","pdf");;
+
+
+  // write output
+  outfile->cd();
+  outtr->Write("tr");
+  
+
 
   // build TObjArrays
+  /*
   TObjArray * pt_vs_eta_arr[N_CLASS];
   TObjArray * en_vs_eta_arr[N_CLASS];
   TObjArray * pt_vs_phi_arr[N_CLASS];
@@ -756,4 +846,5 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   {
     mass_dist_for_ptbin_arr[k]->Write(mass_dist_for_ptbin_arr_n[k],TObject::kSingleKey);
   };
+  */
 };

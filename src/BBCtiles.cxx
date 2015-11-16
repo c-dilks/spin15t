@@ -113,6 +113,46 @@ BBCtiles::BBCtiles()
   // compute azimuths
   for(tt=1; tt<=36; tt++) azi_tile[tt] = ComputeAzimuthOfTile(tt);
   for(pp=1; pp<=24; pp++) azi_pmt[pp] = ComputeAveAzimuthOfPMT(pp);
+
+
+  // initialise event polys
+  for(sl=0; sl<2; sl++)
+  {
+    for(ew=0; ew<2; ew++)
+    {
+      adc_poly[ew][sl] = this->MakeNewPoly(sl);
+      tac_poly[ew][sl] = this->MakeNewPoly(sl);
+      acc_ev_poly[ew][sl] = this->MakeNewPoly(sl);
+    };
+  };
+
+  
+  // mask PMTs
+  for(pp=0; pp<25; pp++) PMTmasked[pp]=false;
+  PMTmasked[7]=true;
+  PMTmasked[12]=true;
+  PMTmasked[18]=true;
+  PMTmasked[20]=true;
+  PMTmasked[21]=true;
+  PMTmasked[22]=true;
+  PMTmasked[23]=true;
+  PMTmasked[24]=true;
+
+
+  bbc_canv = new TCanvas("bbc_canv","bbc_canv",1000,500);
+  ev_canv = new TCanvas("ev_canv","ev_canv",1000,1000);
+
+  for(sl=0; sl<2; sl++)
+  {
+    for(ew=0; ew<2; ew++)
+    {
+      evp_line[ew][sl] = new TLine(0,0,0,0);
+      evp_line[ew][sl]->SetLineWidth(2);
+      evp_line[ew][sl]->SetLineColor(kMagenta);
+    };
+  };
+
+  ResetEvent(); // zero event variables upon instantiation
 };
 
 
@@ -243,7 +283,7 @@ Double_t BBCtiles::ComputeAveAzimuthOfPMT(Int_t pmt0)
 // draw BBC tile and PMT maps
 void BBCtiles::DrawBBC()
 {
-  TCanvas * bbc_canv = new TCanvas("bbc_canv","bbc_canv",1000,500);
+  bbc_canv->Clear();
   bbc_canv->Divide(2,1);
   for(int cc=1; cc<=2; cc++) bbc_canv->GetPad(cc)->SetGrid(1,1);
   bbc_canv->cd(1);
@@ -293,27 +333,158 @@ void BBCtiles::PrintBBC()
 };
 
 
-// set new event
-void BBCtiles::Event(Int_t ew, Int_t sl, Int_t NQT0, Int_t Ind0[16], Int_t ADC0[16], Int_t TAC0[16])
+// set new event displays and compute EVPs
+void BBCtiles::UpdateEvent()
 {
-  if(ew>=0 && ew<=1 && sl>=0 && sl<=1)
+  // reset adc & tac displays
+  for(ew=0; ew<2; ew++)
   {
-    for(int qq=0; qq<16; qq++)
+    for(sl=0; sl<2; sl++)
     {
-      Ind[ew][sl][qq]=0;
-      ADC[ew][sl][qq]=0;
-      TAC[ew][sl][qq]=0;
+      adc_poly[ew][sl]->Clear();
+      tac_poly[ew][sl]->Clear();
+      adc_poly[ew][sl]->SetMinimum(1);
+      tac_poly[ew][sl]->SetMinimum(1);
+      adc_poly[ew][sl]->SetMaximum(4096);
+      tac_poly[ew][sl]->SetMaximum(4096);
+      EVP[ew][sl]=1000;
     };
+  };
 
-    NQT[ew][sl] = NQT0;
-
-    for(int qq=0; qq<NQT0; qq++)
+  // update event display
+  Int_t tile3,content;
+  for(ew=0; ew<2; ew++)
+  {
+    for(sl=0; sl<2; sl++)
     {
-      Ind[ew][sl][qq] = Ind0[qq];
-      ADC[ew][sl][qq] = ADC0[qq];
-      TAC[ew][sl][qq] = TAC0[qq];
+      for(int qq=0; qq<QTN[ew][sl]; qq++)
+      {
+        for(int t3=0; t3<3; t3++)
+        {
+          tile3 = GetTileOfPMT(Idx[ew][sl][qq],t3);
+          if(tile3>0)
+          {
+            if(!(PMTmasked[Idx[ew][sl][qq]]))
+            {
+              content = acc_ev_poly[ew][sl]->GetBinContent(GetBinOfTile(tile3)); // stupid hack to avoid override
+              acc_ev_poly[ew][sl]->SetBinContent(GetBinOfTile(tile3),content+1); // " "
+              adc_poly[ew][sl]->SetBinContent(GetBinOfTile(tile3), ADC[ew][sl][qq]);
+              tac_poly[ew][sl]->SetBinContent(GetBinOfTile(tile3), TAC[ew][sl][qq]);
+            };
+          };
+        };
+      };
+      EVP[ew][sl] = GetEVP(ew,sl);
     };
-  }
-  else fprintf(stderr,"ERROR: either ew or sl out of range in BBCtiles::Event\n");
+  };
   return;
+};
+
+
+// reset event variables and ADC & TAC displays
+void BBCtiles::ResetEvent()
+{
+  for(sl=0; sl<2; sl++)
+  {
+    for(ew=0; ew<2; ew++)
+    {
+      for(int qq=0; qq<16; qq++)
+      {
+        Idx[ew][sl][qq]=0;
+        ADC[ew][sl][qq]=0;
+        TAC[ew][sl][qq]=0;
+      };
+      EVP[ew][sl]=0;
+    };
+  };
+};
+
+
+// compute event plane
+Double_t BBCtiles::GetEVP(Int_t ew0, Int_t sl0)
+{
+  xflow = 0; 
+  yflow = 0;
+  Int_t pmt_curr;
+  if(QTN[ew0][sl0]>0)
+  {
+    for(int qq=0; qq<QTN[ew0][sl0]; qq++)
+    {
+      pmt_curr = Idx[ew0][sl0][qq];
+      if(!(PMTmasked[pmt_curr]))
+      {
+        xflow += ADC[ew0][sl0][qq] * TMath::Cos(2*GetAveAzimuthOfPMT(pmt_curr));
+        yflow += ADC[ew0][sl0][qq] * TMath::Sin(2*GetAveAzimuthOfPMT(pmt_curr));
+      };
+    };
+    return 0.5 * TMath::ATan2(yflow,xflow);
+  }
+  else return 1000; // no event plane computed
+};
+
+
+// draw event
+void BBCtiles::DrawEvent()
+{
+  // EVP lines
+  scale = 4*cellsize[kL]; // 1/2 length of evp_line
+  for(ew=0; ew<2; ew++)
+  {
+    for(sl=0; sl<2; sl++)
+    {
+      if(EVP[ew][sl]<1000)
+      {
+        evp_line[ew][sl]->SetX1(-1*scale*TMath::Cos(EVP[ew][sl]));
+        evp_line[ew][sl]->SetY1(-1*scale*TMath::Sin(EVP[ew][sl]));
+        evp_line[ew][sl]->SetX2(scale*TMath::Cos(EVP[ew][sl]));
+        evp_line[ew][sl]->SetY2(scale*TMath::Sin(EVP[ew][sl]));
+      }
+      else
+      {
+        evp_line[ew][sl]->SetX1(0);
+        evp_line[ew][sl]->SetY1(0);
+        evp_line[ew][sl]->SetX2(0);
+        evp_line[ew][sl]->SetY2(0);
+      }
+    };
+  };
+
+
+  // draw canvas; ADC on top, TAC on bottom; E is left, W is right 
+  ev_canv->Clear();
+  ev_canv->Divide(2,2);
+
+  for(int ccc=1; ccc<=4; ccc++)
+  {
+    ev_canv->GetPad(ccc)->SetLogz();
+    ev_canv->cd(ccc);
+    ew = (ccc-1)%2;
+    if(ccc<3)
+    {
+      adc_poly[ew][kL]->Draw("colz");
+      adc_poly[ew][kS]->Draw("colzsame");
+    }
+    else
+    {
+      tac_poly[ew][kL]->Draw("colz");
+      tac_poly[ew][kS]->Draw("colzsame");
+    };
+
+    pmt_poly[kL]->Draw("textsame");
+    pmt_poly[kS]->Draw("textsame");
+
+    for(sl=0; sl<2; sl++)
+    {
+      for(tt=0; tt<18; tt++)
+      {
+        for(int xx=0; xx<6; xx++)
+        {
+          hexline[xx][sl][tt]->Draw();
+        };
+      };
+    };
+
+    if(ccc<3) for(sl=0; sl<2; sl++) evp_line[ew][sl]->Draw();
+    else for(sl=0; sl<2; sl++) evp_line[ew][sl]->Draw();
+  };
 };

@@ -38,17 +38,41 @@ class BBCtiles : public TObject
     void DrawBBC();
     void PrintBBC();
 
-    void Event(Int_t ew, Int_t sl, Int_t NQT0, Int_t Ind0[16], Int_t ADC0[16], Int_t TAC0[16]);
+    void UpdateEvent();
+    void ResetEvent();
+
+    Double_t GetEVP(Int_t ew0, Int_t sl0);
+
+    void DrawEvent();
 
 
     TH2Poly * tile_poly[2]; // [sl (sl=0 for small, sl=1 for large)]
     TH2Poly * pmt_poly[2]; // [sl]
-    TH2Poly * ev_poly[2][2]; // [sl] [ew]
+    TH2Poly * adc_poly[2][2]; // [ew] [sl] // single event ADC
+    TH2Poly * tac_poly[2][2]; // [ew] [sl] // single event TAC
+    TH2Poly * acc_ev_poly[2][2]; // [ew] [sl] // accumulated hit display
+
+
+    /* event variables */
+    Char_t QTN[2][2]; // [ew] [sl]
+    Char_t Idx[2][2][16]; // [ew] [sl] [channel]
+    Short_t ADC[2][2][16]; // [ew] [sl] [channel]
+    Short_t TAC[2][2][16]; // [ew] [sl] [channel]
+
+    
+    Double_t EVP[2][2]; // [ew] [sl]
+
+
+    // canvases
+    TCanvas * bbc_canv;
+    TCanvas * ev_canv;
+
 
     
   protected:
-    int sl,tt,pp,tpxyz;
+    int ew,sl,tt,pp,tpxyz;
     Bool_t initTlines;
+    Double_t xflow,yflow;
 
     // BBC coordinates map
     // [0=small 1=large] [tile enumerator] [0=tile# 1=pmt# 2=xhex 3=yhex 4=zhex]
@@ -97,10 +121,11 @@ class BBCtiles : public TObject
     Double_t y[6];
 
 
-    Int_t NQT[2][2]; // [ew] [sl]
-    Int_t Ind[2][2][16]; // [ew] [sl] [channel]
-    Int_t ADC[2][2][16]; // [ew] [sl] [channel]
-    Int_t TAC[2][2][16]; // [ew] [sl] [channel]
+
+    Bool_t PMTmasked[25]; // [pmt] // if true, don't use for EVP calculation
+
+    TLine * evp_line[2][2]; // [ew] [sl]
+    Double_t scale;
 
 
 
