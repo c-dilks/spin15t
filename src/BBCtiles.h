@@ -11,6 +11,7 @@
 #include "TH2Poly.h"
 #include "TLine.h"
 #include "TCanvas.h"
+#include "TString.h"
 
 class BBCtiles : public TObject
 {
@@ -41,7 +42,8 @@ class BBCtiles : public TObject
     void UpdateEvent();
     void ResetEvent();
 
-    Double_t GetEVP(Int_t ew0, Int_t sl0);
+    void ComputeEVP(Int_t ew0, Int_t sl0); // sets EVP, Xfow, and Yflow
+    void ComputePlanarity(Int_t ew0, Int_t sl0);
 
     void DrawEvent();
 
@@ -60,7 +62,11 @@ class BBCtiles : public TObject
     Short_t TAC[2][2][16]; // [ew] [sl] [channel]
 
     
-    Double_t EVP[2][2]; // [ew] [sl]
+    Double_t dir[2][2]; // [ew] [sl] // first fourier coeff
+    Double_t EVP[2][2]; // [ew] [sl] // second fourier coeff = event plane azimuth
+    Double_t Xflow[2][2]; // [ew] [sl]
+    Double_t Yflow[2][2]; // [ew] [sl]
+
 
 
     // canvases
@@ -72,7 +78,7 @@ class BBCtiles : public TObject
   protected:
     int ew,sl,tt,pp,tpxyz;
     Bool_t initTlines;
-    Double_t xflow,yflow;
+    Double_t xfl1,yfl1,xfl2,yfl2;
 
     // BBC coordinates map
     // [0=small 1=large] [tile enumerator] [0=tile# 1=pmt# 2=xhex 3=yhex 4=zhex]
@@ -120,14 +126,20 @@ class BBCtiles : public TObject
     Double_t x[6];
     Double_t y[6];
 
-
+    // momoent variables for planarity
+    Double_t xbar[2][2]; // [ew] [sl];
+    Double_t ybar[2][2];
+    Double_t sigma_x[2][2];
+    Double_t sigma_y[2][2];
+    Double_t sigma_xy[2][2];
+    Double_t esum;
 
     Bool_t PMTmasked[25]; // [pmt] // if true, don't use for EVP calculation
 
     TLine * evp_line[2][2]; // [ew] [sl]
     Double_t scale;
 
-
+    TString datastring[2][2]; // [ew] [sl]
 
 
 

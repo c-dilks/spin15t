@@ -431,7 +431,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
 
 
   Int_t ENT = tr->GetEntries();
-  ENT = 100000; // uncomment to do a short loop for testing
+  ENT = 1000; // uncomment to do a short loop for testing
   Int_t DrawLimit=1000; // how many bbc events to draw
   Int_t DrawCount=0;
   for(Int_t x=0; x<ENT; x++)
@@ -525,7 +525,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
                     {
                       for(int sl=0; sl<2; sl++)
                       {
-                        printf("ew=%d sl=%d evp=%.2f\n",ew,sl,bbc->EVP[ew][sl]*180.0/3.1415);
+                        //printf("ew=%d sl=%d evp=%.2f\n",ew,sl,bbc->EVP[ew][sl]*180.0/3.1415);
                         ou_evp[ew][sl]=bbc->EVP[ew][sl];
                       };
                     };

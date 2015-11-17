@@ -341,10 +341,13 @@ void BBCtiles::UpdateEvent()
   {
     for(sl=0; sl<2; sl++)
     {
-      adc_poly[ew][sl]->Clear();
-      tac_poly[ew][sl]->Clear();
-      adc_poly[ew][sl]->SetMinimum(1);
-      tac_poly[ew][sl]->SetMinimum(1);
+      for(int bb=1; bb<=18; bb++)
+      {
+        adc_poly[ew][sl]->SetBinContent(bb,0); // TH2poly::Clear doesn't work
+        tac_poly[ew][sl]->SetBinContent(bb,0);
+      };
+      adc_poly[ew][sl]->SetMinimum(0);
+      tac_poly[ew][sl]->SetMinimum(0);
       adc_poly[ew][sl]->SetMaximum(4096);
       tac_poly[ew][sl]->SetMaximum(4096);
       EVP[ew][sl]=1000;
@@ -374,7 +377,8 @@ void BBCtiles::UpdateEvent()
           };
         };
       };
-      EVP[ew][sl] = GetEVP(ew,sl);
+      ComputeEVP(ew,sl);
+      ComputePlanarity(ew,sl);
     };
   };
   return;
@@ -400,11 +404,13 @@ void BBCtiles::ResetEvent()
 };
 
 
-// compute event plane
-Double_t BBCtiles::GetEVP(Int_t ew0, Int_t sl0)
+// compute event plane (i.e. fourier coefficients)
+void BBCtiles::ComputeEVP(Int_t ew0, Int_t sl0)
 {
-  xflow = 0; 
-  yflow = 0;
+  xfl1 = 0; 
+  yfl1 = 0;
+  xfl2 = 0; 
+  yfl2 = 0;
   Int_t pmt_curr;
   if(QTN[ew0][sl0]>0)
   {
@@ -413,14 +419,100 @@ Double_t BBCtiles::GetEVP(Int_t ew0, Int_t sl0)
       pmt_curr = Idx[ew0][sl0][qq];
       if(!(PMTmasked[pmt_curr]))
       {
-        xflow += ADC[ew0][sl0][qq] * TMath::Cos(2*GetAveAzimuthOfPMT(pmt_curr));
-        yflow += ADC[ew0][sl0][qq] * TMath::Sin(2*GetAveAzimuthOfPMT(pmt_curr));
+        xfl1 += ADC[ew0][sl0][qq] * TMath::Cos(GetAveAzimuthOfPMT(pmt_curr));
+        yfl1 += ADC[ew0][sl0][qq] * TMath::Sin(GetAveAzimuthOfPMT(pmt_curr));
+        xfl2 += ADC[ew0][sl0][qq] * TMath::Cos(2*GetAveAzimuthOfPMT(pmt_curr));
+        yfl2 += ADC[ew0][sl0][qq] * TMath::Sin(2*GetAveAzimuthOfPMT(pmt_curr));
       };
     };
-    return 0.5 * TMath::ATan2(yflow,xflow);
+
+    dir[ew0][sl0] = TMath::ATan2(yfl1,xfl1);
+    Xflow[ew0][sl0] = xfl2;
+    Yflow[ew0][sl0] = yfl2;
+    EVP[ew0][sl0] = 0.5 * TMath::ATan2(yfl2,xfl2);
   }
-  else return 1000; // no event plane computed
+  else 
+  {
+    Xflow[ew0][sl0] = 0;
+    Yflow[ew0][sl0] = 0;
+    EVP[ew0][sl0] = 1000; // no EVP computed for zero multiplicity
+  };
+  return;
 };
+
+
+void BBCtiles::ComputePlanarity(Int_t ew0, Int_t sl0)
+{
+  Int_t pmt_curr,tile3,adc_curr;
+  Double_t xcart_rot,ycart_rot;
+
+  xbar[ew0][sl0]=0;
+  ybar[ew0][sl0]=0;
+  sigma_x[ew0][sl0]=0;
+  sigma_y[ew0][sl0]=0;
+  sigma_xy[ew0][sl0]=0;
+  esum=0;
+
+  if(QTN[ew0][sl0]>0)
+  {
+    // compute first moments first, which are prerequesite variables to compute second moment
+    for(int whichMoment=1; whichMoment<=2; whichMoment++)
+    {
+      // loop through active channels 
+      for(int qq=0; qq<QTN[ew0][sl0]; qq++)
+      {
+        pmt_curr = Idx[ew0][sl0][qq];
+        adc_curr = ADC[ew0][sl0][qq];
+        if(!(PMTmasked[pmt_curr]))
+        {
+          // first obtain tile number; since there is some degeneracy in tile for
+          // given PMT, I'm just using the zeroth one for now, since the degenerate
+          // channels are masked out for now; no idea what to do otherwise
+          tile3 = GetTileOfPMT(pmt_curr,0);
+
+          // get hex coordinates of tile and convert them to cartesian coordinates
+          xhex = GetXhexOfTile(tile3);
+          yhex = GetYhexOfTile(tile3);
+          zhex = GetZhexOfTile(tile3);
+          HexToCart(cellsize[GetSlOfTile(tile3)],xhex,yhex,zhex,xcart,ycart);
+
+          // rotate cartesian coordinates by EVP azimuth
+          xcart_rot =      xcart * TMath::Cos(EVP[ew0][sl0]) + ycart * TMath::Sin(EVP[ew0][sl0]);
+          ycart_rot = -1 * xcart * TMath::Sin(EVP[ew0][sl0]) + ycart * TMath::Cos(EVP[ew0][sl0]);
+
+          // append to numerators for moments
+          if(whichMoment==1)
+          {
+            xbar[ew0][sl0] += adc_curr * xcart_rot;
+            ybar[ew0][sl0] += adc_curr * ycart_rot;
+            esum += adc_curr; // only append to esum once
+          }
+          else if(whichMoment==2)
+          {
+            sigma_x[ew0][sl0]  += adc_curr * (xbar[ew0][sl0]-xcart_rot) * (xbar[ew0][sl0]-xcart_rot);
+            sigma_y[ew0][sl0]  += adc_curr * (ybar[ew0][sl0]-ycart_rot) * (ybar[ew0][sl0]-ycart_rot);
+            sigma_xy[ew0][sl0] += adc_curr * (xbar[ew0][sl0]-xcart_rot) * (ybar[ew0][sl0]-ycart_rot);
+          };
+        };
+      };
+
+      // finalise moment computations
+      if(whichMoment==1)
+      {
+        xbar[ew0][sl0] /= esum;
+        ybar[ew0][sl0] /= esum;
+      }
+      else if(whichMoment==2)
+      {
+        sigma_x[ew0][sl0] = TMath::Sqrt(sigma_x[ew0][sl0] / esum);
+        sigma_y[ew0][sl0] = TMath::Sqrt(sigma_y[ew0][sl0] / esum);
+        sigma_xy[ew0][sl0] = TMath::Sqrt(sigma_xy[ew0][sl0] / esum);
+      };
+    };
+  };
+  return;
+};
+
 
 
 // draw event
@@ -434,8 +526,8 @@ void BBCtiles::DrawEvent()
     {
       if(EVP[ew][sl]<1000)
       {
-        evp_line[ew][sl]->SetX1(-1*scale*TMath::Cos(EVP[ew][sl]));
-        evp_line[ew][sl]->SetY1(-1*scale*TMath::Sin(EVP[ew][sl]));
+        //evp_line[ew][sl]->SetX1(-1*scale*TMath::Cos(EVP[ew][sl]));
+        //evp_line[ew][sl]->SetY1(-1*scale*TMath::Sin(EVP[ew][sl]));
         evp_line[ew][sl]->SetX2(scale*TMath::Cos(EVP[ew][sl]));
         evp_line[ew][sl]->SetY2(scale*TMath::Sin(EVP[ew][sl]));
       }
@@ -446,6 +538,19 @@ void BBCtiles::DrawEvent()
         evp_line[ew][sl]->SetX2(0);
         evp_line[ew][sl]->SetY2(0);
       }
+    };
+  };
+
+
+  // data string
+  for(ew=0; ew<2; ew++)
+  {
+    for(sl=0; sl<2; sl++)
+    {
+      datastring[ew][sl] = Form("EVP=%.2f #sigma_{x}=%.2f #sigma_{y}=%.2f #sigma_{xy}=%.2f",
+        EVP[ew][sl],sigma_x[ew][sl],sigma_y[ew][sl],sigma_xy[ew][sl]);
+      adc_poly[ew][sl]->SetTitle(datastring[ew][0].Data()); // for now, no large cells read out, just use small
+      tac_poly[ew][sl]->SetTitle("TACs"); // for now, no large cells read out, just use small
     };
   };
 
