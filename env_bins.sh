@@ -47,7 +47,7 @@ export TRIGGER_TYPE="All"
 export MASS_CUT_TYPE="en"
 export RP_SELECT="N"
 
-export STG1=0
-export STG2=0
+export STG1=2
+export STG2=1
 export MIPN=0
-export USE_TCU_BITS=1
+export USE_TCU_BITS=0

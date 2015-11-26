@@ -22,6 +22,7 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
   TriggerBoolean * trg_bool = 
     new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
   trg_bool->PrintParameters();
+  BBCtiles * bbc = new BBCtiles();
 
   // get bins from environment
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
@@ -69,6 +70,15 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
   tree->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
   tree->SetBranchAddress("RPvertex",&(trg_bool->RPSCI->vertex));
   tree->SetBranchAddress("BBCvertex",&(trg_bool->BBCvertex));
+
+  tree->SetBranchAddress("BBCE_QTN",&(bbc->QTN[kE][0]));
+  tree->SetBranchAddress("BBCW_QTN",&(bbc->QTN[kW][0]));
+  tree->SetBranchAddress("BBCE_Idx",bbc->Idx[kE][0]);
+  tree->SetBranchAddress("BBCE_ADC",bbc->ADC[kE][0]);
+  tree->SetBranchAddress("BBCE_TAC",bbc->TAC[kE][0]);
+  tree->SetBranchAddress("BBCW_Idx",bbc->Idx[kW][0]);
+  tree->SetBranchAddress("BBCW_ADC",bbc->ADC[kW][0]);
+  tree->SetBranchAddress("BBCW_TAC",bbc->TAC[kW][0]);
 
 
   // define spinbit strings
@@ -200,6 +210,7 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
 
   // fill phi distributions and wdists 
   Int_t ss,gg,pp,ee,rr;
+  Bool_t EVPinRange;
   rr=-1; runnum_tmp=0;
   printf("fill phi dists...\n");
 
@@ -253,6 +264,14 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
           // set kinematics variables for event, tcu bits, rp bits
           ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
 
+          // bbc EVP in range
+          bbc->UpdateEvent();
+
+          //EVPinRange = bbc->IsVertical();
+          //EVPinRange = bbc->IsHorizontal();
+          EVPinRange = true;
+            
+
           // determine event class(es)
           for(Int_t c=0; c<N_CLASS; c++)
           {
@@ -260,7 +279,7 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
             {
               // check roman pots / diffraction trigger boolean
               // (RP_nonzero=true means nonzero RP_SD in runlog)
-              if(trg_bool->Fired(env->RPselect) && RP_nonzero)
+              if(trg_bool->Fired(env->RPselect) && RP_nonzero && EVPinRange)
               {
                 if(debug)
                 {

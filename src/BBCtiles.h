@@ -12,6 +12,9 @@
 #include "TLine.h"
 #include "TCanvas.h"
 #include "TString.h"
+#include "TMatrix.h"
+#include "TVector.h"
+
 
 class BBCtiles : public TObject
 {
@@ -36,6 +39,8 @@ class BBCtiles : public TObject
     Double_t ComputeAzimuthOfTile(Int_t tile0,Bool_t returnDeg=0);
     Double_t ComputeAveAzimuthOfPMT(Int_t pmt0);
 
+    void InitRecenteringValues();
+
     void DrawBBC();
     void PrintBBC();
 
@@ -43,9 +48,12 @@ class BBCtiles : public TObject
     void ResetEvent();
 
     void ComputeEVP(Int_t ew0, Int_t sl0); // sets EVP, Xfow, and Yflow
-    void ComputePlanarity(Int_t ew0, Int_t sl0);
+    void ComputeMoments(Int_t ew0, Int_t sl0);
 
     void DrawEvent();
+
+    Bool_t IsVertical();
+    Bool_t IsHorizontal();
 
 
     TH2Poly * tile_poly[2]; // [sl (sl=0 for small, sl=1 for large)]
@@ -60,6 +68,7 @@ class BBCtiles : public TObject
     Char_t Idx[2][2][16]; // [ew] [sl] [channel]
     Short_t ADC[2][2][16]; // [ew] [sl] [channel]
     Short_t TAC[2][2][16]; // [ew] [sl] [channel]
+    Float_t vertex;
 
     
     Double_t dir[2][2]; // [ew] [sl] // first fourier coeff
@@ -67,6 +76,21 @@ class BBCtiles : public TObject
     Double_t Xflow[2][2]; // [ew] [sl]
     Double_t Yflow[2][2]; // [ew] [sl]
 
+    Double_t Xflow_cor[2][2]; // [ew] [sl] // re-centered
+    Double_t Yflow_cor[2][2]; // [ew] [sl] // re-centered
+    Double_t EVP_cor[2][2]; // [ew] [sl] // re-centered
+
+    // momoent variables for planarity
+    Double_t xbar[2][2]; // [ew] [sl];
+    Double_t ybar[2][2];
+    Double_t esum[2][2];
+    Double_t sigma_x[2][2];
+    Double_t sigma_y[2][2];
+    Double_t sigma_xy[2][2];
+    Double_t sigma_min[2][2];
+    Double_t sigma_max[2][2];
+    Double_t discrim;
+    Double_t sigma_theta[2][2]; // angle of sigma_max eigenvector
 
 
     // canvases
@@ -126,20 +150,30 @@ class BBCtiles : public TObject
     Double_t x[6];
     Double_t y[6];
 
-    // momoent variables for planarity
-    Double_t xbar[2][2]; // [ew] [sl];
-    Double_t ybar[2][2];
-    Double_t sigma_x[2][2];
-    Double_t sigma_y[2][2];
-    Double_t sigma_xy[2][2];
-    Double_t esum;
+    TMatrix * sigma_mtx;
+    TVector * sigma_evals;
+    Double_t sigma_min_tmp,sigma_max_tmp;
+
+    // EVP directionality
+    Double_t left_sum,right_sum;
+    Int_t directionality[2][2]; // 0 for positive, 1 for negative, -1 for undetermined, 2 for left/right equal
+    Double_t left_sum_cor,right_sum_cor; // (for re-centered evp calculation)
+    Int_t directionality_cor[2][2]; // (for re-centered evp calculation)
+
 
     Bool_t PMTmasked[25]; // [pmt] // if true, don't use for EVP calculation
 
     TLine * evp_line[2][2]; // [ew] [sl]
+    TLine * evp_cor_line[2][2]; // [ew] [sl]
     Double_t scale;
 
     TString datastring[2][2]; // [ew] [sl]
+
+    Double_t Xflow_calib[2][2][16][2]; // [ew] [sl] [qtn-1] [0=mean, 1=rms]
+    Double_t Yflow_calib[2][2][16][2]; // [ew] [sl] [qtn-1] [0=mean, 1=rms]
+
+    Double_t div[4];
+    Double_t eee[2];
 
 
 

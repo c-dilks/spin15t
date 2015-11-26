@@ -223,6 +223,7 @@ void ReduceData(const char * filename="Outputset080ac.root",
         y_pol_err = RD->YellPolErr(runnum);
 
         isConsistent = RD->RellumConsistent(runnum);
+
         fill = RD->GetFill(runnum);
         runnum_tmp = runnum;
       };

@@ -14,11 +14,14 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   const Int_t MAXRUNS=12; // arbitrary max number of runs in redset file 
 
   enum ew_enum {kE,kW};
-  enum io_enum {kI,kO};
-  enum ud_enum {kU,kD};
-  enum ns_enum {kN,kS};
+  enum sl_enum {kS,kL};
 
-  enum sl_enum {kBBCs,kBBCl};
+  TString ew_str[2];
+  TString sl_str[2];
+  ew_str[kE]="E";
+  ew_str[kW]="W";
+  sl_str[kS]="small";
+  sl_str[kL]="large";
 
   gSystem->Load("src/RunInfo.so");
   RunInfo * RD = new RunInfo();
@@ -48,10 +51,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   E12_min=Pt_min=Eta_min=Phi_min=1000;
   E12_max=Pt_max=Eta_max=Phi_max=0;
 
-  Char_t BBC_QTN[2]; // [ew]
-  Char_t BBC_Idx[2][16]; // [ew] [channel]
-  Short_t BBC_ADC[2][16]; // [ew] [channel]
-  Short_t BBC_TAC[2][16]; // [ew] [channel]
+  int ew,sl,chan;
 
   tr->SetBranchAddress("runnum",&runnum);
   tr->SetBranchAddress("Bunchid7bit",&bx);
@@ -65,6 +65,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("L2sum",L2sum);
   tr->SetBranchAddress("lastdsm",trg_bool->TCU->lastdsm);
 
+  /*
   tr->SetBranchAddress("RPE_QTN",&(trg_bool->RPSCI->N[kE]));
   tr->SetBranchAddress("RPW_QTN",&(trg_bool->RPSCI->N[kW]));
   tr->SetBranchAddress("RPE_Idx",trg_bool->RPSCI->Idx[kE]);
@@ -74,6 +75,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("RPW_TAC",trg_bool->RPSCI->TAC[kW]);
   tr->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
   tr->SetBranchAddress("RPvertex",trg_bool->RPSCI->vertex);
+  */
 
   tr->SetBranchAddress("BBCE_QTN",&(bbc->QTN[kE][0]));
   tr->SetBranchAddress("BBCW_QTN",&(bbc->QTN[kW][0]));
@@ -83,6 +85,33 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("BBCW_Idx",bbc->Idx[kW][0]);
   tr->SetBranchAddress("BBCW_ADC",bbc->ADC[kW][0]);
   tr->SetBranchAddress("BBCW_TAC",bbc->TAC[kW][0]);
+  tr->SetBranchAddress("BBCvertex",&(bbc->vertex));
+
+  // BBC histograms
+  TH1D * adc[2][2][16]; // [ew] [sl] [chan = pmt-1]
+  TH1D * tac[2][2][16]; // [ew] [sl] [chan = pmt-1]
+  TH2D * adc_vs_tac[2][2][16]; 
+  TString adc_n[2][2][16];
+  TString tac_n[2][2][16];
+  TString adc_vs_tac_n[2][2][16];
+
+  for(ew=0; ew<2; ew++)
+  {
+    for(sl=0; sl<2; sl++)
+    {
+      for(chan=0; chan<16; chan++)
+      {
+        adc_n[ew][sl][chan] = Form("adc_%s_%s_pmt_%d",ew_str[ew].Data(),sl_str[sl].Data(),chan+1);
+        tac_n[ew][sl][chan] = Form("tac_%s_%s_pmt_%d",ew_str[ew].Data(),sl_str[sl].Data(),chan+1);
+        adc_vs_tac_n[ew][sl][chan] = Form("adc_vs_tac_%s_%s_pmt_%d",ew_str[ew].Data(),sl_str[sl].Data(),chan+1);
+        adc[ew][sl][chan] = new TH1D(adc_n[ew][sl][chan].Data(),adc_n[ew][sl][chan].Data(),1000,0,4096);
+        tac[ew][sl][chan] = new TH1D(tac_n[ew][sl][chan].Data(),tac_n[ew][sl][chan].Data(),1000,0,4096);
+        adc_vs_tac[ew][sl][chan] = new TH2D(adc_vs_tac_n[ew][sl][chan].Data(),adc_vs_tac_n[ew][sl][chan].Data(),
+            200,0,4096,200,0,4096);
+      };
+    };
+  };
+
 
 
   // define output tree
@@ -97,13 +126,91 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   TTree * outtr = new TTree();
   Int_t ou_qtn[2];
   Double_t ou_evp[2][2];
+  Double_t ou_evp_cor[2][2];
+  Double_t esum[2][2];
+  Double_t Xflow[2][2];
+  Double_t Yflow[2][2];
+  Double_t Xflow_cor[2][2];
+  Double_t Yflow_cor[2][2];
+  Double_t sigma_x[2][2];
+  Double_t sigma_y[2][2];
+  Double_t sigma_xy[2][2];
+  Double_t sigma_min[2][2];
+  Double_t sigma_max[2][2];
+  Double_t sigma_theta[2][2];
+  Bool_t ou_H,ou_V;
   outtr->Branch("qtne",&(ou_qtn[kE]),"qtne/I");
   outtr->Branch("qtnw",&(ou_qtn[kW]),"qtnw/I");
-  outtr->Branch("evpes",&(ou_evp[kE][0]),"evpes/D");
-  outtr->Branch("evpws",&(ou_evp[kW][0]),"evpws/D");
-  outtr->Branch("evpel",&(ou_evp[kE][1]),"evpel/D");
-  outtr->Branch("evpwl",&(ou_evp[kW][1]),"evpwl/D");
 
+  outtr->Branch("evp_es",&(ou_evp[kE][0]),"evp_es/D");
+  outtr->Branch("evp_ws",&(ou_evp[kW][0]),"evp_ws/D");
+  outtr->Branch("evp_el",&(ou_evp[kE][1]),"evp_el/D");
+  outtr->Branch("evp_wl",&(ou_evp[kW][1]),"evp_wl/D");
+
+  outtr->Branch("evp_cor_es",&(ou_evp_cor[kE][0]),"evp_cor_es/D");
+  outtr->Branch("evp_cor_ws",&(ou_evp_cor[kW][0]),"evp_cor_ws/D");
+  outtr->Branch("evp_cor_el",&(ou_evp_cor[kE][1]),"evp_cor_el/D");
+  outtr->Branch("evp_cor_wl",&(ou_evp_cor[kW][1]),"evp_cor_wl/D");
+
+  outtr->Branch("esum_es",&(esum[kE][0]),"esum_es/D");
+  outtr->Branch("esum_ws",&(esum[kW][0]),"esum_ws/D");
+  outtr->Branch("esum_el",&(esum[kE][1]),"esum_el/D");
+  outtr->Branch("esum_wl",&(esum[kW][1]),"esum_wl/D");
+
+  outtr->Branch("Xflow_es",&(Xflow[kE][0]),"Xflow_es/D");
+  outtr->Branch("Xflow_ws",&(Xflow[kW][0]),"Xflow_ws/D");
+  outtr->Branch("Xflow_el",&(Xflow[kE][1]),"Xflow_el/D");
+  outtr->Branch("Xflow_wl",&(Xflow[kW][1]),"Xflow_wl/D");
+
+  outtr->Branch("Yflow_es",&(Yflow[kE][0]),"Yflow_es/D");
+  outtr->Branch("Yflow_ws",&(Yflow[kW][0]),"Yflow_ws/D");
+  outtr->Branch("Yflow_el",&(Yflow[kE][1]),"Yflow_el/D");
+  outtr->Branch("Yflow_wl",&(Yflow[kW][1]),"Yflow_wl/D");
+
+  outtr->Branch("Xflow_cor_es",&(Xflow_cor[kE][0]),"Xflow_cor_es/D");
+  outtr->Branch("Xflow_cor_ws",&(Xflow_cor[kW][0]),"Xflow_cor_ws/D");
+  outtr->Branch("Xflow_cor_el",&(Xflow_cor[kE][1]),"Xflow_cor_el/D");
+  outtr->Branch("Xflow_cor_wl",&(Xflow_cor[kW][1]),"Xflow_cor_wl/D");
+
+  outtr->Branch("Yflow_cor_es",&(Yflow_cor[kE][0]),"Yflow_cor_es/D");
+  outtr->Branch("Yflow_cor_ws",&(Yflow_cor[kW][0]),"Yflow_cor_ws/D");
+  outtr->Branch("Yflow_cor_el",&(Yflow_cor[kE][1]),"Yflow_cor_el/D");
+  outtr->Branch("Yflow_cor_wl",&(Yflow_cor[kW][1]),"Yflow_cor_wl/D");
+
+  outtr->Branch("sigma_x_es",&(sigma_x[kE][0]),"sigma_x_es/D");
+  outtr->Branch("sigma_x_ws",&(sigma_x[kW][0]),"sigma_x_ws/D");
+  outtr->Branch("sigma_x_el",&(sigma_x[kE][1]),"sigma_x_el/D");
+  outtr->Branch("sigma_x_wl",&(sigma_x[kW][1]),"sigma_x_wl/D");
+
+  outtr->Branch("sigma_y_es",&(sigma_y[kE][0]),"sigma_y_es/D");
+  outtr->Branch("sigma_y_ws",&(sigma_y[kW][0]),"sigma_y_ws/D");
+  outtr->Branch("sigma_y_el",&(sigma_y[kE][1]),"sigma_y_el/D");
+  outtr->Branch("sigma_y_wl",&(sigma_y[kW][1]),"sigma_y_wl/D");
+
+  outtr->Branch("sigma_xy_es",&(sigma_xy[kE][0]),"sigma_xy_es/D");
+  outtr->Branch("sigma_xy_ws",&(sigma_xy[kW][0]),"sigma_xy_ws/D");
+  outtr->Branch("sigma_xy_el",&(sigma_xy[kE][1]),"sigma_xy_el/D");
+  outtr->Branch("sigma_xy_wl",&(sigma_xy[kW][1]),"sigma_xy_wl/D");
+
+  outtr->Branch("sigma_min_es",&(sigma_min[kE][0]),"sigma_min_es/D");
+  outtr->Branch("sigma_min_ws",&(sigma_min[kW][0]),"sigma_min_ws/D");
+  outtr->Branch("sigma_min_el",&(sigma_min[kE][1]),"sigma_min_el/D");
+  outtr->Branch("sigma_min_wl",&(sigma_min[kW][1]),"sigma_min_wl/D");
+
+  outtr->Branch("sigma_max_es",&(sigma_max[kE][0]),"sigma_max_es/D");
+  outtr->Branch("sigma_max_ws",&(sigma_max[kW][0]),"sigma_max_ws/D");
+  outtr->Branch("sigma_max_el",&(sigma_max[kE][1]),"sigma_max_el/D");
+  outtr->Branch("sigma_max_wl",&(sigma_max[kW][1]),"sigma_max_wl/D");
+
+  outtr->Branch("sigma_theta_es",&(sigma_theta[kE][0]),"sigma_theta_es/D");
+  outtr->Branch("sigma_theta_ws",&(sigma_theta[kW][0]),"sigma_theta_ws/D");
+  outtr->Branch("sigma_theta_el",&(sigma_theta[kE][1]),"sigma_theta_el/D");
+  outtr->Branch("sigma_theta_wl",&(sigma_theta[kW][1]),"sigma_theta_wl/D");
+
+  outtr->Branch("vertex",&(bbc->vertex),"vertex/F");
+
+  outtr->Branch("V",&(ou_V),"V/O");
+  outtr->Branch("H",&(ou_H),"H/O");
 
 
   // trigger list
@@ -431,7 +538,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
 
 
   Int_t ENT = tr->GetEntries();
-  ENT = 1000; // uncomment to do a short loop for testing
+  //ENT = 1000; // uncomment to do a short loop for testing
   Int_t DrawLimit=1000; // how many bbc events to draw
   Int_t DrawCount=0;
   for(Int_t x=0; x<ENT; x++)
@@ -439,15 +546,21 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
     if((x%100000)==0) printf("filling histograms: %.2f%%\n",100*((Float_t)x)/((Float_t)ENT));
     tr->GetEntry(x);
 
-    kicked = RD->Kicked(runnum,bx);
+    //kicked = RD->Kicked(runnum,bx);
+    kicked = 0;
 
     // get new polarisation and check rellum
     // also fill kinematic vs. run plots
     if(runnum!=runnum_tmp)
     {
+      /*
       b_pol = RD->BluePol(runnum);
       y_pol = RD->YellPol(runnum);
       isConsistent = RD->RellumConsistent(runnum);
+      */
+      b_pol = 0.5;
+      y_pol = 0.5;
+      isConsistent = 1;
 
       runcount++;
       printf(">>> %d <<<\n",runnum);
@@ -501,35 +614,66 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
         if(ev->Valid(c))
         {
           ev->FiducialGeom(Eta,Phi,0); // compute x and y coordinates
-          for(Int_t t=0; t<N_TRIG; t++)
-          {
-            if(L2sum[1] & T->Mask(runnum,t,1))
-            {
-              if(trg_bool->Fired(env->RPselect))
-              {
+          //for(Int_t t=0; t<N_TRIG; t++)
+          //{
+            //if(L2sum[1] & T->Mask(runnum,t,1))
+            //{
+              //if(trg_bool->Fired(env->RPselect))
+              //{
                 /**************************************************************/
                 // execute EVP test calculation
                 bbc->UpdateEvent();
                 if(bbc->QTN[0][0]>0 || bbc->QTN[1][0]>0)
                 {
                   // only print the display if it's an FMSOR pi0
-                  if(c==1 && t==0)
+                  if(c==1)
                   {
                     bbc->DrawEvent();
+
+                    // fill histograms
+                    for(ew=0; ew<2; ew++)
+                    {
+                      for(sl=0; sl<2; sl++)
+                      {
+                        for(int qq=0; qq<bbc->QTN[ew][sl]; qq++)
+                        {
+                          adc[ew][sl][bbc->Idx[ew][sl][qq] - 1]->Fill(bbc->ADC[ew][sl][qq]);
+                          tac[ew][sl][bbc->Idx[ew][sl][qq] - 1]->Fill(bbc->TAC[ew][sl][qq]);
+                          adc_vs_tac[ew][sl][bbc->Idx[ew][sl][qq] - 1]->Fill(bbc->TAC[ew][sl][qq],bbc->ADC[ew][sl][qq]);
+                        };
+                      };
+                    };
+
+
+                    // print event to pdf
                     if(DrawCount<DrawLimit)
                     {
                       bbc->ev_canv->Print("bbc_evdisp.pdf","pdf");
                       DrawCount++;
                     };
-                    for(int ew=0; ew<2; ew++)
+                    for(ew=0; ew<2; ew++)
                     {
-                      for(int sl=0; sl<2; sl++)
+                      for(sl=0; sl<2; sl++)
                       {
                         //printf("ew=%d sl=%d evp=%.2f\n",ew,sl,bbc->EVP[ew][sl]*180.0/3.1415);
                         ou_evp[ew][sl]=bbc->EVP[ew][sl];
+                        ou_evp_cor[ew][sl]=bbc->EVP_cor[ew][sl];
+                        esum[ew][sl]=bbc->esum[ew][sl];
+                        Xflow[ew][sl]=bbc->Xflow[ew][sl];
+                        Yflow[ew][sl]=bbc->Yflow[ew][sl];
+                        Xflow_cor[ew][sl]=bbc->Xflow_cor[ew][sl];
+                        Yflow_cor[ew][sl]=bbc->Yflow_cor[ew][sl];
+                        sigma_x[ew][sl]=bbc->sigma_x[ew][sl];
+                        sigma_y[ew][sl]=bbc->sigma_y[ew][sl];
+                        sigma_xy[ew][sl]=bbc->sigma_xy[ew][sl];
+                        sigma_min[ew][sl]=bbc->sigma_min[ew][sl];
+                        sigma_max[ew][sl]=bbc->sigma_max[ew][sl];
+                        sigma_theta[ew][sl]=bbc->sigma_theta[ew][sl];
+                        ou_H=bbc->IsHorizontal();
+                        ou_V=bbc->IsVertical();
                       };
+                      ou_qtn[ew]=(bbc->QTN[ew][0]);
                     };
-                    ou_qtn[ew]=(bbc->QTN[ew][0]);
                     outtr->Fill();
                   };
                 };
@@ -551,7 +695,7 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
                 eta_rdist[c][t][runcount]->Fill(Eta);
                 phi_rdist[c][t][runcount]->Fill(Phi);
                 */
-              };
+              //};
 
               // fill trigger overlap matrices
               if(enableOverlap)
@@ -579,8 +723,8 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
                 };
                 trig_fmsrp_mix[c]->Fill(N_RP,t); // fill "n/a" column
               };
-            };
-          };
+            //};
+          //};
         };
 
         // fill mass plots
@@ -639,10 +783,52 @@ void EVPtest(const char * infile_name = "RedOutputset079ai.root")
   bbc->ev_canv->Clear();
   bbc->ev_canv->Print("bbc_evdisp.pdf)","pdf");;
 
+  
+  // histogram canvases
+  TCanvas * adc_canv[2][2];
+  TCanvas * tac_canv[2][2];
+  TCanvas * adc_vs_tac_canv[2][2];
+  TString adc_canv_n[2][2];
+  TString tac_canv_n[2][2];
+  TString adc_vs_tac_canv_n[2][2];
+  for(ew=0; ew<2; ew++)
+  {
+    for(sl=0; sl<2; sl++)
+    {
+      adc_canv_n[ew][sl] = Form("adc_canv_%s_%s",ew_str[ew].Data(),sl_str[sl].Data());
+      tac_canv_n[ew][sl] = Form("tac_canv_%s_%s",ew_str[ew].Data(),sl_str[sl].Data());
+      adc_vs_tac_canv_n[ew][sl] = Form("adc_vs_tac_canv_%s_%s",ew_str[ew].Data(),sl_str[sl].Data());
+
+      adc_canv[ew][sl] = new TCanvas(adc_canv_n[ew][sl].Data(),adc_canv_n[ew][sl].Data(),1000,1000);
+      tac_canv[ew][sl] = new TCanvas(tac_canv_n[ew][sl].Data(),tac_canv_n[ew][sl].Data(),1000,1000);
+      adc_vs_tac_canv[ew][sl] = new TCanvas(adc_vs_tac_canv_n[ew][sl].Data(),adc_vs_tac_canv_n[ew][sl].Data(),1000,1000);
+
+      adc_canv[ew][sl]->Divide(4,4);
+      tac_canv[ew][sl]->Divide(4,4);
+      adc_vs_tac_canv[ew][sl]->Divide(4,4);
+
+      for(chan=0; chan<16; chan++)
+      {
+        adc_canv[ew][sl]->GetPad(chan+1)->SetLogy();
+        tac_canv[ew][sl]->GetPad(chan+1)->SetLogy();
+        adc_vs_tac_canv[ew][sl]->GetPad(chan+1)->SetLogz();
+        adc_canv[ew][sl]->cd(chan+1); 
+        adc[ew][sl][chan]->Draw();
+        tac_canv[ew][sl]->cd(chan+1); 
+        tac[ew][sl][chan]->Draw();
+        adc_vs_tac_canv[ew][sl]->cd(chan+1); 
+        adc_vs_tac[ew][sl][chan]->Draw("colz");
+      };
+    };
+  };
+
 
   // write output
   outfile->cd();
   outtr->Write("tr");
+  for(int ew=0; ew<2; ew++) { for(sl=0; sl<2; sl++) { adc_canv[ew][sl]->Write(); }; };
+  for(int ew=0; ew<2; ew++) { for(sl=0; sl<2; sl++) { tac_canv[ew][sl]->Write(); }; };
+  for(int ew=0; ew<2; ew++) { for(sl=0; sl<2; sl++) { adc_vs_tac_canv[ew][sl]->Write(); }; };
   
 
 

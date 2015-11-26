@@ -2,6 +2,7 @@
 
 namespace
 {
+  enum ew_enum {kE,kW};
   enum sl_enum {kS,kL};
   enum tpxyz_enum {kTile,kPMT,kX,kY,kZ};
   const Double_t sq = TMath::Sqrt(3);
@@ -149,10 +150,18 @@ BBCtiles::BBCtiles()
       evp_line[ew][sl] = new TLine(0,0,0,0);
       evp_line[ew][sl]->SetLineWidth(2);
       evp_line[ew][sl]->SetLineColor(kMagenta);
+      evp_cor_line[ew][sl] = new TLine(0,0,0,0);
+      evp_cor_line[ew][sl]->SetLineWidth(2);
+      evp_cor_line[ew][sl]->SetLineColor(kOrange-3);
     };
   };
 
+  sigma_mtx = new TMatrix(2,2);
+  sigma_evals = new TVector(2);
+
   ResetEvent(); // zero event variables upon instantiation
+
+  InitRecenteringValues();
 };
 
 
@@ -351,6 +360,7 @@ void BBCtiles::UpdateEvent()
       adc_poly[ew][sl]->SetMaximum(4096);
       tac_poly[ew][sl]->SetMaximum(4096);
       EVP[ew][sl]=1000;
+      EVP_cor[ew][sl]=1000;
     };
   };
 
@@ -378,7 +388,7 @@ void BBCtiles::UpdateEvent()
         };
       };
       ComputeEVP(ew,sl);
-      ComputePlanarity(ew,sl);
+      ComputeMoments(ew,sl);
     };
   };
   return;
@@ -399,6 +409,7 @@ void BBCtiles::ResetEvent()
         TAC[ew][sl][qq]=0;
       };
       EVP[ew][sl]=0;
+      EVP_cor[ew][sl]=0;
     };
   };
 };
@@ -412,7 +423,7 @@ void BBCtiles::ComputeEVP(Int_t ew0, Int_t sl0)
   xfl2 = 0; 
   yfl2 = 0;
   Int_t pmt_curr;
-  if(QTN[ew0][sl0]>0)
+  if(QTN[ew0][sl0]>=2)
   {
     for(int qq=0; qq<QTN[ew0][sl0]; qq++)
     {
@@ -427,31 +438,52 @@ void BBCtiles::ComputeEVP(Int_t ew0, Int_t sl0)
     };
 
     dir[ew0][sl0] = TMath::ATan2(yfl1,xfl1);
+
     Xflow[ew0][sl0] = xfl2;
     Yflow[ew0][sl0] = yfl2;
-    EVP[ew0][sl0] = 0.5 * TMath::ATan2(yfl2,xfl2);
+    EVP[ew0][sl0] = 0.5 * TMath::ATan2(Yflow[ew0][sl0], Xflow[ew0][sl0]);
+
+    Xflow_cor[ew0][sl0] = 
+      ( xfl2 - Xflow_calib[ew0][sl0][QTN[ew0][sl0]-1][0] ) / Xflow_calib[ew0][sl0][QTN[ew0][sl0]-1][1];
+    Yflow_cor[ew0][sl0] = 
+      ( yfl2 - Yflow_calib[ew0][sl0][QTN[ew0][sl0]-1][0] ) / Yflow_calib[ew0][sl0][QTN[ew0][sl0]-1][1];
+    EVP_cor[ew0][sl0] = 0.5 * TMath::ATan2(Yflow_cor[ew0][sl0], Xflow_cor[ew0][sl0]);
   }
   else 
   {
     Xflow[ew0][sl0] = 0;
     Yflow[ew0][sl0] = 0;
     EVP[ew0][sl0] = 1000; // no EVP computed for zero multiplicity
+
+    Xflow_cor[ew0][sl0] = 0;
+    Yflow_cor[ew0][sl0] = 0;
+    EVP_cor[ew0][sl0] = 1000; // no EVP computed for zero multiplicity
   };
   return;
 };
 
 
-void BBCtiles::ComputePlanarity(Int_t ew0, Int_t sl0)
+void BBCtiles::ComputeMoments(Int_t ew0, Int_t sl0)
 {
   Int_t pmt_curr,tile3,adc_curr;
   Double_t xcart_rot,ycart_rot;
+  Double_t xcart_rot_cor,ycart_rot_cor;
 
   xbar[ew0][sl0]=0;
   ybar[ew0][sl0]=0;
   sigma_x[ew0][sl0]=0;
   sigma_y[ew0][sl0]=0;
   sigma_xy[ew0][sl0]=0;
-  esum=0;
+  sigma_min[ew0][sl0]=0;
+  sigma_max[ew0][sl0]=0;
+  esum[ew0][sl0]=0;
+
+  left_sum=0;
+  right_sum=0;
+  directionality[ew0][sl0]=-1;
+  left_sum_cor=0;
+  right_sum_cor=0;
+  directionality_cor[ew0][sl0]=-1;
 
   if(QTN[ew0][sl0]>0)
   {
@@ -476,22 +508,30 @@ void BBCtiles::ComputePlanarity(Int_t ew0, Int_t sl0)
           zhex = GetZhexOfTile(tile3);
           HexToCart(cellsize[GetSlOfTile(tile3)],xhex,yhex,zhex,xcart,ycart);
 
-          // rotate cartesian coordinates by EVP azimuth
+          // rotate cartesian coordinates by EVP azimuth (for directionality computation)
           xcart_rot =      xcart * TMath::Cos(EVP[ew0][sl0]) + ycart * TMath::Sin(EVP[ew0][sl0]);
           ycart_rot = -1 * xcart * TMath::Sin(EVP[ew0][sl0]) + ycart * TMath::Cos(EVP[ew0][sl0]);
+          xcart_rot_cor =      xcart * TMath::Cos(EVP_cor[ew0][sl0]) + ycart * TMath::Sin(EVP_cor[ew0][sl0]);
+          ycart_rot_cor = -1 * xcart * TMath::Sin(EVP_cor[ew0][sl0]) + ycart * TMath::Cos(EVP_cor[ew0][sl0]);
 
           // append to numerators for moments
           if(whichMoment==1)
           {
-            xbar[ew0][sl0] += adc_curr * xcart_rot;
-            ybar[ew0][sl0] += adc_curr * ycart_rot;
-            esum += adc_curr; // only append to esum once
+            xbar[ew0][sl0] += adc_curr * xcart;
+            ybar[ew0][sl0] += adc_curr * ycart;
+
+            esum[ew0][sl0] += adc_curr; // only append to esum once
+
+            if(xcart_rot<0) left_sum += adc_curr;
+            else if(xcart_rot>0) right_sum += adc_curr;
+            if(xcart_rot_cor<0) left_sum_cor += adc_curr;
+            else if(xcart_rot_cor>0) right_sum_cor += adc_curr;
           }
           else if(whichMoment==2)
           {
-            sigma_x[ew0][sl0]  += adc_curr * (xbar[ew0][sl0]-xcart_rot) * (xbar[ew0][sl0]-xcart_rot);
-            sigma_y[ew0][sl0]  += adc_curr * (ybar[ew0][sl0]-ycart_rot) * (ybar[ew0][sl0]-ycart_rot);
-            sigma_xy[ew0][sl0] += adc_curr * (xbar[ew0][sl0]-xcart_rot) * (ybar[ew0][sl0]-ycart_rot);
+            sigma_x[ew0][sl0]  += adc_curr * (xbar[ew0][sl0]-xcart) * (xbar[ew0][sl0]-xcart);
+            sigma_y[ew0][sl0]  += adc_curr * (ybar[ew0][sl0]-ycart) * (ybar[ew0][sl0]-ycart);
+            sigma_xy[ew0][sl0] += adc_curr * (xbar[ew0][sl0]-xcart) * (ybar[ew0][sl0]-ycart);
           };
         };
       };
@@ -499,15 +539,63 @@ void BBCtiles::ComputePlanarity(Int_t ew0, Int_t sl0)
       // finalise moment computations
       if(whichMoment==1)
       {
-        xbar[ew0][sl0] /= esum;
-        ybar[ew0][sl0] /= esum;
+        xbar[ew0][sl0] /= esum[ew0][sl0];
+        ybar[ew0][sl0] /= esum[ew0][sl0];
       }
       else if(whichMoment==2)
       {
-        sigma_x[ew0][sl0] = TMath::Sqrt(sigma_x[ew0][sl0] / esum);
-        sigma_y[ew0][sl0] = TMath::Sqrt(sigma_y[ew0][sl0] / esum);
-        sigma_xy[ew0][sl0] = TMath::Sqrt(sigma_xy[ew0][sl0] / esum);
+        sigma_x[ew0][sl0] /= esum[ew0][sl0];
+        sigma_y[ew0][sl0] /= esum[ew0][sl0];
+        sigma_xy[ew0][sl0] /= esum[ew0][sl0];
       };
+    };
+
+    // compute sigma_min and simga_max
+    /* using TMatrix::EigenVectors */
+    /*
+    (*sigma_mtx)(0,0) = sigma_x[ew0][sl0];
+    (*sigma_mtx)(0,1) = sigma_xy[ew0][sl0];
+    (*sigma_mtx)(1,0) = sigma_xy[ew0][sl0];
+    (*sigma_mtx)(1,1) = sigma_y[ew0][sl0];
+    sigma_mtx->EigenVectors(*sigma_evals);
+    sigma_min[ew0][sl0] = TMath::Min((*sigma_evals)(0),(*sigma_evals)(1));
+    sigma_max[ew0][sl0] = TMath::Max((*sigma_evals)(0),(*sigma_evals)(1));
+    */
+    /* manually */
+    discrim = TMath::Power(sigma_x[ew0][sl0] - sigma_y[ew0][sl0], 2) + 4 * TMath::Power(sigma_xy[ew0][sl0], 2);
+
+    sigma_min_tmp = 0.5 * ( sigma_x[ew0][sl0] + sigma_y[ew0][sl0] - TMath::Sqrt(discrim) );
+    sigma_max_tmp = 0.5 * ( sigma_x[ew0][sl0] + sigma_y[ew0][sl0] + TMath::Sqrt(discrim) );
+    sigma_min[ew0][sl0] = TMath::Min(sigma_min_tmp,sigma_max_tmp);
+    sigma_max[ew0][sl0] = TMath::Max(sigma_min_tmp,sigma_max_tmp);
+    
+    // compute eigenvector angle.. ambiguity on which one to use
+    /* range 0 to +pi */
+    //sigma_theta[ew0][sl0] = TMath::ATan2(sigma_max[ew0][sl0]-sigma_x[ew0][sl0], sigma_xy[ew0][sl0]);
+    /* range -pi/2 to +pi/2... can impose directionality just like on EVP... */
+    sigma_theta[ew0][sl0] = TMath::ATan2(sigma_xy[ew0][sl0], sigma_max[ew0][sl0]-sigma_y[ew0][sl0]);
+
+
+    // determine directionality 
+    if(left_sum == right_sum) directionality[ew0][sl0]=2;
+    else if(left_sum < right_sum) directionality[ew0][sl0]=0;
+    else directionality[ew0][sl0]=1;
+
+    if(left_sum_cor == right_sum_cor) directionality_cor[ew0][sl0]=2;
+    else if(left_sum_cor < right_sum_cor) directionality_cor[ew0][sl0]=0;
+    else directionality_cor[ew0][sl0]=1;
+
+
+    // fix EVP azimuth directionality
+    if(directionality[ew0][sl0]==1)
+    {
+      EVP[ew0][sl0] = (EVP[ew0][sl0]<0) ? EVP[ew0][sl0]+TMath::Pi() : EVP[ew0][sl0]-TMath::Pi();
+      sigma_theta[ew0][sl0] = 
+        (sigma_theta[ew0][sl0]<0) ? sigma_theta[ew0][sl0]+TMath::Pi() : sigma_theta[ew0][sl0]-TMath::Pi();
+    };
+    if(directionality_cor[ew0][sl0]==1)
+    {
+      EVP_cor[ew0][sl0] = (EVP_cor[ew0][sl0]<0) ? EVP_cor[ew0][sl0]+TMath::Pi() : EVP_cor[ew0][sl0]-TMath::Pi();
     };
   };
   return;
@@ -526,10 +614,49 @@ void BBCtiles::DrawEvent()
     {
       if(EVP[ew][sl]<1000)
       {
-        //evp_line[ew][sl]->SetX1(-1*scale*TMath::Cos(EVP[ew][sl]));
-        //evp_line[ew][sl]->SetY1(-1*scale*TMath::Sin(EVP[ew][sl]));
-        evp_line[ew][sl]->SetX2(scale*TMath::Cos(EVP[ew][sl]));
-        evp_line[ew][sl]->SetY2(scale*TMath::Sin(EVP[ew][sl]));
+        switch(directionality[ew][sl])
+        {
+          case 0:
+            evp_line[ew][sl]->SetX1(0);
+            evp_line[ew][sl]->SetY1(0);
+            evp_line[ew][sl]->SetX2(scale*TMath::Cos(EVP[ew][sl]));
+            evp_line[ew][sl]->SetY2(scale*TMath::Sin(EVP[ew][sl]));
+            evp_cor_line[ew][sl]->SetX1(0);
+            evp_cor_line[ew][sl]->SetY1(0);
+            evp_cor_line[ew][sl]->SetX2(scale*TMath::Cos(EVP_cor[ew][sl]));
+            evp_cor_line[ew][sl]->SetY2(scale*TMath::Sin(EVP_cor[ew][sl]));
+            break;
+          case 1:
+            evp_line[ew][sl]->SetX1(0);
+            evp_line[ew][sl]->SetY1(0);
+            evp_line[ew][sl]->SetX2(scale*TMath::Cos(EVP[ew][sl]));
+            evp_line[ew][sl]->SetY2(scale*TMath::Sin(EVP[ew][sl]));
+            evp_cor_line[ew][sl]->SetX1(0);
+            evp_cor_line[ew][sl]->SetY1(0);
+            evp_cor_line[ew][sl]->SetX2(scale*TMath::Cos(EVP_cor[ew][sl]));
+            evp_cor_line[ew][sl]->SetY2(scale*TMath::Sin(EVP_cor[ew][sl]));
+            break;
+          case 2:
+            evp_line[ew][sl]->SetX1(scale*TMath::Cos(EVP[ew][sl]));
+            evp_line[ew][sl]->SetY1(scale*TMath::Sin(EVP[ew][sl]));
+            evp_line[ew][sl]->SetX2(-1*scale*TMath::Cos(EVP[ew][sl]));
+            evp_line[ew][sl]->SetY2(-1*scale*TMath::Sin(EVP[ew][sl]));
+            evp_cor_line[ew][sl]->SetX1(scale*TMath::Cos(EVP_cor[ew][sl]));
+            evp_cor_line[ew][sl]->SetY1(scale*TMath::Sin(EVP_cor[ew][sl]));
+            evp_cor_line[ew][sl]->SetX2(-1*scale*TMath::Cos(EVP_cor[ew][sl]));
+            evp_cor_line[ew][sl]->SetY2(-1*scale*TMath::Sin(EVP_cor[ew][sl]));
+            break;
+          case -1:
+            evp_line[ew][sl]->SetX1(0);
+            evp_line[ew][sl]->SetY1(0);
+            evp_line[ew][sl]->SetX2(0);
+            evp_line[ew][sl]->SetY2(0);
+            evp_cor_line[ew][sl]->SetX1(0);
+            evp_cor_line[ew][sl]->SetY1(0);
+            evp_cor_line[ew][sl]->SetX2(0);
+            evp_cor_line[ew][sl]->SetY2(0);
+            break;
+        };
       }
       else
       {
@@ -537,6 +664,10 @@ void BBCtiles::DrawEvent()
         evp_line[ew][sl]->SetY1(0);
         evp_line[ew][sl]->SetX2(0);
         evp_line[ew][sl]->SetY2(0);
+        evp_cor_line[ew][sl]->SetX1(0);
+        evp_cor_line[ew][sl]->SetY1(0);
+        evp_cor_line[ew][sl]->SetX2(0);
+        evp_cor_line[ew][sl]->SetY2(0);
       }
     };
   };
@@ -547,8 +678,16 @@ void BBCtiles::DrawEvent()
   {
     for(sl=0; sl<2; sl++)
     {
-      datastring[ew][sl] = Form("EVP=%.2f #sigma_{x}=%.2f #sigma_{y}=%.2f #sigma_{xy}=%.2f",
-        EVP[ew][sl],sigma_x[ew][sl],sigma_y[ew][sl],sigma_xy[ew][sl]);
+      /*
+      datastring[ew][sl] 
+        = Form("EVP=%.2f EVP_cor=%.2f #sigma_{x}=%.2f #sigma_{y}=%.2f #sigma_{xy}=%.2f #sigma_{min}=%.2f #sigma_{max}=%.2f",
+        EVP[ew][sl],EVP_cor[ew][sl],sigma_x[ew][sl],
+        sigma_y[ew][sl],sigma_xy[ew][sl],sigma_min[ew][sl],sigma_max[ew][sl]);
+      */
+      datastring[ew][sl] 
+        = Form("EVP=%.2f EVP_cor=%.2f V%d H%d",
+        EVP[ew][sl],EVP_cor[ew][sl],IsVertical(),IsHorizontal());
+
       adc_poly[ew][sl]->SetTitle(datastring[ew][0].Data()); // for now, no large cells read out, just use small
       tac_poly[ew][sl]->SetTitle("TACs"); // for now, no large cells read out, just use small
     };
@@ -589,7 +728,202 @@ void BBCtiles::DrawEvent()
       };
     };
 
-    if(ccc<3) for(sl=0; sl<2; sl++) evp_line[ew][sl]->Draw();
-    else for(sl=0; sl<2; sl++) evp_line[ew][sl]->Draw();
+    if(ccc<3) 
+    {
+      for(sl=0; sl<2; sl++) 
+      {
+        evp_line[ew][sl]->Draw();
+        evp_cor_line[ew][sl]->Draw();
+      };
+    }
+    else 
+    {
+      for(sl=0; sl<2; sl++) 
+      {
+        evp_line[ew][sl]->Draw();
+        evp_cor_line[ew][sl]->Draw();
+      };
+    };
   };
+};
+
+
+// EVP class selection
+Bool_t BBCtiles::IsVertical()
+{
+  // vertex cut
+  if(TMath::Abs(vertex) > 200) return false;
+
+  div[0] = TMath::Pi()/3.0; // quadrant I bound
+  div[1] = 2*TMath::Pi()/3.0; // quadrant II bound
+  div[2] = -2*TMath::Pi()/3.0; // quadrant III bound
+  div[3] = -1*TMath::Pi()/3.0; // quadrant IV bound
+
+  eee[kE] = EVP_cor[kE][0];
+  eee[kW] = EVP_cor[kW][0];
+
+  return ( ( eee[kE] >= div[0] && eee[kE] <= div[1] ) ||
+           ( eee[kE] >= div[2] && eee[kE] <= div[3] )
+         ) &&
+         ( ( eee[kW] >= div[0] && eee[kW] <= div[1] ) ||
+           ( eee[kW] >= div[2] && eee[kW] <= div[3] )
+         );
+};
+
+Bool_t BBCtiles::IsHorizontal()
+{
+  // vertex cut
+  if(TMath::Abs(vertex) > 200) return false;
+
+  div[0] = TMath::Pi()/6.0; // quadrant I bound
+  div[1] = 5*TMath::Pi()/6.0; // quadrant II bound
+  div[2] = -5*TMath::Pi()/6.0; // quadrant III bound
+  div[3] = -1*TMath::Pi()/6.0; // quadrant IV bound
+
+  eee[kE] = EVP_cor[kE][0];
+  eee[kW] = EVP_cor[kW][0];
+
+  return ( ( eee[kE] >= div[3] && eee[kE] <= div[0] ) ||
+           ( eee[kE] >= div[1] && eee[kE] <= TMath::Pi() ) ||
+           ( eee[kE] >= -1*TMath::Pi() && eee[kE] <= div[2] )
+         ) &&
+         ( ( eee[kW] >= div[3] && eee[kW] <= div[0] ) ||
+           ( eee[kW] >= div[1] && eee[kW] <= TMath::Pi() ) ||
+           ( eee[kW] >= -1*TMath::Pi() && eee[kW] <= div[2] )
+         );
+};
+
+
+// initialize flow vector means & rms for re-centering correction
+// (copy and paste output from EVPdiagnostics.C)
+void BBCtiles::InitRecenteringValues()
+{
+  Xflow_calib[0][0][0][0]=46.30; Xflow_calib[0][0][0][1]=383.81;
+  Yflow_calib[0][0][0][0]=60.47; Yflow_calib[0][0][0][1]=272.71;
+  Xflow_calib[0][0][1][0]=41.80; Xflow_calib[0][0][1][1]=497.64;
+  Yflow_calib[0][0][1][0]=68.18; Yflow_calib[0][0][1][1]=348.97;
+  Xflow_calib[0][0][2][0]=33.54; Xflow_calib[0][0][2][1]=597.32;
+  Yflow_calib[0][0][2][0]=66.66; Yflow_calib[0][0][2][1]=426.96;
+  Xflow_calib[0][0][3][0]=14.62; Xflow_calib[0][0][3][1]=682.20;
+  Yflow_calib[0][0][3][0]=54.61; Yflow_calib[0][0][3][1]=483.60;
+  Xflow_calib[0][0][4][0]=-5.41; Xflow_calib[0][0][4][1]=768.23;
+  Yflow_calib[0][0][4][0]=38.44; Yflow_calib[0][0][4][1]=558.66;
+  Xflow_calib[0][0][5][0]=-18.05; Xflow_calib[0][0][5][1]=849.70;
+  Yflow_calib[0][0][5][0]=26.01; Yflow_calib[0][0][5][1]=620.26;
+  Xflow_calib[0][0][6][0]=-29.69; Xflow_calib[0][0][6][1]=922.55;
+  Yflow_calib[0][0][6][0]=-1.77; Yflow_calib[0][0][6][1]=680.60;
+  Xflow_calib[0][0][7][0]=-61.19; Xflow_calib[0][0][7][1]=1006.72;
+  Yflow_calib[0][0][7][0]=-33.90; Yflow_calib[0][0][7][1]=753.23;
+  Xflow_calib[0][0][8][0]=-80.92; Xflow_calib[0][0][8][1]=1087.05;
+  Yflow_calib[0][0][8][0]=-84.85; Yflow_calib[0][0][8][1]=818.35;
+  Xflow_calib[0][0][9][0]=-110.94; Xflow_calib[0][0][9][1]=1180.75;
+  Yflow_calib[0][0][9][0]=-133.45; Yflow_calib[0][0][9][1]=890.75;
+  Xflow_calib[0][0][10][0]=-131.77; Xflow_calib[0][0][10][1]=1274.49;
+  Yflow_calib[0][0][10][0]=-197.75; Yflow_calib[0][0][10][1]=988.28;
+  Xflow_calib[0][0][11][0]=-172.23; Xflow_calib[0][0][11][1]=1401.41;
+  Yflow_calib[0][0][11][0]=-268.87; Yflow_calib[0][0][11][1]=1081.05;
+  Xflow_calib[0][0][12][0]=-182.98; Xflow_calib[0][0][12][1]=1523.05;
+  Yflow_calib[0][0][12][0]=-355.78; Yflow_calib[0][0][12][1]=1188.18;
+  Xflow_calib[0][0][13][0]=-191.81; Xflow_calib[0][0][13][1]=1679.05;
+  Yflow_calib[0][0][13][0]=-434.86; Yflow_calib[0][0][13][1]=1316.19;
+  Xflow_calib[0][0][14][0]=-216.74; Xflow_calib[0][0][14][1]=1833.76;
+  Yflow_calib[0][0][14][0]=-507.84; Yflow_calib[0][0][14][1]=1453.85;
+  Xflow_calib[0][0][15][0]=-192.05; Xflow_calib[0][0][15][1]=1966.15;
+  Yflow_calib[0][0][15][0]=-600.54; Yflow_calib[0][0][15][1]=1533.06;
+  Xflow_calib[0][1][0][0]=0.00; Xflow_calib[0][1][0][1]=1.00;
+  Yflow_calib[0][1][0][0]=0.00; Yflow_calib[0][1][0][1]=1.00;
+  Xflow_calib[0][1][1][0]=0.00; Xflow_calib[0][1][1][1]=1.00;
+  Yflow_calib[0][1][1][0]=0.00; Yflow_calib[0][1][1][1]=1.00;
+  Xflow_calib[0][1][2][0]=0.00; Xflow_calib[0][1][2][1]=1.00;
+  Yflow_calib[0][1][2][0]=0.00; Yflow_calib[0][1][2][1]=1.00;
+  Xflow_calib[0][1][3][0]=0.00; Xflow_calib[0][1][3][1]=1.00;
+  Yflow_calib[0][1][3][0]=0.00; Yflow_calib[0][1][3][1]=1.00;
+  Xflow_calib[0][1][4][0]=0.00; Xflow_calib[0][1][4][1]=1.00;
+  Yflow_calib[0][1][4][0]=0.00; Yflow_calib[0][1][4][1]=1.00;
+  Xflow_calib[0][1][5][0]=0.00; Xflow_calib[0][1][5][1]=1.00;
+  Yflow_calib[0][1][5][0]=0.00; Yflow_calib[0][1][5][1]=1.00;
+  Xflow_calib[0][1][6][0]=0.00; Xflow_calib[0][1][6][1]=1.00;
+  Yflow_calib[0][1][6][0]=0.00; Yflow_calib[0][1][6][1]=1.00;
+  Xflow_calib[0][1][7][0]=0.00; Xflow_calib[0][1][7][1]=1.00;
+  Yflow_calib[0][1][7][0]=0.00; Yflow_calib[0][1][7][1]=1.00;
+  Xflow_calib[0][1][8][0]=0.00; Xflow_calib[0][1][8][1]=1.00;
+  Yflow_calib[0][1][8][0]=0.00; Yflow_calib[0][1][8][1]=1.00;
+  Xflow_calib[0][1][9][0]=0.00; Xflow_calib[0][1][9][1]=1.00;
+  Yflow_calib[0][1][9][0]=0.00; Yflow_calib[0][1][9][1]=1.00;
+  Xflow_calib[0][1][10][0]=0.00; Xflow_calib[0][1][10][1]=1.00;
+  Yflow_calib[0][1][10][0]=0.00; Yflow_calib[0][1][10][1]=1.00;
+  Xflow_calib[0][1][11][0]=0.00; Xflow_calib[0][1][11][1]=1.00;
+  Yflow_calib[0][1][11][0]=0.00; Yflow_calib[0][1][11][1]=1.00;
+  Xflow_calib[0][1][12][0]=0.00; Xflow_calib[0][1][12][1]=1.00;
+  Yflow_calib[0][1][12][0]=0.00; Yflow_calib[0][1][12][1]=1.00;
+  Xflow_calib[0][1][13][0]=0.00; Xflow_calib[0][1][13][1]=1.00;
+  Yflow_calib[0][1][13][0]=0.00; Yflow_calib[0][1][13][1]=1.00;
+  Xflow_calib[0][1][14][0]=0.00; Xflow_calib[0][1][14][1]=1.00;
+  Yflow_calib[0][1][14][0]=0.00; Yflow_calib[0][1][14][1]=1.00;
+  Xflow_calib[0][1][15][0]=0.00; Xflow_calib[0][1][15][1]=1.00;
+  Yflow_calib[0][1][15][0]=0.00; Yflow_calib[0][1][15][1]=1.00;
+  Xflow_calib[1][0][0][0]=77.72; Xflow_calib[1][0][0][1]=314.81;
+  Yflow_calib[1][0][0][0]=35.01; Yflow_calib[1][0][0][1]=318.92;
+  Xflow_calib[1][0][1][0]=125.10; Xflow_calib[1][0][1][1]=426.76;
+  Yflow_calib[1][0][1][0]=65.45; Yflow_calib[1][0][1][1]=388.24;
+  Xflow_calib[1][0][2][0]=183.30; Xflow_calib[1][0][2][1]=531.37;
+  Yflow_calib[1][0][2][0]=96.34; Yflow_calib[1][0][2][1]=473.36;
+  Xflow_calib[1][0][3][0]=226.75; Xflow_calib[1][0][3][1]=628.88;
+  Yflow_calib[1][0][3][0]=137.14; Yflow_calib[1][0][3][1]=538.70;
+  Xflow_calib[1][0][4][0]=262.33; Xflow_calib[1][0][4][1]=702.26;
+  Yflow_calib[1][0][4][0]=165.09; Yflow_calib[1][0][4][1]=594.98;
+  Xflow_calib[1][0][5][0]=278.42; Xflow_calib[1][0][5][1]=771.01;
+  Yflow_calib[1][0][5][0]=188.92; Yflow_calib[1][0][5][1]=649.69;
+  Xflow_calib[1][0][6][0]=293.18; Xflow_calib[1][0][6][1]=850.79;
+  Yflow_calib[1][0][6][0]=203.07; Yflow_calib[1][0][6][1]=715.43;
+  Xflow_calib[1][0][7][0]=275.24; Xflow_calib[1][0][7][1]=919.95;
+  Yflow_calib[1][0][7][0]=209.23; Yflow_calib[1][0][7][1]=776.18;
+  Xflow_calib[1][0][8][0]=261.46; Xflow_calib[1][0][8][1]=994.65;
+  Yflow_calib[1][0][8][0]=205.10; Yflow_calib[1][0][8][1]=834.35;
+  Xflow_calib[1][0][9][0]=252.59; Xflow_calib[1][0][9][1]=1058.39;
+  Yflow_calib[1][0][9][0]=181.52; Yflow_calib[1][0][9][1]=905.22;
+  Xflow_calib[1][0][10][0]=225.24; Xflow_calib[1][0][10][1]=1131.57;
+  Yflow_calib[1][0][10][0]=182.74; Yflow_calib[1][0][10][1]=966.80;
+  Xflow_calib[1][0][11][0]=179.09; Xflow_calib[1][0][11][1]=1245.70;
+  Yflow_calib[1][0][11][0]=136.07; Yflow_calib[1][0][11][1]=1045.91;
+  Xflow_calib[1][0][12][0]=151.53; Xflow_calib[1][0][12][1]=1370.14;
+  Yflow_calib[1][0][12][0]=114.35; Yflow_calib[1][0][12][1]=1149.54;
+  Xflow_calib[1][0][13][0]=80.88; Xflow_calib[1][0][13][1]=1501.78;
+  Yflow_calib[1][0][13][0]=56.89; Yflow_calib[1][0][13][1]=1250.89;
+  Xflow_calib[1][0][14][0]=64.02; Xflow_calib[1][0][14][1]=1628.06;
+  Yflow_calib[1][0][14][0]=-3.22; Yflow_calib[1][0][14][1]=1353.10;
+  Xflow_calib[1][0][15][0]=85.98; Xflow_calib[1][0][15][1]=1768.64;
+  Yflow_calib[1][0][15][0]=-112.77; Yflow_calib[1][0][15][1]=1465.44;
+  Xflow_calib[1][1][0][0]=0.00; Xflow_calib[1][1][0][1]=1.00;
+  Yflow_calib[1][1][0][0]=0.00; Yflow_calib[1][1][0][1]=1.00;
+  Xflow_calib[1][1][1][0]=0.00; Xflow_calib[1][1][1][1]=1.00;
+  Yflow_calib[1][1][1][0]=0.00; Yflow_calib[1][1][1][1]=1.00;
+  Xflow_calib[1][1][2][0]=0.00; Xflow_calib[1][1][2][1]=1.00;
+  Yflow_calib[1][1][2][0]=0.00; Yflow_calib[1][1][2][1]=1.00;
+  Xflow_calib[1][1][3][0]=0.00; Xflow_calib[1][1][3][1]=1.00;
+  Yflow_calib[1][1][3][0]=0.00; Yflow_calib[1][1][3][1]=1.00;
+  Xflow_calib[1][1][4][0]=0.00; Xflow_calib[1][1][4][1]=1.00;
+  Yflow_calib[1][1][4][0]=0.00; Yflow_calib[1][1][4][1]=1.00;
+  Xflow_calib[1][1][5][0]=0.00; Xflow_calib[1][1][5][1]=1.00;
+  Yflow_calib[1][1][5][0]=0.00; Yflow_calib[1][1][5][1]=1.00;
+  Xflow_calib[1][1][6][0]=0.00; Xflow_calib[1][1][6][1]=1.00;
+  Yflow_calib[1][1][6][0]=0.00; Yflow_calib[1][1][6][1]=1.00;
+  Xflow_calib[1][1][7][0]=0.00; Xflow_calib[1][1][7][1]=1.00;
+  Yflow_calib[1][1][7][0]=0.00; Yflow_calib[1][1][7][1]=1.00;
+  Xflow_calib[1][1][8][0]=0.00; Xflow_calib[1][1][8][1]=1.00;
+  Yflow_calib[1][1][8][0]=0.00; Yflow_calib[1][1][8][1]=1.00;
+  Xflow_calib[1][1][9][0]=0.00; Xflow_calib[1][1][9][1]=1.00;
+  Yflow_calib[1][1][9][0]=0.00; Yflow_calib[1][1][9][1]=1.00;
+  Xflow_calib[1][1][10][0]=0.00; Xflow_calib[1][1][10][1]=1.00;
+  Yflow_calib[1][1][10][0]=0.00; Yflow_calib[1][1][10][1]=1.00;
+  Xflow_calib[1][1][11][0]=0.00; Xflow_calib[1][1][11][1]=1.00;
+  Yflow_calib[1][1][11][0]=0.00; Yflow_calib[1][1][11][1]=1.00;
+  Xflow_calib[1][1][12][0]=0.00; Xflow_calib[1][1][12][1]=1.00;
+  Yflow_calib[1][1][12][0]=0.00; Yflow_calib[1][1][12][1]=1.00;
+  Xflow_calib[1][1][13][0]=0.00; Xflow_calib[1][1][13][1]=1.00;
+  Yflow_calib[1][1][13][0]=0.00; Yflow_calib[1][1][13][1]=1.00;
+  Xflow_calib[1][1][14][0]=0.00; Xflow_calib[1][1][14][1]=1.00;
+  Yflow_calib[1][1][14][0]=0.00; Yflow_calib[1][1][14][1]=1.00;
+  Xflow_calib[1][1][15][0]=0.00; Xflow_calib[1][1][15][1]=1.00;
+  Yflow_calib[1][1][15][0]=0.00; Yflow_calib[1][1][15][1]=1.00;
 };
