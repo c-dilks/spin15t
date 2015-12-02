@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+  echo "usage $0 [directory in asym_plots] [kinvar] [evclass] [asym]"
+  echo " - kinvar: en, pt"
+  echo " - evclass: sph, pi0, thr, etm"
+  echo " - asym: R_blue, R_yellow, A_Sigma, A_N_blue, A_N_yellow, A_TT"
+  exit
+fi
+
+direc="$1"
+if [ $# -gt 1 ]; then kinvar="$2"; else kinvar="en"; fi
+if [ $# -gt 2 ]; then evclass="$3"; else evclass="pi0"; fi
+if [ $# -gt 3 ]; then asym="$4"; else asym="A_N_blue"; fi
+
+sep="==================="
+echo $sep
+echo "direc=$direc"
+echo "kinvar=$kinvar"
+echo "evclass=$evclass"
+echo "asym=$asym"
+echo $sep
+
+source asym_plots/$1/env_bins.sh
+env | grep BINS
+echo $sep
+root -b -q CompareEVPasym.C'("'$direc'","'$kinvar'","'$evclass'","'$asym'")'

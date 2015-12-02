@@ -29,14 +29,6 @@
 #echo "en=$en"
 #echo ""
 
-echo ""
-echo ""
-echo "WARNING WARNING WARNING !!!!!!!!!!!!!!!"
-echo "there's a pAu file in the redset directory and in the ../../Output directory !!!!!!"
-echo "----> its name is set150af"
-echo "it was put there for BBC EVP testing!!!!"
-echo ""
-echo ""
 
 echo "removing phiset/*.root in 3 seconds..."
 sleep 3

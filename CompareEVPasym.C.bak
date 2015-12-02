@@ -1,79 +1,77 @@
 // asym: A_Sigma, R_blue, R_yellow
 //       A_TT, A_N_blue, A_N_yellow
 
-void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass="pi0", TString asym="A_N_bluel")
+void CompareEVPasym(char * direc="output",  char * kinvar="en", char * evclass="pi0",
+                    char * asym="A_N_blue", char * binselect="")
 {
-  Bool_t debug=true;
+  char dir[32];
 
-  // event plane classes
+  Bool_t PROJECT = false;
+
+  // strongest scint-based trg, selecting on inner MIPs
+  //strcpy(dir,"scint-mips");
+
+  // strongest scint-based trg, excluding inner MIPs
+  //strcpy(dir,"scint-nomips");
+
+  // strongest scint-based trg, no MIP constraints
+  strcpy(dir,"scint");
+
+  // TCU-like scint-based trigger; should be same as TCU-based trigger
+  //strcpy(dir,"tcu-like");
+
+  // TCU-based trigger
+  //strcpy(dir,"tcu");
+
+  //---------------------------------------------------------------
+
+  // prepend dir name
+  sprintf(dir,"");
+
+
+  //---------------------------------------------------------------
+
+
   const Int_t NEVP = 3;
   enum evp_enum {kAll,kVer,kHor};
-  TString evp_name[NEVP];
-  evp_name[kVer] = "VER";
-  evp_name[kHor] = "HOR";
-  evp_name[kAll] = "ALL";
 
 
   // draw switch
   const Int_t NPLOTS = 1;
   Bool_t draw[NPLOTS][NEVP];
+  TString png_name[NPLOTS];
   for(int i=0; i<NPLOTS; i++) for(int j=0; j<NEVP; j++) draw[i][j] = false;
-  draw[0][kAll]=true; 
-  draw[0][kVer]=true; 
-  draw[0][kHor]=true; 
+  png_name[0] = "ver_vs_hor"; draw[0][kAll]=true; draw[0][kVer]=true; draw[0][kHor]=true; 
+  //png_name[1] = "SDE_v_SDW"; draw[1][kAll]=true; draw[1][kSDE]=true; draw[1][kSDW]=true;
+  //png_name[2] = "ET_v_IT";   draw[2][kAll]=true; draw[2][kET]=true; draw[2][kIT]=true;
+   
 
 
-  // colors
+  /////////////////////////
+
+  char evp_name[NEVP][16];
+  strcpy(evp_name[kVer],"VERTICAL");
+  strcpy(evp_name[kHor],"HORIZONTAL");
+  strcpy(evp_name[kAll],"ALL");
+
   Int_t evp_plot_color[NEVP];
   evp_plot_color[kAll] = (Int_t) kRed;
   evp_plot_color[kHor] = (Int_t) kGreen+2;
   evp_plot_color[kVer] = (Int_t) kMagenta;
 
-
-  ///////////////////////////////////////////////////////
-
-  
-  // load binning
-  gSystem->Load("src/RunInfo.so");
-  Environ * env = new Environ();
-  Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
-  Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
-  Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
-  if(debug) printf(" env->eta_bins=%d\n env->en_bins=%d\n env->pt_bins=%d\n",eta_bins,en_bins,pt_bins);
-
-
-  // build spin.root filename
-  TString spinfile[NEVP];
-  int ee;
-  for(ee=0; ee<NEVP; ee++) 
-  {
-    spinfile[ee] = "asym_plots/"+direc+"_"+evp_name[ee]+"/spin_"+evclass+".root";
-    if(debug) printf("spinfile[%d]=%s\n",ee,spinfile[ee].Data());
-  };
-
-
-  // determine spin.root TDirectory and asym number
   Int_t A,Z;
   TString asym_str;
-  if(asym=="A_Sigma") { Z=0; A=3; asym_str="A_{#Sigma}";}
-  else if(asym=="R_blue") { Z=0; A=2; asym_str="R^{B}";}
-  else if(asym=="R_yellow") { Z=0; A=1; asym_str="R^{Y}";}
-  else if(asym=="A_TT") { Z=1; A=3; asym_str="A_{TT}";}
-  else if(asym=="A_N_blue") { Z=1; A=2; asym_str="A_{N}^{B}";}
-  else if(asym=="A_N_yellow") { Z=1; A=1; asym_str="A_{N}^{Y}";}
+  if(!strcmp(asym,"A_Sigma")) { Z=0; A=3; asym_str="A_{#Sigma}";}
+  else if(!strcmp(asym,"R_blue")) { Z=0; A=2; asym_str="R^{B}";}
+  else if(!strcmp(asym,"R_yellow")) { Z=0; A=1; asym_str="R^{Y}";}
+  else if(!strcmp(asym,"A_TT")) { Z=1; A=3; asym_str="A_{TT}";}
+  else if(!strcmp(asym,"A_N_blue")) { Z=1; A=2; asym_str="A_{N}^{B}";}
+  else if(!strcmp(asym,"A_N_yellow")) { Z=1; A=1; asym_str="A_{N}^{Y}";}
   else
   {
     fprintf(stderr,"ERROR: asym directory not valid\n");
     return;
   };
-  if(debug) printf("%s A=%d Z=%d asym_str=%s\n",asym.Data(),A,Z,asym_str.Data());
-
-
-
-  return;
-
-
-
   
   char gr_n[32];
   TString kinvar_str;

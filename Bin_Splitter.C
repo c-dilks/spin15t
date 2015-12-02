@@ -13,7 +13,7 @@
 void Bin_Splitter(Int_t phi_bins = 10,
                   Int_t eta_bins = 1,
                   Int_t pt_bins = 0,
-                  Int_t en_bins = 1,
+                  Int_t en_bins = 3,
                   Int_t STG1_in = 2,
                   Int_t STG2_in = 1,
                   Int_t MIPN_in = 0,

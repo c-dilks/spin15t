@@ -21,6 +21,10 @@ fi
 mkdir -p $outputdir
 rm $outputdir/*
 
+# copy binning env variables 
+grep -v SPINDIR env_bins.sh > $outputdir/env_bins.sh
+echo "export SPINDIR=$SPINDIR" >> $outputdir/env_bins.sh
+
 for class in "sph" "pi0" "thr" "etm"; do
   root -b -q -l 'Asym3.C('\"${class}\"','\"all\"')'
   root -b -q -l 'DrawAsymmetries.C('\"${class}\"')'
