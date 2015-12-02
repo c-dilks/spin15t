@@ -18,6 +18,8 @@ else
   #outputdir="asym_plots/output_${TRIGGER_TYPE}_$kindep"
 fi
 
+outputdir="asym_plots/$outputdir"
+
 mkdir -p $outputdir
 rm $outputdir/*
 

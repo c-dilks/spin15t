@@ -268,8 +268,8 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
           bbc->UpdateEvent();
 
           //EVPinRange = bbc->IsVertical();
-          //EVPinRange = bbc->IsHorizontal();
-          EVPinRange = true;
+          EVPinRange = bbc->IsHorizontal();
+          //EVPinRange = true;
             
 
           // determine event class(es)

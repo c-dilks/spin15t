@@ -24,4 +24,4 @@ echo $sep
 source asym_plots/$1/env_bins.sh
 env | grep BINS
 echo $sep
-root -b -q CompareEVPasym.C'("'$direc'","'$kinvar'","'$evclass'","'$asym'")'
+root -l CompareEVPasym.C'("'$direc'","'$kinvar'","'$evclass'","'$asym'")'

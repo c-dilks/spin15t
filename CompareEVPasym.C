@@ -15,12 +15,12 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
 
 
   // draw switch
-  const Int_t NPLOTS = 1;
-  Bool_t draw[NPLOTS][NEVP];
-  for(int i=0; i<NPLOTS; i++) for(int j=0; j<NEVP; j++) draw[i][j] = false;
-  draw[0][kAll]=true; 
-  draw[0][kVer]=true; 
-  draw[0][kHor]=true; 
+  Bool_t draw[NEVP];
+  int ne;
+  for(ne=0; ne<NEVP; ne++) draw[ne] = false;
+  draw[kAll]=true; 
+  draw[kVer]=true; 
+  draw[kHor]=true; 
 
 
   // colors
@@ -36,6 +36,7 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
   // load binning
   gSystem->Load("src/RunInfo.so");
   Environ * env = new Environ();
+  EventClass * ev = new EventClass();
   Int_t eta_bins0 = env->EtaBins; const Int_t eta_bins = eta_bins0;
   Int_t en_bins0 = env->EnBins; const Int_t en_bins = en_bins0;
   Int_t pt_bins0 = env->PtBins; const Int_t pt_bins = pt_bins0;
@@ -43,16 +44,16 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
 
 
   // build spin.root filename
-  TString spinfile[NEVP];
+  TString spinfile_n[NEVP];
   int ee;
   for(ee=0; ee<NEVP; ee++) 
   {
-    spinfile[ee] = "asym_plots/"+direc+"_"+evp_name[ee]+"/spin_"+evclass+".root";
-    if(debug) printf("spinfile[%d]=%s\n",ee,spinfile[ee].Data());
+    spinfile_n[ee] = "asym_plots/"+direc+"_"+evp_name[ee]+"/spin_"+evclass+".root";
+    if(debug) printf("spinfile_n[%d]=%s\n",ee,spinfile_n[ee].Data());
   };
 
 
-  // determine spin.root TDirectory and asym number
+  // determine spin.root TDirectory and asym number and asym title
   Int_t A,Z;
   TString asym_str;
   if(asym=="A_Sigma") { Z=0; A=3; asym_str="A_{#Sigma}";}
@@ -69,114 +70,110 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
   if(debug) printf("%s A=%d Z=%d asym_str=%s\n",asym.Data(),A,Z,asym_str.Data());
 
 
+  // evclass title info
+  TString evclass_str = Form("%s",ev->Title(evclass.Data()));
 
-  return;
 
 
-
-  
-  char gr_n[32];
+  // determing NOTRO, the number of bins in the "other" kinematic variable (denoted "otro")
+  // (i.e. if kinvar=pt, NOTRO=number of en bins)
+  // NOTRO is then the number of TCanvases of plots which will be drawn
+  Int_t NOTRO_tmp;
   TString kinvar_str;
-  if(!strcmp(kinvar,"en")) 
+  if(kinvar=="en") 
   {
-    sprintf(gr_n,"%s/en_dep_z%d_a%d_g0_p0",asym,Z,A);
-    kinvar_str="E";
+    NOTRO_tmp = pt_bins; 
+    kinvar_str = "E_{#gamma#gamma}";
   }
-  else if(!strcmp(kinvar,"pt")) 
+  else if(kinvar=="pt") 
   {
-    sprintf(gr_n,"%s/pt_dep_z%d_a%d_g0_e0",asym,Z,A);
-    kinvar_str="p_{T}";
+    NOTRO_tmp = en_bins;
+    kinvar_str = "p_{T}";
   }
   else 
   {
-    fprintf(stderr,"ERROR: kinvar not valid\n");
+    fprintf(stderr,"ERROR: kinvar should be en or pt\n");
     return;
   };
+  const Int_t NOTRO = NOTRO_tmp;
 
-  // QUICK TITLE FOR STAR COLLAB MEETING; CHANGE ME!!!
-  TString evclass_str;
-  if(!strcmp(evclass,"pi0")) evclass_str="#pi^{0}";
-  else evclass_str=Form("%s",evclass);
 
-  TFile * infile[NEVP]; 
-  char infile_n[NEVP][256];
-  TGraphErrors * gr[NPLOTS][NEVP];
-  TMultiGraph * multi_gr[NPLOTS];
-  for(int i=0; i<NPLOTS; i++) multi_gr[i] = new TMultiGraph();
-
-  char multi_gr_title[64];
-  sprintf(multi_gr_title,"%s %s vs. %s",evclass_str.Data(),asym_str.Data(),kinvar_str.Data());
-  if(strcmp(binselect,"")) sprintf(multi_gr_title,"%s (%s)",multi_gr_title,binselect);
-  for(int i=0; i<NPLOTS; i++) multi_gr[i]->SetTitle(multi_gr_title);
-
-  TLegend * leg[NPLOTS];
-  TString print_name[NPLOTS];
-  Double_t xxx,yyy,xxxe,yyye;
-  Int_t nnn;
-  for(int i=0; i<NPLOTS; i++)
+  // build string to specify range of otro kinematic variable
+  TString otro_str[NOTRO];
+  int no;
+  for(no=0; no<NOTRO; no++)
   {
-    leg[i] = new TLegend(0.1,0.9,0.2,0.6);
-    for(Int_t n=0; n<NEVP; n++)
-    {
-      if(draw[i][n])
-      {
-        if(strcmp(binselect,"")) 
-        {
-          sprintf(infile_n[n],"asym_plots/%s_%s/spin_%s.root",evp_name[n],kinvar,evclass);
-          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s_%s.png",dir,kinvar,binselect,evclass,png_name[i].Data());
-        }
-        else 
-        {
-          sprintf(infile_n[n],"asym_plots/%s_%s/spin_%s.root",evp_name[n],kinvar,evclass);
-          print_name[i] = Form("asym_plots/output_%s_%s_%s_%s.png",dir,kinvar,evclass,png_name[i].Data());
-        };
-        printf("%s\n",infile_n[n]);
-        infile[n] = new TFile(infile_n[n],"READ");
-        //infile[n]->cd(asym);
-        gr[i][n] = (TGraphErrors*) infile[n]->Get(gr_n);
+    if(kinvar=="en") otro_str[no] = Form("p_{T}#in[%.2f,%.2f)",env->PtDiv(no),env->PtDiv(no+1));
+    else if(kinvar=="pt") otro_str[no] = Form("E_{#gamma#gamma}#in[%.2f,%.2f)",env->EnDiv(no),env->EnDiv(no+1));
+  };
 
-        // projection
-        if(PROJECT)
-        {
-          nnn = gr[i][n]->GetN();
-          for(int iii=0; iii<nnn; iii++)
-          {
-            gr[i][n]->GetPoint(iii,xxx,yyy);
-            xxxe = gr[i][n]->GetErrorX(iii);
-            yyye = gr[i][n]->GetErrorY(iii);
-            gr[i][n]->SetPoint(iii,xxx,0);
-            gr[i][n]->SetPointError(iii,xxxe,yyye);
-          };
-        };
-        printf("infile @ %p   gr[%d] @ %p\n",(void*)infile[n],n,(void*)gr[i][n]);
-        gr[i][n]->SetMarkerColor(evp_plot_color[n]);
-        gr[i][n]->SetLineColor(evp_plot_color[n]);
-        gr[i][n]->SetFillColor(evp_plot_color[n]);
-        gr[i][n]->SetFillStyle(3003);
-        gr[i][n]->SetMarkerSize(1.3);
-        gr[i][n]->SetMarkerStyle(kFullCircle);
-        gr[i][n]->SetLineWidth(2);
-        leg[i]->AddEntry(gr[i][n],evp_name[n],"LPE");
-        multi_gr[i]->Add(gr[i][n]);
+
+  // build names of asym plots to retrieve from spin.root
+  TString gr_n[NOTRO];
+  for(no=0; no<NOTRO; no++)
+  {
+    if(kinvar=="en") gr_n[no] = Form("%s/en_dep_z%d_a%d_g0_p%d",asym.Data(),Z,A,no);
+    else if(kinvar=="pt") gr_n[no] = Form("%s/pt_dep_z%d_a%d_g0_e%d",asym.Data(),Z,A,no);
+  };
+
+
+
+  // open spin.root file
+  TFile * spinfile[NEVP];
+  for(ne=0; ne<NEVP; ne++) spinfile[ne] = new TFile(spinfile_n[ne].Data(),"READ");
+
+
+  // build graph titles
+  TGraphErrors * gr[NEVP][NOTRO];
+  TMultiGraph * multi_gr[NOTRO];
+  TString multi_gr_title[NOTRO];
+  int np;
+  for(no=0; no<NOTRO; no++)
+  {
+    multi_gr[no] = new TMultiGraph();
+    multi_gr_title[no] = evclass_str+" "+asym_str+" vs. "+kinvar_str+" where "+otro_str[no];
+    multi_gr[no]->SetTitle(multi_gr_title[no]);
+  };
+
+
+  // obtain graphs from spin.root files, add to multigraphs, and build legend
+  for(ne=0; ne<NEVP; ne++)
+  {
+    spinfile[ne]->cd();
+
+    if(draw[ne])
+    {
+      for(no=0; no<NOTRO; no++)
+      {
+        gr[ne][no] = (TGraphErrors*) spinfile[ne]->Get(gr_n[no].Data());
+        gr[ne][no]->SetMarkerColor(evp_plot_color[ne]);
+        gr[ne][no]->SetLineColor(evp_plot_color[ne]);
+        gr[ne][no]->SetFillColor(evp_plot_color[ne]);
+        gr[ne][no]->SetMarkerStyle(3003);
+        gr[ne][no]->SetMarkerSize(1.3);
+        gr[ne][no]->SetMarkerStyle(kFullCircle);
+        gr[ne][no]->SetLineWidth(2);
+        multi_gr[no]->Add(gr[ne][no]);
       };
     };
   };
 
-  TCanvas * canv[NPLOTS];
-  //TString canv_n[NPLOTS];
-  for(int i=0; i<NPLOTS; i++)
+
+  // build legend
+  TLegend * leg;
+  leg = new TLegend(0.1,0.9,0.2,0.6);
+  for(ne=0; ne<NEVP; ne++) leg->AddEntry(gr[ne][0],evp_name[ne].Data(),"LPE");
+
+
+  // draw canvases
+  TCanvas * canv[NOTRO];
+  TString canv_n[NOTRO];
+  for(no=0; no<NOTRO; no++)
   {
-    //canv_n[i] = Form("canv%d",i);
-    canv[i] = new TCanvas(png_name[i].Data(),png_name[i].Data(),800,800);
-    canv[i]->SetGrid(1,1);
-    multi_gr[i]->Draw("ape");
-    leg[i]->Draw();
+    canv_n[no] = Form("canv_%d",no);
+    canv[no] = new TCanvas(canv_n[no].Data(),canv_n[no].Data(),1000,1000);
+    canv[no]->SetGrid(1,1);
+    multi_gr[no]->Draw("APE");
+    leg->Draw();
   };
-  /*
-  // this png printing does not work correctly for me. no idea why
-  for(int i=0; i<NPLOTS; i++)
-  {
-    canv[i]->Print(print_name[i].Data(),"png");
-  };
-  */
 };
