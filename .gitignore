@@ -28,3 +28,7 @@ rptrg15/thresh/thfiles/*
 debug/*
 bbc_evdisp.pdf
 evpset
+wdist_pdfs/*
+bbc_evdi*.pdf
+hot_chan.pdf
+pi0_bx_dist.pdf

@@ -67,7 +67,7 @@ void EVPdiagnostics(TString setname="079ai")
       Xflow_dist[c][ew]->SetLineColor(line_color[c]);
       Yflow_dist[c][ew]->SetLineColor(line_color[c]);
 
-      flow_cut[c][ew] = Form("evp%ss<1000 && qtn%s==%d && abs(vertex)<200",ew_str[ew].Data(),ew_str[ew].Data(),c+1);
+      flow_cut[c][ew] = Form("evp_%ss<1000 && qtn%s==%d && abs(vertex)<200",ew_str[ew].Data(),ew_str[ew].Data(),c+1);
       Xflow_var[c][ew] = Form("Xflow_%ss",ew_str[ew].Data());
       Yflow_var[c][ew] = Form("Yflow_%ss",ew_str[ew].Data());
       printf("c=%d ew=%d flowcut=\"%s\"\n",c,ew,flow_cut[c][ew].Data());

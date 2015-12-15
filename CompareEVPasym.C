@@ -45,11 +45,10 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
 
   // build spin.root filename
   TString spinfile_n[NEVP];
-  int ee;
-  for(ee=0; ee<NEVP; ee++) 
+  for(ne=0; ne<NEVP; ne++) 
   {
-    spinfile_n[ee] = "asym_plots/"+direc+"_"+evp_name[ee]+"/spin_"+evclass+".root";
-    if(debug) printf("spinfile_n[%d]=%s\n",ee,spinfile_n[ee].Data());
+    spinfile_n[ne] = "asym_plots/"+direc+"_"+evp_name[ne]+"/spin_"+evclass+".root";
+    if(debug) printf("spinfile_n[%d]=%s\n",ne,spinfile_n[ne].Data());
   };
 
 
@@ -120,7 +119,14 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
 
   // open spin.root file
   TFile * spinfile[NEVP];
-  for(ne=0; ne<NEVP; ne++) spinfile[ne] = new TFile(spinfile_n[ne].Data(),"READ");
+  for(ne=0; ne<NEVP; ne++) 
+  {
+    if(draw[ne])
+    {
+      spinfile[ne] = new TFile(spinfile_n[ne].Data(),"READ");
+    };
+  };
+
 
 
   // build graph titles
@@ -139,10 +145,9 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
   // obtain graphs from spin.root files, add to multigraphs, and build legend
   for(ne=0; ne<NEVP; ne++)
   {
-    spinfile[ne]->cd();
-
     if(draw[ne])
     {
+      spinfile[ne]->cd();
       for(no=0; no<NOTRO; no++)
       {
         gr[ne][no] = (TGraphErrors*) spinfile[ne]->Get(gr_n[no].Data());
@@ -162,7 +167,13 @@ void CompareEVPasym(TString direc="output", TString kinvar="en", TString evclass
   // build legend
   TLegend * leg;
   leg = new TLegend(0.1,0.9,0.2,0.6);
-  for(ne=0; ne<NEVP; ne++) leg->AddEntry(gr[ne][0],evp_name[ne].Data(),"LPE");
+  for(ne=0; ne<NEVP; ne++) 
+  {
+    if(draw[ne])
+    {
+      leg->AddEntry(gr[ne][0],evp_name[ne].Data(),"LPE");
+    };
+  };
 
 
   // draw canvases

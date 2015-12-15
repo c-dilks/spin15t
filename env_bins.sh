@@ -37,13 +37,13 @@ export PT_DIV_5=6.000000
 export PT_DIV_6=8.000000
 export PT_DIV_7=10.000000
 
-export EN_LOW=0.000000
-export EN_HIGH=100.000000
+export EN_LOW=15.000000
+export EN_HIGH=75.000000
 export EN_BINS=3
-export EN_DIV_0=0.000000
-export EN_DIV_1=33.333333
-export EN_DIV_2=66.666667
-export EN_DIV_3=100.000000
+export EN_DIV_0=15.000000
+export EN_DIV_1=35.000000
+export EN_DIV_2=55.000000
+export EN_DIV_3=75.000000
 
 export TRIGGER_TYPE="All"
 export MASS_CUT_TYPE="en"

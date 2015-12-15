@@ -21,7 +21,7 @@ echo "evclass=$evclass"
 echo "asym=$asym"
 echo $sep
 
-source asym_plots/$1/env_bins.sh
+source asym_plots/$1_ALL/env_bins.sh
 env | grep BINS
 echo $sep
 root -l CompareEVPasym.C'("'$direc'","'$kinvar'","'$evclass'","'$asym'")'

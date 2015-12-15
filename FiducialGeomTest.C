@@ -39,4 +39,5 @@ void FiducialGeomTest(Double_t Cd=1.5)
   canv->cd(1); fmsmap->Draw("col");
   canv->cd(2); etaphi->Draw("col");
   canv->Print("fiducial_geom.png","png");
+  //canv->SaveAs("fiducial_geom.C"); // large file if high no. bins
 };

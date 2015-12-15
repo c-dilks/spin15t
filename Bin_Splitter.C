@@ -51,8 +51,8 @@ void Bin_Splitter(Int_t phi_bins = 10,
   Double_t pt_low=0.0;   // lowest acceptable pT for runs 12 & 13; hard kin. cutoff overrides this
   Double_t pt_high=10.0; // pi0 reconstruction is unreliable for pT>15
 
-  Double_t en_low=0.0; // E>30 cutoff point for pi0s; should allow sph & thr to go lower
-  Double_t en_high=100; // can go up to 255, but cluster merging for pi0s is problem for E>100
+  Double_t en_low=15; // E>30 cutoff point for pi0s; should allow sph & thr to go lower
+  Double_t en_high=75; // can go up to 255, but cluster merging for pi0s is problem for E>100
 
   char efile[64];
   strcpy(efile,"env_bins.sh");
@@ -154,7 +154,7 @@ void Bin_Splitter(Int_t phi_bins = 10,
     en_width = (en_high-en_low)/en_bins;
     for(Int_t i=0; i<=en_bins; i++) printf("export EN_DIV_%d=%f\n",i,en_low+i*en_width);
   }
-  else
+  else if(en_bins==0)
   {
     /*
     // for pt-dependnce for E<100 & E>100
@@ -187,7 +187,21 @@ void Bin_Splitter(Int_t phi_bins = 10,
     printf("export EN_DIV_6=%f\n",80);
     printf("export EN_DIV_7=%f\n",en_high);
     //*/
+  }
+  else if(en_bins==-1)
+  {
+    // matching heppels xF bins for run15 prelim
+    en_bins=6;
+    printf("export EN_BINS=%d\n",en_bins);
+    printf("export EN_DIV_0=%f\n",15);
+    printf("export EN_DIV_1=%f\n",25);
+    printf("export EN_DIV_2=%f\n",35);
+    printf("export EN_DIV_3=%f\n",45);
+    printf("export EN_DIV_4=%f\n",55);
+    printf("export EN_DIV_5=%f\n",65);
+    printf("export EN_DIV_6=%f\n",75);
   };
+
   printf("\nexport TRIGGER_TYPE=\"%s\"\n",trigger);
   printf("export MASS_CUT_TYPE=\"%s\"\n",cut_type);
   printf("export RP_SELECT=\"%s\"\n",RP_select);
