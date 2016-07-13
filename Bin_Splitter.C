@@ -9,6 +9,10 @@
 //
 // -- these bins do not define the final kinematic cuts used for the jet types; the 
 //    final kinematic boundaries are set in PhiDists3.C (and additionally Diagnostics.C)
+//
+//    RP_SOURCE: 0 = MuDST branches (STG1,STG2,MIPN don't matter for this setting)
+//               1 = TCUbits
+//               2 = QTs (currently disabled RP QT branches in ReduceData.C)
 
 void Bin_Splitter(Int_t phi_bins = 10,
                   Int_t eta_bins = 1,
@@ -17,7 +21,7 @@ void Bin_Splitter(Int_t phi_bins = 10,
                   Int_t STG1_in = 2,
                   Int_t STG2_in = 1,
                   Int_t MIPN_in = 0,
-                  Int_t USE_TCU_BITS_in = 0 
+                  Int_t RP_SOURCE_in = 0 
 )
 {
   // CONTROL VARIABLES
@@ -33,11 +37,11 @@ void Bin_Splitter(Int_t phi_bins = 10,
   char RP_select[16]; strcpy(RP_select,"N");
 
 
-  Int_t STG1,STG2,MIPN,USE_TCU_BITS;
+  Int_t STG1,STG2,MIPN,RP_SOURCE;
   STG1 = STG1_in;
   STG2 = STG2_in;
   MIPN = MIPN_in;
-  USE_TCU_BITS = USE_TCU_BITS_in;
+  RP_SOURCE = RP_SOURCE_in;
 
 
 
@@ -209,7 +213,7 @@ void Bin_Splitter(Int_t phi_bins = 10,
   printf("export STG1=%d\n",STG1);
   printf("export STG2=%d\n",STG2);
   printf("export MIPN=%d\n",MIPN);
-  printf("export USE_TCU_BITS=%d\n",USE_TCU_BITS);
+  printf("export RP_SOURCE=%d\n",RP_SOURCE);
   
   gSystem->RedirectOutput(0);
   char cat[128];

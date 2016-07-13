@@ -11,7 +11,7 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TriggerBoolean * trg_bool = 
-    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
+    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->RP_SOURCE);
 
   Int_t evc = ev->Idx("pi0"); // choose an event class
   //char l2trg[32]; strcpy(l2trg,"All"); // choose FMS L2 trigger mask (FMS OR = "All")
@@ -87,20 +87,20 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
   // obtain trigger boolean strength cases to analyse
   // -- case number = index for each case
   TTree * bool_case_tr = new TTree();
-  bool_case_tr->ReadFile("boolean_cases.dat","stg1/I:stg2/I:mipn/I:use_tcu/I:case_name/C");
-  Int_t stg1_r,stg2_r,mipn_r,use_tcu_r;
+  bool_case_tr->ReadFile("boolean_cases.dat","stg1/I:stg2/I:mipn/I:rp_source/I:case_name/C");
+  Int_t stg1_r,stg2_r,mipn_r,rp_source_r;
   char case_name_r[64];
   bool_case_tr->SetBranchAddress("stg1",&stg1_r);
   bool_case_tr->SetBranchAddress("stg2",&stg2_r);
   bool_case_tr->SetBranchAddress("mipn",&mipn_r);
-  bool_case_tr->SetBranchAddress("use_tcu",&use_tcu_r);
+  bool_case_tr->SetBranchAddress("rp_source",&rp_source_r);
   bool_case_tr->SetBranchAddress("case_name",case_name_r);
   Int_t NCASE_tmp = bool_case_tr->GetEntries();
   const Int_t NCASE = NCASE_tmp;
   Int_t STG1_case[NCASE]; // [case number]
   Int_t STG2_case[NCASE];
   Int_t MIPN_case[NCASE];
-  Int_t USE_TCU_BITS_case[NCASE];
+  Int_t RP_SOURCE_case[NCASE];
   TString str_case[NCASE];
   TString case_name[NCASE];
   for(i=0; i<NCASE; i++)
@@ -109,9 +109,9 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
     STG1_case[i] = stg1_r;
     STG2_case[i] = stg2_r;
     MIPN_case[i] = mipn_r;
-    USE_TCU_BITS_case[i] = use_tcu_r;
+    RP_SOURCE_case[i] = rp_source_r;
     case_name[i] = Form("%s",case_name_r);
-    str_case[i] = Form("%d%d%d%d",STG1_case[i],STG2_case[i],MIPN_case[i],USE_TCU_BITS_case[i]);
+    str_case[i] = Form("%d%d%d%d",STG1_case[i],STG2_case[i],MIPN_case[i],RP_SOURCE_case[i]);
   };
 
   // determine combinations of trigger boolean strength cases to analyse overlap
@@ -122,7 +122,7 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
   Int_t STG1_combo[NCOMBO][2]; // [combo number] [0=left / 1=right]
   Int_t STG2_combo[NCOMBO][2];
   Int_t MIPN_combo[NCOMBO][2];
-  Int_t USE_TCU_BITS_combo[NCOMBO][2];
+  Int_t RP_SOURCE_combo[NCOMBO][2];
   TString str_combo[NCOMBO][2];
   TString combo_name[NCOMBO][2];
   Int_t case_combo[NCOMBO][2];
@@ -138,18 +138,18 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
         STG1_combo[c][kL] = STG1_case[l];
         STG2_combo[c][kL] = STG2_case[l];
         MIPN_combo[c][kL] = MIPN_case[l];
-        USE_TCU_BITS_combo[c][kL] = USE_TCU_BITS_case[l];
+        RP_SOURCE_combo[c][kL] = RP_SOURCE_case[l];
         str_combo[c][kL] = 
-          Form("%d%d%d%d",STG1_combo[c][kL],STG2_combo[c][kL],MIPN_combo[c][kL],USE_TCU_BITS_combo[c][kL]);
+          Form("%d%d%d%d",STG1_combo[c][kL],STG2_combo[c][kL],MIPN_combo[c][kL],RP_SOURCE_combo[c][kL]);
         combo_name[c][kL] = case_name[l];
         case_combo[c][kL] = l;
         
         STG1_combo[c][kR] = STG1_case[r];
         STG2_combo[c][kR] = STG2_case[r];
         MIPN_combo[c][kR] = MIPN_case[r];
-        USE_TCU_BITS_combo[c][kR] = USE_TCU_BITS_case[r];
+        RP_SOURCE_combo[c][kR] = RP_SOURCE_case[r];
         str_combo[c][kR] = 
-          Form("%d%d%d%d",STG1_combo[c][kR],STG2_combo[c][kR],MIPN_combo[c][kR],USE_TCU_BITS_combo[c][kR]);
+          Form("%d%d%d%d",STG1_combo[c][kR],STG2_combo[c][kR],MIPN_combo[c][kR],RP_SOURCE_combo[c][kR]);
         combo_name[c][kR] = case_name[r];
         case_combo[c][kR] = r;
 
@@ -272,7 +272,7 @@ void TriggerBooleanOverlap(const char * set_name = "080ac")
         {
           for(Int_t bb=0; bb<NBOOL; bb++)
           {
-            trg[bb][cc] = trg_bool->FiredAlternate(bb,STG1_case[cc],STG2_case[cc],MIPN_case[cc],USE_TCU_BITS_case[cc]);
+            trg[bb][cc] = trg_bool->FiredAlternate(bb,STG1_case[cc],STG2_case[cc],MIPN_case[cc],RP_SOURCE_case[cc]);
             if(trg[bb][cc]) bool_w_case[run_count]->Fill(cc,bb);
           };
         };

@@ -8,6 +8,18 @@ namespace
   enum io_enum {kI,kO};
   enum ud_enum {kU,kD};
   enum ns_enum {kN,kS};
+
+  enum rp_source_enum { 
+    kMuDSTs=0,
+    kTCUbits=1,
+    kQTs=2
+  };
+  enum rp_branch_enum { 
+    kEU=0,
+    kED=1,
+    kWU=2,
+    kWD=3
+  };
   
   const TString sEW[2] = {"E","W"};
   const TString sIO[2] = {"I","O"};
@@ -16,12 +28,12 @@ namespace
 };
 
 
-TriggerBoolean::TriggerBoolean(Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
+TriggerBoolean::TriggerBoolean(Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t rp_source_in)
 {
   STG1 = stg1_in;
   STG2 = stg2_in;
   MIPN = mipn_in;
-  USE_TCU_BITS = use_tcu;
+  RP_SOURCE = rp_source_in;
    
   TCU = new TCUbits();
   RPSCI = new RPscint();
@@ -95,20 +107,29 @@ Bool_t TriggerBoolean::Fired(char * name0)
   if(!strcmp(name0,"N")) return true; // no RP bias
   else
   {
-    if(USE_TCU_BITS==1)
+    if(RP_SOURCE==kMuDSTs) 
+    {
+      CheckForTracks();
+    }
+    else if(RP_SOURCE==kTCUbits)
     {
       EOR = TCU->Fired("RP_EOR");
       WOR = TCU->Fired("RP_WOR");
       ET = TCU->Fired("RP_ET");
       IT = TCU->Fired("RP_IT");
     }
-    else
+    else if(RP_SOURCE==kQTs)
     {
       RPSCI->Process();
       EOR = RPSCI->track_trg[kE][STG1][MIPN];
       WOR = RPSCI->track_trg[kW][STG1][MIPN];
       ET = RPSCI->elastic_trg[STG2][MIPN];
       IT = RPSCI->inelastic_trg[STG2][MIPN];
+    }
+    else
+    {
+      fprintf(stderr,"ERROR: unknown RP_SOURCE\n");
+      return false;
     };
 
     if(!strcmp(name0,"EOR")) return EOR;
@@ -136,7 +157,7 @@ Bool_t TriggerBoolean::Fired(char * name0)
 
 
 Bool_t TriggerBoolean::FiredAlternate(Int_t idx0, 
-                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
+                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t rp_source_in)
 {
   std::string name0;
   try { name0 = trg_name.at(idx0); }
@@ -145,7 +166,7 @@ Bool_t TriggerBoolean::FiredAlternate(Int_t idx0,
     fprintf(stderr,"ERROR: RP idx out of range\n");
     return 0;
   };
-  return FiredAlternate((char*)(name0.data()),stg1_in,stg2_in,mipn_in,use_tcu);
+  return FiredAlternate((char*)(name0.data()),stg1_in,stg2_in,mipn_in,rp_source_in);
 };
 
 
@@ -153,24 +174,24 @@ Bool_t TriggerBoolean::FiredAlternate(Int_t idx0,
 // then changes the parameters back (note that the parameters are initialised in the constructor,
 // and since they're private, cannot be changed outside the class)
 Bool_t TriggerBoolean::FiredAlternate(char * name0, 
-                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t use_tcu)
+                                      Int_t stg1_in, Int_t stg2_in, Int_t mipn_in, Int_t rp_source_in)
 {
   STG1_tmp = STG1;
   STG2_tmp = STG2;
   MIPN_tmp = MIPN;
-  USE_TCU_BITS_tmp = USE_TCU_BITS;
+  RP_SOURCE_tmp = RP_SOURCE;
   
   STG1 = stg1_in;
   STG2 = stg2_in;
   MIPN = mipn_in;
-  USE_TCU_BITS = use_tcu;
+  RP_SOURCE = rp_source_in;
 
   Bool_t return_val = Fired(name0);
 
   STG1 = STG1_tmp;
   STG2 = STG2_tmp;
   MIPN = MIPN_tmp;
-  USE_TCU_BITS = USE_TCU_BITS_tmp;
+  RP_SOURCE = RP_SOURCE_tmp;
 
   return return_val;
 };
@@ -218,4 +239,59 @@ void TriggerBoolean::Diagnostic(Int_t runnum0, Int_t event0)
      printf("\n");
      */
   //-----------
+};
+
+
+// uses MuDST branches to look for valid tracks, and assignes values to EOR,WOR,ET, and IT
+void TriggerBoolean::CheckForTracks() {
+  // reset booleans
+  EOR = false;
+  WOR = false;
+  IT = false;
+  ET = false;
+
+  // reset n_good_tracks[RP branch]
+  for(int b=0; b<4; b++) n_good_tracks[b] = 0;
+
+  if(n_tracks>0) {
+    for(int x=0; x<n_tracks; x++) {
+      // GOOD TRACKS CUT---------------------------------
+      if(t_gold[x] && t_p[x]>40.0 && t_p[x]<100) {
+        if(t_branch[x]>=0 && t_branch[x]<=4) {
+          n_good_tracks[t_branch[x]]++;
+        }
+        else {
+          fprintf(stderr,"ERROR: t_branch not in range!!!\n");
+          return;
+        };
+      };
+      //-------------------------------------------------
+    };
+
+    // BOOLEANS CUTS
+    // single good track only -- highly restrictive
+    /*
+    if((n_good_tracks[kEU]==1 && n_good_tracks[kED]==0) ||
+       (n_good_tracks[kEU]==0 && n_good_tracks[kED]==1))
+       EOR = true;
+    if((n_good_tracks[kWU]==1 && n_good_tracks[kWD]==0) ||
+       (n_good_tracks[kWU]==0 && n_good_tracks[kWD]==1)) 
+       WOR = true;
+    if((n_good_gracks[kEU]==1 && n_good_tracks[kED]==0 && n_good_tracks[kWU]==0 && n_good_tracks[kWD]==1) ||
+       (n_good_gracks[kEU]==0 && n_good_tracks[kED]==1 && n_good_tracks[kWU]==1 && n_good_tracks[kWD]==0))
+       ET = true;
+    if((n_good_gracks[kEU]==1 && n_good_tracks[kED]==0 && n_good_tracks[kWU]==1 && n_good_tracks[kWD]==0) ||
+       (n_good_gracks[kEU]==0 && n_good_tracks[kED]==1 && n_good_tracks[kWU]==0 && n_good_tracks[kWD]==1))
+       IT = true;
+    */
+    // nonzero good tracks -- highly unrestrictive
+    ///*
+    if(n_good_tracks[kEU]>0 || n_good_tracks[kED]>0) EOR = true;
+    if(n_good_tracks[kWU]>0 || n_good_tracks[kWD]>0) WOR = true;
+    if((n_good_tracks[kEU]>0 && n_good_tracks[kWD]>0) || 
+       (n_good_tracks[kED]>0 && n_good_tracks[kWU]>0)) ET = true;
+    if((n_good_tracks[kEU]>0 && n_good_tracks[kWU]>0) || 
+       (n_good_tracks[kED]>0 && n_good_tracks[kWD]>0)) IT = true;
+    //*/
+  };
 };

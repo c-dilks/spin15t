@@ -68,6 +68,32 @@ void ReduceData(const char * filename="Outputset080ac.root",
   Short_t BBCW_ADC[16];
   Float_t BBCvertex;
 
+  // RP MuDST branches
+  Int_t n_tracks,n_trackpoints;
+  // track variables -- prefixed with t_
+  Int_t t_index[n_tracks_max];
+  Int_t t_branch[n_tracks_max];
+  Int_t t_type[n_tracks_max];
+  Int_t t_planesUsed[n_tracks_max];
+  Double_t t_p[n_tracks_max];
+  Double_t t_pt[n_tracks_max];
+  Double_t t_eta[n_tracks_max];
+  Double_t t_time[n_tracks_max];
+  Double_t t_theta[n_tracks_max];
+  Double_t t_thetaRP[n_tracks_max];
+  Double_t t_phi[n_tracks_max];
+  Double_t t_phiRP[n_tracks_max];
+  Double_t t_t[n_tracks_max];
+  Double_t t_xi[n_tracks_max];
+  Bool_t t_gold[n_tracks_max];
+  // trackpoint variables -- prefixed with p0_ and p1_
+  Bool_t p_tpExists[2][n_tracks_max];
+  Int_t p_RPid[2][n_tracks_max];
+  Int_t p_quality[2][n_tracks_max];
+  Double_t p_x[2][n_tracks_max];
+  Double_t p_y[2][n_tracks_max];
+  Double_t p_z[2][n_tracks_max];
+
   twotr->SetBranchAddress("M12",&M12);
   twotr->SetBranchAddress("N12",&N12);
   twotr->SetBranchAddress("E12",&E12);
@@ -82,6 +108,7 @@ void ReduceData(const char * filename="Outputset080ac.root",
   twotr->SetBranchAddress("L2sum",L2sum);
   twotr->SetBranchAddress("lastdsm",lastdsm);
   
+  /*
   twotr->SetBranchAddress("RPE_QTN",&RPE_QTN);
   twotr->SetBranchAddress("RPW_QTN",&RPW_QTN);
   twotr->SetBranchAddress("RPE_Idx",RPE_Idx);
@@ -101,6 +128,53 @@ void ReduceData(const char * filename="Outputset080ac.root",
   twotr->SetBranchAddress("QTWBBCTAC",BBCW_TAC);
   twotr->SetBranchAddress("QTWBBCADC",BBCW_ADC);
   twotr->SetBranchAddress("QTBVertex",&BBCvertex);
+  */
+
+  // mudst branches
+  twotr->SetBranchAddress("RP_n_tracks",&n_tracks);
+  twotr->SetBranchAddress("RP_n_trackpoints",&n_trackpoints);
+  // tracks
+  twotr->SetBranchAddress("RP_t_index",t_index); // track index number
+  twotr->SetBranchAddress("RP_t_branch",t_branch); // RP branch (0=EU 1=ED 2=WU 3=WD)
+  twotr->SetBranchAddress("RP_t_type",t_type); // track type (see next line)
+    /* 0=rpsLocal -- 1 track point
+     * 1=rpsGlobal -- 2 track points
+     * 2=rpsUndefined -- track not defined
+     */
+  twotr->SetBranchAddress("RP_t_planesUsed",t_planesUsed); // number of SSD planes hit by track points in track
+  twotr->SetBranchAddress("RP_t_p",t_p); // momentum
+  twotr->SetBranchAddress("RP_t_pt",t_pt); // transverse momentum
+  twotr->SetBranchAddress("RP_t_eta",t_eta); // pseudorapidity
+  twotr->SetBranchAddress("RP_t_time",t_time); // time of track detection
+  twotr->SetBranchAddress("RP_t_theta",t_theta); // polar angle at RP according to STAR coord sys
+  twotr->SetBranchAddress("RP_t_thetaRP",t_thetaRP); // polar angle at RP according to STAR survey
+  twotr->SetBranchAddress("RP_t_phi",t_phi); // azimuth at RP according to STAR coord sys
+  twotr->SetBranchAddress("RP_t_phiRP",t_phiRP); // azimuth at RP according to STAR survey
+  twotr->SetBranchAddress("RP_t_t",t_t); // squared 4-momentum transfer
+  twotr->SetBranchAddress("RP_t_xi",t_xi); // fractional momentum loss (pbeam-p)/pbeam
+  twotr->SetBranchAddress("RP_t_gold",t_gold); // my track quality variable (2 track points in all 2x4=8 Si planes)
+  // track point 0
+  twotr->SetBranchAddress("RP_p0_tpExists",p_tpExists[0]); // true if track point 0 exists
+  twotr->SetBranchAddress("RP_p0_RPid",p_RPid[0]); // RP id (see next line)
+    /* 0=E1U  1=E1D  2=E2U  3=E2D
+     * 4=W1U  5=W1D  6=W2U  7=W2D
+     */
+  twotr->SetBranchAddress("RP_p0_quality",p_quality[0]); // track point quality (see next line)
+    /* 0=rpsNormal -- not golden and not undefined
+     * 1=rpsGolden -- single cluster in all 4 SSD planes
+     * 2=rpsNotSet -- undefined track point
+     */
+  twotr->SetBranchAddress("RP_p0_x",p_x[0]); // STAR survey coords x-position
+  twotr->SetBranchAddress("RP_p0_y",p_y[0]); // STAR survey coords y-position
+  twotr->SetBranchAddress("RP_p0_z",p_z[0]); // STAR survey coords z-position
+  // track point 1
+  twotr->SetBranchAddress("RP_p1_tpExists",p_tpExists[1]); // true if track point 1 exists
+  twotr->SetBranchAddress("RP_p1_RPid",p_RPid[1]);
+  twotr->SetBranchAddress("RP_p1_quality",p_quality[1]);
+  twotr->SetBranchAddress("RP_p1_x",p_x[1]);
+  twotr->SetBranchAddress("RP_p1_y",p_y[1]);
+  twotr->SetBranchAddress("RP_p1_z",p_z[1]);
+
 
   str->Branch("M12",&M12,"M12/F");
   str->Branch("N12",&N12,"N12/F");
@@ -120,6 +194,7 @@ void ReduceData(const char * filename="Outputset080ac.root",
   str->Branch("L2sum",L2sum,"L2sum[2]/i");
   str->Branch("lastdsm",lastdsm,"lastdsm[8]/i");
 
+  /*
   str->Branch("RPE_QTN",&RPE_QTN,"RPE_QTN/S");
   str->Branch("RPW_QTN",&RPW_QTN,"RPW_QTN/S");
   str->Branch("RPE_Idx",RPE_Idx,"RPE_Idx[RPE_QTN]/S");
@@ -139,6 +214,39 @@ void ReduceData(const char * filename="Outputset080ac.root",
   str->Branch("BBCW_TAC",BBCW_TAC,"BBCW_TAC[BBCW_QTN]/S");
   str->Branch("BBCW_ADC",BBCW_ADC,"BBCW_ADC[BBCW_QTN]/S");
   str->Branch("BBCvertex",&BBCvertex,"BBCvertex/F");
+  */
+
+  // mudst branches
+  str->Branch("RP_n_tracks",&n_tracks,"RP_n_tracks/I");
+  str->Branch("RP_n_trackpoints",&n_trackpoints,"RP_n_trackpoints/I");
+  str->Branch("RP_t_index",t_index,"RP_t_index[RP_n_tracks]/I");
+  str->Branch("RP_t_branch",t_branch,"RP_t_branch[RP_n_tracks]/I");
+  str->Branch("RP_t_type",t_type,"RP_t_type[RP_n_tracks]/I");
+  str->Branch("RP_t_planesUsed",t_planesUsed,"RP_t_planesUsed[RP_n_tracks]/I");
+  str->Branch("RP_t_p",t_p,"RP_t_p[RP_n_tracks]/D");
+  str->Branch("RP_t_pt",t_pt,"RP_t_pt[RP_n_tracks]/D");
+  str->Branch("RP_t_eta",t_eta,"RP_t_eta[RP_n_tracks]/D");
+  str->Branch("RP_t_time",t_time,"RP_t_time[RP_n_tracks]/D");
+  str->Branch("RP_t_theta",t_theta,"RP_t_theta[RP_n_tracks]/D");
+  str->Branch("RP_t_thetaRP",t_thetaRP,"RP_t_thetaRP[RP_n_tracks]/D");
+  str->Branch("RP_t_phi",t_phi,"RP_t_phi[RP_n_tracks]/D");
+  str->Branch("RP_t_phiRP",t_phiRP,"RP_t_phiRP[RP_n_tracks]/D");
+  str->Branch("RP_t_t",t_t,"RP_t_t[RP_n_tracks]/D");
+  str->Branch("RP_t_xi",t_xi,"RP_t_xi[RP_n_tracks]/D");
+  str->Branch("RP_t_gold",t_gold,"RP_t_gold[RP_n_tracks]/O");
+  str->Branch("RP_p0_tpExists",p_tpExists[0],"RP_p0_tpExists[RP_n_tracks]/O");
+  str->Branch("RP_p0_RPid",p_RPid[0],"RP_p0_RPid[RP_n_tracks]/I");
+  str->Branch("RP_p0_quality",p_quality[0],"RP_p0_quality[RP_n_tracks]/I");
+  str->Branch("RP_p0_x",p_x[0],"RP_p0_x[RP_n_tracks]/D");
+  str->Branch("RP_p0_y",p_y[0],"RP_p0_y[RP_n_tracks]/D");
+  str->Branch("RP_p0_z",p_z[0],"RP_p0_z[RP_n_tracks]/D");
+  str->Branch("RP_p1_tpExists",p_tpExists[1],"RP_p1_tpExists[RP_n_tracks]/O");
+  str->Branch("RP_p1_RPid",p_RPid[1],"RP_p1_RPid[RP_n_tracks]/I");
+  str->Branch("RP_p1_quality",p_quality[1],"RP_p1_quality[RP_n_tracks]/I");
+  str->Branch("RP_p1_x",p_x[1],"RP_p1_x[RP_n_tracks]/D");
+  str->Branch("RP_p1_y",p_y[1],"RP_p1_y[RP_n_tracks]/D");
+  str->Branch("RP_p1_z",p_z[1],"RP_p1_z[RP_n_tracks]/D");
+
 
   /*
   char R_bbc_n[10][32];

@@ -26,7 +26,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TriggerBoolean * trg_bool = 
-    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
+    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->RP_SOURCE);
 
 
   // open tree
@@ -59,6 +59,7 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("L2sum",L2sum);
   tr->SetBranchAddress("lastdsm",trg_bool->TCU->lastdsm);
 
+  /*
   tr->SetBranchAddress("RPE_QTN",&(trg_bool->RPSCI->N[kE]));
   tr->SetBranchAddress("RPW_QTN",&(trg_bool->RPSCI->N[kW]));
   tr->SetBranchAddress("RPE_Idx",trg_bool->RPSCI->Idx[kE]);
@@ -68,7 +69,38 @@ void DiagnosticsOne(const char * infile_name = "RedOutputset079ai.root")
   tr->SetBranchAddress("RPW_TAC",trg_bool->RPSCI->TAC[kW]);
   tr->SetBranchAddress("RPW_ADC",trg_bool->RPSCI->ADC[kW]);
   tr->SetBranchAddress("RPvertex",trg_bool->RPSCI->vertex);
+  */
 
+  // mudst branches
+  tr->SetBranchAddress("RP_n_tracks",&(trg_bool->n_tracks));
+  tr->SetBranchAddress("RP_n_trackpoints",&(trg_bool->n_trackpoints));
+  tr->SetBranchAddress("RP_t_index",trg_bool->t_index);
+  tr->SetBranchAddress("RP_t_branch",trg_bool->t_branch);
+  tr->SetBranchAddress("RP_t_type",trg_bool->t_type);
+  tr->SetBranchAddress("RP_t_planesUsed",trg_bool->t_planesUsed);
+  tr->SetBranchAddress("RP_t_p",trg_bool->t_p);
+  tr->SetBranchAddress("RP_t_pt",trg_bool->t_pt);
+  tr->SetBranchAddress("RP_t_eta",trg_bool->t_eta);
+  tr->SetBranchAddress("RP_t_time",trg_bool->t_time);
+  tr->SetBranchAddress("RP_t_theta",trg_bool->t_theta);
+  tr->SetBranchAddress("RP_t_thetaRP",trg_bool->t_thetaRP);
+  tr->SetBranchAddress("RP_t_phi",trg_bool->t_phi);
+  tr->SetBranchAddress("RP_t_phiRP",trg_bool->t_phiRP);
+  tr->SetBranchAddress("RP_t_t",trg_bool->t_t);
+  tr->SetBranchAddress("RP_t_xi",trg_bool->t_xi);
+  tr->SetBranchAddress("RP_t_gold",trg_bool->t_gold);
+  tr->SetBranchAddress("RP_p0_tpExists",trg_bool->p_tpExists[0]);
+  tr->SetBranchAddress("RP_p0_RPid",trg_bool->p_RPid[0]);
+  tr->SetBranchAddress("RP_p0_quality",trg_bool->p_quality[0]);
+  tr->SetBranchAddress("RP_p0_x",trg_bool->p_x[0]);
+  tr->SetBranchAddress("RP_p0_y",trg_bool->p_y[0]);
+  tr->SetBranchAddress("RP_p0_z",trg_bool->p_z[0]);
+  tr->SetBranchAddress("RP_p1_tpExists",trg_bool->p_tpExists[1]);
+  tr->SetBranchAddress("RP_p1_RPid",trg_bool->p_RPid[1]);
+  tr->SetBranchAddress("RP_p1_quality",trg_bool->p_quality[1]);
+  tr->SetBranchAddress("RP_p1_x",trg_bool->p_x[1]);
+  tr->SetBranchAddress("RP_p1_y",trg_bool->p_y[1]);
+  tr->SetBranchAddress("RP_p1_z",trg_bool->p_z[1]);
 
 
   // trigger list

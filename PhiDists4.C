@@ -20,9 +20,9 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TriggerBoolean * trg_bool = 
-    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
+    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->RP_SOURCE);
   trg_bool->PrintParameters();
-  BBCtiles * bbc = new BBCtiles();
+  //BBCtiles * bbc = new BBCtiles();
 
   // get bins from environment
   Int_t phi_bins0 = env->PhiBins; const Int_t phi_bins = phi_bins0;
@@ -60,6 +60,7 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
   tree->SetBranchAddress("L2sum",L2sum);
   tree->SetBranchAddress("lastdsm",trg_bool->TCU->lastdsm);
 
+  /*
   tree->SetBranchAddress("RPE_QTN",&(trg_bool->RPSCI->N[kE]));
   tree->SetBranchAddress("RPW_QTN",&(trg_bool->RPSCI->N[kW]));
   tree->SetBranchAddress("RPE_Idx",trg_bool->RPSCI->Idx[kE]);
@@ -79,7 +80,38 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
   tree->SetBranchAddress("BBCW_Idx",bbc->Idx[kW][0]);
   tree->SetBranchAddress("BBCW_ADC",bbc->ADC[kW][0]);
   tree->SetBranchAddress("BBCW_TAC",bbc->TAC[kW][0]);
+  */
 
+  // mudst branches
+  tree->SetBranchAddress("RP_n_tracks",&(trg_bool->n_tracks));
+  tree->SetBranchAddress("RP_n_trackpoints",&(trg_bool->n_trackpoints));
+  tree->SetBranchAddress("RP_t_index",trg_bool->t_index);
+  tree->SetBranchAddress("RP_t_branch",trg_bool->t_branch);
+  tree->SetBranchAddress("RP_t_type",trg_bool->t_type);
+  tree->SetBranchAddress("RP_t_planesUsed",trg_bool->t_planesUsed);
+  tree->SetBranchAddress("RP_t_p",trg_bool->t_p);
+  tree->SetBranchAddress("RP_t_pt",trg_bool->t_pt);
+  tree->SetBranchAddress("RP_t_eta",trg_bool->t_eta);
+  tree->SetBranchAddress("RP_t_time",trg_bool->t_time);
+  tree->SetBranchAddress("RP_t_theta",trg_bool->t_theta);
+  tree->SetBranchAddress("RP_t_thetaRP",trg_bool->t_thetaRP);
+  tree->SetBranchAddress("RP_t_phi",trg_bool->t_phi);
+  tree->SetBranchAddress("RP_t_phiRP",trg_bool->t_phiRP);
+  tree->SetBranchAddress("RP_t_t",trg_bool->t_t);
+  tree->SetBranchAddress("RP_t_xi",trg_bool->t_xi);
+  tree->SetBranchAddress("RP_t_gold",trg_bool->t_gold);
+  tree->SetBranchAddress("RP_p0_tpExists",trg_bool->p_tpExists[0]);
+  tree->SetBranchAddress("RP_p0_RPid",trg_bool->p_RPid[0]);
+  tree->SetBranchAddress("RP_p0_quality",trg_bool->p_quality[0]);
+  tree->SetBranchAddress("RP_p0_x",trg_bool->p_x[0]);
+  tree->SetBranchAddress("RP_p0_y",trg_bool->p_y[0]);
+  tree->SetBranchAddress("RP_p0_z",trg_bool->p_z[0]);
+  tree->SetBranchAddress("RP_p1_tpExists",trg_bool->p_tpExists[1]);
+  tree->SetBranchAddress("RP_p1_RPid",trg_bool->p_RPid[1]);
+  tree->SetBranchAddress("RP_p1_quality",trg_bool->p_quality[1]);
+  tree->SetBranchAddress("RP_p1_x",trg_bool->p_x[1]);
+  tree->SetBranchAddress("RP_p1_y",trg_bool->p_y[1]);
+  tree->SetBranchAddress("RP_p1_z",trg_bool->p_z[1]);
 
   // define spinbit strings
   char spinbit_t[4][4];
@@ -261,15 +293,14 @@ void PhiDists4(const char * filename="RedOutputset080ac.root",Bool_t debug=false
         /*if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0 && fabs(Phi)<3.1415/2.0)*/ /* south cells only */
         if(ss>=0 && gg>=0 && pp>=0 && ee>=0 && rr>=0)
         {
-          // set kinematics variables for event, tcu bits, rp bits
+          // set kinematics variables for event 
           ev->SetKinematics(runnum,E12,Pt,Eta,Phi,M12,Z,N12);
 
           // bbc EVP in range
-          bbc->UpdateEvent();
-
+          //bbc->UpdateEvent();
           //EVPinRange = bbc->IsVertical();
-          EVPinRange = bbc->IsHorizontal();
-          //EVPinRange = true;
+          //EVPinRange = bbc->IsHorizontal();
+          EVPinRange = true; // LEAVE THIS TRUE (from deprecated EVP study)
             
 
           // determine event class(es)

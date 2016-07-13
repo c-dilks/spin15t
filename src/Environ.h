@@ -30,7 +30,7 @@ class Environ : public TObject
     Float_t PtDiv(Int_t bin);
     Double_t Error(const char * bintype);
 
-    Int_t STG1,STG2,MIPN,USE_TCU_BITS;
+    Int_t STG1,STG2,MIPN,RP_SOURCE;
 
   protected:
     typedef std::map<Int_t,Float_t> DivMap;

@@ -1,4 +1,4 @@
-void CombineOverlaps(TString caseToConsider="scint",TString fmsTrg="")
+void CombineOverlaps(TString caseToConsider="mudst",TString fmsTrg="")
 {
   const Int_t MAX_RUNS = 12; // assumed max number of runs in a set file
 
@@ -9,7 +9,7 @@ void CombineOverlaps(TString caseToConsider="scint",TString fmsTrg="")
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
   TriggerBoolean * trg_bool = 
-    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->USE_TCU_BITS);
+    new TriggerBoolean(env->STG1,env->STG2,env->MIPN,env->RP_SOURCE);
 
   int i,j;
   enum ew_enum {kE,kW};
@@ -34,22 +34,22 @@ void CombineOverlaps(TString caseToConsider="scint",TString fmsTrg="")
   // obtain trigger boolean strength cases to analyse
   // -- case number = index for each case
   TTree * bool_case_tr = new TTree();
-  bool_case_tr->ReadFile("boolean_cases.dat","stg1/I:stg2/I:mipn/I:use_tcu/I:case_name/C");
-  Int_t stg1_r,stg2_r,mipn_r,use_tcu_r;
-  Int_t tcu_case_num=-1;
+  bool_case_tr->ReadFile("boolean_cases.dat","stg1/I:stg2/I:mipn/I:rp_source/I:case_name/C");
+  Int_t stg1_r,stg2_r,mipn_r,rp_source_r;
+  Int_t rp_source_num=-1;
   Int_t case_num=-1;
   char case_name_r[64];
   bool_case_tr->SetBranchAddress("stg1",&stg1_r);
   bool_case_tr->SetBranchAddress("stg2",&stg2_r);
   bool_case_tr->SetBranchAddress("mipn",&mipn_r);
-  bool_case_tr->SetBranchAddress("use_tcu",&use_tcu_r);
+  bool_case_tr->SetBranchAddress("rp_source",&rp_source_r);
   bool_case_tr->SetBranchAddress("case_name",case_name_r);
   Int_t NCASE_tmp = bool_case_tr->GetEntries();
   const Int_t NCASE = NCASE_tmp;
   Int_t STG1_case[NCASE]; // [case number]
   Int_t STG2_case[NCASE];
   Int_t MIPN_case[NCASE];
-  Int_t USE_TCU_BITS_case[NCASE];
+  Int_t RP_SOURCE_case[NCASE];
   TString str_case[NCASE];
   TString case_name[NCASE];
   for(i=0; i<NCASE; i++)
@@ -58,14 +58,14 @@ void CombineOverlaps(TString caseToConsider="scint",TString fmsTrg="")
     STG1_case[i] = stg1_r;
     STG2_case[i] = stg2_r;
     MIPN_case[i] = mipn_r;
-    USE_TCU_BITS_case[i] = use_tcu_r;
+    RP_SOURCE_case[i] = rp_source_r;
     case_name[i] = Form("%s",case_name_r);
-    str_case[i] = Form("%d%d%d%d",STG1_case[i],STG2_case[i],MIPN_case[i],USE_TCU_BITS_case[i]);
+    str_case[i] = Form("%d%d%d%d",STG1_case[i],STG2_case[i],MIPN_case[i],RP_SOURCE_case[i]);
     if(!strcmp(case_name_r,caseToConsider.Data())) case_num=i;
-    else if(!strcmp(case_name_r,"tcu")) tcu_case_num=i;
+    else if(!strcmp(case_name_r,"tcu")) rp_source_num=i;
   };
   if(case_num<0) { fprintf(stderr,"ERROR: caseToConsider invalid\n"); return; }
-  else if(tcu_case_num<0) { fprintf(stderr,"ERROR: no TCU case found\n"); return; }
+  else if(rp_source_num<0) { fprintf(stderr,"ERROR: no RP SOURCE found\n"); return; }
 
 
   // load RP runlog tree
@@ -345,7 +345,7 @@ void CombineOverlaps(TString caseToConsider="scint",TString fmsTrg="")
         xx = ((TH2D*)(frac_arr[fi]->At(ti)))->GetBinContent(binn);
         X_gr[b]->SetPoint(pnt,r,xx);
 
-        binn = ((TH2D*)(bool_prob_case_arr[fi]->At(ti)))->GetBin(tcu_case_num+1,b+1);
+        binn = ((TH2D*)(bool_prob_case_arr[fi]->At(ti)))->GetBin(rp_source_num+1,b+1);
         oo_tcu = ((TH2D*)(bool_prob_case_arr[fi]->At(ti)))->GetBinContent(binn);
         O_tcu_gr[b]->SetPoint(pnt,r,oo_tcu);
 

@@ -1,0 +1,5 @@
+2 1 0 0 scint
+2 1 1 0 scint-mips
+2 1 2 0 scint-nomips
+0 0 0 0 tcu-like
+0 0 0 1 tcu

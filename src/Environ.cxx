@@ -34,7 +34,7 @@ Environ::Environ()
   sscanf(gSystem->Getenv("STG1"),"%d",&STG1);
   sscanf(gSystem->Getenv("STG2"),"%d",&STG2);
   sscanf(gSystem->Getenv("MIPN"),"%d",&MIPN);
-  sscanf(gSystem->Getenv("USE_TCU_BITS"),"%d",&USE_TCU_BITS);
+  sscanf(gSystem->Getenv("RP_SOURCE"),"%d",&RP_SOURCE);
   
   Float_t d;
   char s[32];
