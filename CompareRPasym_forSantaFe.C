@@ -3,7 +3,7 @@
 // asym: A_Sigma, R_blue, R_yellow
 //       A_TT, A_N_blue, A_N_yellow
 
-void DrawProjections(char * kinvar="en", char * evclass="pi0",
+void CompareRPasym_forSantaFe(char * kinvar="en", char * evclass="pi0",
                      char * asym="A_N_blue", char * binselect="")
 {
   char dir[32];

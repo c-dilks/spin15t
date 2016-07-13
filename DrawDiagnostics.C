@@ -1,4 +1,4 @@
-// draws plots from diag.root
+// draws plots from diagset/all.root
 
 void DrawDiagnostics(const char * filename="diagset/all.root")
 {
