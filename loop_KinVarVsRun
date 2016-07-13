@@ -1,0 +1,7 @@
+#!/bin/bash
+# executes KinVarVsRun for all kinematic variables simultaneously
+
+root -b -q KinVarVsRun.C'("Eta")' &
+root -b -q KinVarVsRun.C'("Phi")' &
+root -b -q KinVarVsRun.C'("Pt")' &
+root -b -q KinVarVsRun.C'("E12")'

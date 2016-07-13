@@ -2,12 +2,12 @@
 // of that variable for each run in a 2d histogram; plots are normalised
 // to equalise the scale
 
-void HotTowerSearch(char * var="Eta")
+void KinVarVsRun(char * var="Eta")
 {
   const Int_t N_BINS=100;
-  gSystem->Load("src/RunData.so");
-  RunData * RD = new RunData();
-  Trigger * T = new Trigger();
+  gSystem->Load("src/RunInfo.so");
+  RunInfo * RD = new RunInfo();
+  LevelTwo * T = new LevelTwo();
   Environ * env = new Environ();
   EventClass * ev = new EventClass();
 
@@ -65,6 +65,7 @@ void HotTowerSearch(char * var="Eta")
 
   TH1D * h[N_CLASS][2000]; // assumes max number of runs
   char h_name[N_CLASS][2000][32];
+  //for(Int_t i=0; i<5000000; i++)
   for(Int_t i=0; i<tc->GetEntries(); i++)
   {
     tc->GetEntry(i);
@@ -77,7 +78,7 @@ void HotTowerSearch(char * var="Eta")
         sprintf(h_name[c][count],"h_%d_%s",runnum,ev->Name(c));
         h[c][count] = new TH1D(h_name[c][count],h_name[c][count],N_BINS,bin_low,bin_high);
       };
-      printf("%d %d\n",count,runnum);
+      printf("%s %d %d\n",var,count,runnum);
       runnum_tmp = runnum;
     };
     for(Int_t c=0; c<N_CLASS; c++)
@@ -109,6 +110,9 @@ void HotTowerSearch(char * var="Eta")
     };
   };
 
+  TString outfile_n = Form("kinvarset/%s_vs_run.root",var);
+  TFile * outfile = new TFile(outfile_n.Data(),"RECREATE");
+
   TCanvas * canv = new TCanvas("canv","canv",1000,N_CLASS*400);
   gStyle->SetOptStat(0);
   canv->Divide(1,N_CLASS);
@@ -116,6 +120,11 @@ void HotTowerSearch(char * var="Eta")
   {
     canv->cd(c+1);
     h2[c]->Draw("colz");
+    h2[c]->Write();
   };
+
+  canv->Write();
+
+
 };
 
